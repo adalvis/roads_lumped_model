@@ -1,6 +1,7 @@
 """
 Author: Amanda Manaster
 Date: 04/01/2017
+Updated: 04/04/2017 - added for loop to get multiple water depth plots
 Purpose: Playing with the Landlab component OverlandFlow. Learn to create
          grid in Landlab.
 """
@@ -88,28 +89,38 @@ plt.title('Outlet Hydrograph, Rainfall: 5 mm/hr in 0.5 hr', fontweight = 'bold')
 plt.savefig(r'C:\Users\Amanda\Desktop\Hydrograph.png')
 plt.show()
 
-#re-initialize variables to get water depth map at t = 1hr
-elapsed_time = 0.0
-hydrograph_time = []
-discharge_at_outlet = []
+#re-initialize variables to get water depth map at different time increments
+x = np.linspace(0, 3600, 12)
 
-while elapsed_time < storm_duration:
-    of.dt = of.calc_time_step()
-    of.rainfall_intensity = rainfall_mmhr * (2.777778*10**-7)
-    of.overland_flow()
+for i in range(12):
+    elapsed_time = 0.0
+    model_run_time_new = x[i]
+    hydrograph_time = []
+    discharge_at_outlet = []
+
+    while elapsed_time < model_run_time_new:
+        of.dt = of.calc_time_step()
+        of.rainfall_intensity = rainfall_mmhr * (2.777778*10**-7)
+        of.overland_flow()
     
-    mg.at_node['surface_water__discharge'] = (map_max_of_inlinks_to_node(mg, 
-               np.abs(of.q)*mg.dx))
+        mg.at_node['surface_water__discharge'] = (map_max_of_inlinks_to_node(mg, 
+                  np.abs(of.q)*mg.dx))
 
-    hydrograph_time.append(elapsed_time/3600.)
-    discharge_at_outlet.append(np.abs(of.q[outlet_link])*mg.dx)
-                                           
-    elapsed_time += of.dt
+        hydrograph_time.append(elapsed_time/3600.)
+        discharge_at_outlet.append(np.abs(of.q[outlet_link])*mg.dx)
 
-imshow_grid(mg, 'surface_water__depth', plot_name 
-            = 'Water depth at time = 0.5 hr', var_name = 'Water depth', 
-            var_units = 'm', grid_units = ('m','m'), cmap = 'Blues')
-plt.savefig(r'C:\Users\Amanda\Desktop\WaterDepth.png')
-plt.show()
+        elapsed_time += of.dt
+        
+        
+    time = model_run_time_new/3600.
+    
+    imshow_grid(mg, 'surface_water__depth', plot_name 
+                = 'Water depth at time = %0.2f hr' % time, 
+                var_name = 'Water depth', var_units = 'm', 
+                grid_units = ('m','m'), cmap = 'Blues')
+    plt.savefig('C:/Users/Amanda/Desktop/WaterDepth%i.png' % i)
+    plt.show()     
+
+
 
 
