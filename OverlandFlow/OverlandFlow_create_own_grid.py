@@ -2,6 +2,10 @@
 Author: Amanda Manaster
 Date: 04/01/2017
 Updated: 04/04/2017 - added for loop to get multiple water depth plots
+Updated: 04/07/2017 - increased storm duration and intensity; adjusted model
+                      run time; found and fixed bug that made storm intensity 
+                      continue for longer than storm duration; increased number
+                      of water depth plots
 Purpose: Playing with the Landlab component OverlandFlow. Learn to create
          grid in Landlab.
 """
@@ -49,14 +53,14 @@ outlet_link = mg.links_at_node[outlet_id]
 imshow_grid(mg, 'topographic__elevation', plot_name = 'Topographic Elevation', 
             var_name = 'Elevation', var_units = 'm',grid_units = ('m','m'), 
             cmap = 'gist_earth')
-plt.savefig(r'C:\Users\Amanda\Desktop\Elevation.png')
+#plt.savefig(r'C:\Users\Amanda\Desktop\Elevation.png')
 plt.show()
 
 #initialize variables to run the model
 elapsed_time = 0.0
-model_run_time = 5400. #1.5 hr
-storm_duration = 1800.0 #storm lasts 0.5 hr
-rainfall_mmhr = 5.
+model_run_time = 7200. #2 hr
+storm_duration = 3600.0 #storm lasts 1 hr
+rainfall_mmhr = 10.
 outlet_link = outlet_link[2] #use the link that is contributing flow to outlet
 hydrograph_time = []
 discharge_at_outlet = []
@@ -85,14 +89,14 @@ plt.plot(hydrograph_time, discharge_at_outlet, 'k-')
 axes = plt.gca()
 plt.xlabel('Time (hr)', fontweight = 'bold')
 plt.ylabel('Discharge (cms)', fontweight = 'bold')
-plt.title('Outlet Hydrograph, Rainfall: 5 mm/hr in 0.5 hr', fontweight = 'bold')
-plt.savefig(r'C:\Users\Amanda\Desktop\Hydrograph.png')
+plt.title('Outlet Hydrograph, Rainfall: 10 mm/hr in 1 hr', fontweight = 'bold')
+#plt.savefig(r'C:\Users\Amanda\Desktop\Output\10mmph\Hydrograph.png')
 plt.show()
 
 #re-initialize variables to get water depth map at different time increments
-x = np.linspace(0, 3600, 12)
+x = np.linspace(0, 7200, 72)
 
-for i in range(12):
+for i in range(72):
     elapsed_time = 0.0
     model_run_time_new = x[i]
     hydrograph_time = []
@@ -100,7 +104,10 @@ for i in range(12):
 
     while elapsed_time < model_run_time_new:
         of.dt = of.calc_time_step()
-        of.rainfall_intensity = rainfall_mmhr * (2.777778*10**-7)
+        if elapsed_time < (storm_duration):
+            of.rainfall_intensity = rainfall_mmhr * (2.777778*10**-7)
+        else:
+            of.rainfall_intensity = 0.0
         of.overland_flow()
     
         mg.at_node['surface_water__discharge'] = (map_max_of_inlinks_to_node(mg, 
@@ -117,8 +124,8 @@ for i in range(12):
     imshow_grid(mg, 'surface_water__depth', plot_name 
                 = 'Water depth at time = %0.2f hr' % time, 
                 var_name = 'Water depth', var_units = 'm', 
-                grid_units = ('m','m'), cmap = 'Blues')
-    plt.savefig('C:/Users/Amanda/Desktop/WaterDepth%i.png' % i)
+                grid_units = ('m','m'), cmap = 'Blues', limits= (0,0.045))
+    #plt.savefig('C:/Users/Amanda/Desktop/Output/10mmph/WaterDepth%i.png' % i)
     plt.show()     
 
 
