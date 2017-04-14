@@ -6,6 +6,7 @@ Updated: 04/07/2017 - increased storm duration and intensity; adjusted model
                       run time; found and fixed bug that made storm intensity 
                       continue for longer than storm duration; increased number
                       of water depth plots
+Updated: 04/14/2017 - adjusted model run times                      
 Purpose: Playing with the Landlab component OverlandFlow. Learn to create
          grid in Landlab.
 """
@@ -94,9 +95,9 @@ plt.title('Outlet Hydrograph, Rainfall: 10 mm/hr in 1 hr', fontweight = 'bold')
 plt.show()
 
 #re-initialize variables to get water depth map at different time increments
-x = np.linspace(0, 7200, 72)
+x = np.linspace(0, 7200, 10)
 
-for i in range(72):
+for i in range(10):
     elapsed_time = 0.0
     model_run_time_new = x[i]
     hydrograph_time = []
@@ -116,16 +117,15 @@ for i in range(72):
         hydrograph_time.append(elapsed_time/3600.)
         discharge_at_outlet.append(np.abs(of.q[outlet_link])*mg.dx)
 
-        elapsed_time += of.dt
-        
-        
-    time = model_run_time_new/3600.
+        elapsed_time += of.dt  
     
+    time = model_run_time_new/3600.
+
     imshow_grid(mg, 'surface_water__depth', plot_name 
                 = 'Water depth at time = %0.2f hr' % time, 
                 var_name = 'Water depth', var_units = 'm', 
-                grid_units = ('m','m'), cmap = 'Blues', limits= (0,0.045))
-    #plt.savefig('C:/Users/Amanda/Desktop/Output/10mmph/WaterDepth%i.png' % i)
+                grid_units = ('m','m'), cmap = 'jet', limits= (0,0.045))
+    #plt.savefig('C:/Users/Amanda/Desktop/Output/10mmph/WaterDepth%i_new.png' % i)
     plt.show()     
 
 
