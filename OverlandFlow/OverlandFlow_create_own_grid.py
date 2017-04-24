@@ -28,7 +28,7 @@ surface = init*12
 
 #create a 100x100 grid and add a slanted surface elevation
 mg = RasterModelGrid(100,100, spacing = (1,1))
-z = mg.add_field('topographic__elevation', surface + mg.node_y*0.05, at = 'node')
+z = mg.add_field('topographic__elevation', surface + mg.node_y*0.0005, at = 'node')
 
 #set boundary conditions
 mg.set_fixed_value_boundaries_at_grid_edges(True, False, True, False)
