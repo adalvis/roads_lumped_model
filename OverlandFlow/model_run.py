@@ -4,11 +4,10 @@ Date: 04/14/2017
 Purpose: Define the function that runs the model and produces the flow 
          hydrograph.
 """
-def model_run(mg, z, s, boo=True, elapsed_time=0.0, model_run_time=7200, 
+def model_run(mg, z, s, oid, boo=True, elapsed_time=0.0, model_run_time=7200, 
               storm_duration=3600, rainfall_mmhr=10, n=0.03):
     
     #import usual Python packages
-    import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib as mpl
 
@@ -20,8 +19,7 @@ def model_run(mg, z, s, boo=True, elapsed_time=0.0, model_run_time=7200,
     
     #determine the outlet node based on the lowest elevation and set BC + links
     #    connecting to the outlet
-    outlet_id = mg.core_nodes[np.argmin(mg.at_node['topographic__elevation'][mg.core_nodes])]                     
-    mg.set_watershed_boundary_condition_outlet_id(outlet_id, z)
+    outlet_id = oid
     
     of = OverlandFlow(mg, mannings_n = n, steep_slopes = boo)
 
@@ -55,11 +53,12 @@ def model_run(mg, z, s, boo=True, elapsed_time=0.0, model_run_time=7200,
                    left = 'on', top = 'on', right = 'on')
     plt.minorticks_on()
     plt.plot(hydrograph_time, discharge_at_outlet, 'k-')
-    #plt.ylim(0, 0.7)
+    plt.ylim(0, 0.35)
     plt.xlabel('Time (hr)', fontweight = 'bold')
     plt.ylabel('Discharge (cms)', fontweight = 'bold')
-    plt.title('Outlet Hydrograph, Rainfall: 200 mm/hr, Slope = %0.4f' %s, 
+    plt.title('Outlet Hydrograph, Rainfall: 100 mm/hr, Slope = %0.4f' %s, 
               fontweight = 'bold')
     #plt.savefig(r'C:\Users\Amanda\Desktop\Output\200mmph\Hydrograph_%f.png' % s)
     plt.show()
+    
     return(vol)
