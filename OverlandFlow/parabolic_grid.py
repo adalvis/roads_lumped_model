@@ -51,7 +51,7 @@ def parabolic_grid(size=10000, height=12, s=0.05, ld=0.8, total_t=2000, dt=100, 
                 var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth', 
                 limits= (5.5, 17))
     plt.title('Topographic Elevation, Slope = %0.4f' %s, fontweight = 'bold')
-    plt.savefig('C://Users/Amanda/Desktop/Output/TopographicElevation_%f.png' % s)
+    #plt.savefig('C://Users/Amanda/Desktop/Output/TopographicElevation_%f.png' % s)
     plt.show()
     
     return(mg, z, s, outlet_id)
