@@ -1,7 +1,7 @@
 """
-Created on Mon Mar 12 16:05:22 2018
-
-Author: Amanda
+Purpose: Basic stochastic truck pass erosion model - no deposition
+Date: 03/12/2018
+Author: Amanda Manaster
 """
 #%% Load python packages and set some defaults
 
