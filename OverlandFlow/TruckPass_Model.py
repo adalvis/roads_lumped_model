@@ -56,17 +56,18 @@ truck_pass = np.zeros(240)
 t = np.linspace(0,240,240)
 a = [0,1]
 
+tire_track_1 = mg_erode.nodes[:, tire_1]
+tire_track_2 = mg_erode.nodes[:, tire_2]
 
 for x in range(0,240):
     truck_pass[x] = np.random.choice(a, replace = True, p = [0.7917,0.2083])
     
     if truck_pass[x] == 1:
-        for g in range(0,355): #loop through road length
-            for h in range(0, 47): #loop through road width
-                if h == tire_1 or h == tire_2:
-                    z_erode[g*47 + h] -= 0.001
-            
+        z_erode[tire_track_1] -= 0.001
+        z_erode[tire_track_2] -= 0.001
+          
 
+#%% Plot truck passes
 x_axis = np.linspace(0,240,10)
             
 plt.figure(figsize = (10, 4))
@@ -80,7 +81,7 @@ plt.ylabel('Truck Pass?')
 #plt.savefig('C://Users/Amanda/Desktop/TruckPass_YN.png', bbox_inches = 'tight')
 plt.show()
 
-#Plot 2D surface with rills        
+#%% Plot 2D surface with rills        
 plt.figure(figsize = (4,10))
 imshow_grid(mg_erode, z_erode, var_name = 'Elevation', 
             var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth')
@@ -88,7 +89,7 @@ plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.01_rills.png', bbox_inches = 'tight')
 plt.show()
 
-#Plot 3D surface with rills
+#%% Plot 3D surface with rills
 X_erode = mg_erode.node_x.reshape(mg_erode.shape)
 Y_erode = mg_erode.node_y.reshape(mg_erode.shape)
 Z_erode = z_erode.reshape(mg_erode.shape)
@@ -107,5 +108,5 @@ ax_erode.set_xlabel('Road Width (m)')
 ax_erode.set_ylabel('Road Length (m)')
 ax_erode.set_zlabel('Elevation (m)')
 plt.title('Road Surface Elevation', fontweight = 'bold')
-#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.01.png', bbox_inches = 'tight')
+#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.01_rills.png')
 plt.show()

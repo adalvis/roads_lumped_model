@@ -68,7 +68,7 @@ ax.set_xlabel('Road Width (m)')
 ax.set_ylabel('Road Length (m)')
 ax.set_zlabel('Elevation (m)')
 plt.title('Road Surface Elevation', fontweight = 'bold')
-#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.01.png', bbox_inches = 'tight')
+#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.01.png')
 plt.show()
 
 
