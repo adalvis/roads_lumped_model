@@ -6,6 +6,7 @@ Author: Amanda Manaster
 #%% Load python packages and set some defaults
 
 import numpy as np
+import random as rnd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -52,34 +53,45 @@ z_erode += mg_erode.node_y*0.01 #add longitudinal slope to road segment
 
 #%% Time to try a basic model!
 
-truck_pass = np.zeros(240)
-t = np.linspace(0,240,240)
+#truck_pass = np.zeros(240)
+#t = np.linspace(0,240,240)
 a = [0,1]
 
 tire_track_1 = mg_erode.nodes[:, tire_1]
 tire_track_2 = mg_erode.nodes[:, tire_2]
 
-for x in range(0,240):
-    truck_pass[x] = np.random.choice(a, replace = True, p = [0.7917,0.2083])
-    
-    if truck_pass[x] == 1:
-        z_erode[tire_track_1] -= 0.001
-        z_erode[tire_track_2] -= 0.001
-          
+#for x in range(0,24):
+#    truck_pass[x] = np.random.choice(a, replace = True, p = [0.7917,0.2083])
+#    
+#    if truck_pass[x] == 1:
 
+truck_pass = []
+time = []
+
+for i in range(0,10):
+    for x in range(0,24):
+        t = 6
+        while (t <= 15) and (t >= 6):
+            T_x = rnd.expovariate(1/1.8)
+            z_erode[tire_track_1] -= 0.001
+            z_erode[tire_track_2] -= 0.001
+            time.append(t)
+            truck_pass.append(1)
+            t += T_x
+    
 #%% Plot truck passes
-x_axis = np.linspace(0,240,10)
-            
-plt.figure(figsize = (10, 4))
-plt.bar(t, truck_pass, color = 'r', edgecolor = 'k')
-plt.xticks(x_axis, np.linspace(0,10,10, dtype = int))
-plt.yticks(a, ('No','Yes'))
-plt.xlim(0,240)
-plt.ylim(0,1.1)
-plt.xlabel('Time (Days)')
-plt.ylabel('Truck Pass?')
-#plt.savefig('C://Users/Amanda/Desktop/TruckPass_YN.png', bbox_inches = 'tight')
-plt.show()
+#x_axis = np.linspace(0,10,10)
+#            
+#plt.figure(figsize = (10, 4))
+#plt.bar(time, truck_pass, color = 'r', edgecolor = 'k')
+#plt.xticks(x_axis, np.linspace(0,10,10, dtype = int))
+#plt.yticks(a, ('No','Yes'))
+#plt.xlim(0,10)
+#plt.ylim(0,1.1)
+#plt.xlabel('Time (Days)')
+#plt.ylabel('Truck Pass?')
+##plt.savefig('C://Users/Amanda/Desktop/TruckPass_YN.png', bbox_inches = 'tight')
+#plt.show()
 
 #%% Plot 2D surface with rills        
 plt.figure(figsize = (4,10))
