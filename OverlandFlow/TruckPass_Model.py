@@ -59,29 +59,47 @@ tire_track_2 = mg_erode.nodes[:, tire_2]
 truck_pass = []
 time = []
 
-t = 0
-while t <= 9:
-    T_x = rnd.expovariate(1/1.8)
-    z_erode[tire_track_1] -= 0.001
-    z_erode[tire_track_2] -= 0.001
-    time.append(t)
-    truck_pass.append(1)
-    t += T_x
-    
+for i in range(0, 10):
+    t_recover = 0
+    t_pass = 0
+    t_total = 0
+
+    while t_total <=24:
+        if t_total < 4:
+            T_B_morning = rnd.expovariate(1/4)
+            time.append(t_total+24*i)
+            truck_pass.append(0)
+            t_recover += T_B_morning
+        elif t_total >= 4 and t_total <= 15:
+            t_b = rnd.expovariate(1/2.2)
+            z_erode[tire_track_1] -= 0.001
+            z_erode[tire_track_2] -= 0.001
+            time.append(t_total+24*i)
+            truck_pass.append(1)
+            t_pass += t_b              
+        elif t_total > 15:
+            T_B_night = rnd.expovariate(1/9)
+            time.append(t_total+24*i)
+            truck_pass.append(0)
+            t_recover += T_B_night                
+        
+        t_total = t_pass + t_recover
+   
+
 #%% Plot truck passes
-#x_axis = np.linspace(0,10,10)
-#a = [0,1]
+x_axis = np.linspace(0,240,11)
+a = [0,1]
     
-#plt.figure(figsize = (10, 4))
-#plt.bar(time, truck_pass, color = 'r', edgecolor = 'k')
-#plt.xticks(x_axis, np.linspace(0,10,10, dtype = int))
-#plt.yticks(a, ('No','Yes'))
-#plt.xlim(0,10)
-#plt.ylim(0,1.1)
-#plt.xlabel('Time (Days)')
-#plt.ylabel('Truck Pass?')
-##plt.savefig('C://Users/Amanda/Desktop/TruckPass_YN.png', bbox_inches = 'tight')
-#plt.show()
+plt.figure(figsize = (12, 5))
+plt.bar(time, truck_pass, color = 'r', edgecolor = 'k')
+plt.xticks(x_axis, np.linspace(0,11,12, dtype = int))
+plt.yticks(a, ('No','Yes'))
+plt.xlim(0,240)
+plt.ylim(0,1.1)
+plt.xlabel('Time (Days)')
+plt.ylabel('Truck Pass?')
+#plt.savefig('C://Users/Amanda/Desktop/TruckPass_YN.png', bbox_inches = 'tight')
+plt.show()
 
 #%% Plot 2D surface with rills        
 plt.figure(figsize = (4,10))
