@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 from landlab import RasterModelGrid
+from landlab.components import LinearDiffuser
 from landlab.plot.imshow import imshow_grid
 
 mpl.rcParams['font.sans-serif'] = 'Arial'
@@ -27,6 +28,12 @@ mpl.rcParams['axes.labelweight'] = 'bold'
 
 tire_1 = 12 #x-position of one tire
 tire_2 = 20 #x-position of other tire
+
+out_1 = [11,13] #x-positions of the size cells of the first tire
+out_2 = [19,21] #x-positions of the size cells of the other tire
+
+back_tire_1 = [] #initialize the back of tire recovery for first tire
+back_tire_2 = [] #initialize the back of tire recovery for other tire
 
 #%% Create erodible grid
 
@@ -49,17 +56,29 @@ for g in range(0,355): #loop through road length
         else:
             elev -= down
 
-z_erode += mg_erode.node_y*0.01 #add longitudinal slope to road segment
+z_erode += mg_erode.node_y*0.05 #add longitudinal slope to road segment
 
 #%% Time to try a basic model!
 
+#get node IDs for the important nodes
 tire_track_1 = mg_erode.nodes[:, tire_1]
 tire_track_2 = mg_erode.nodes[:, tire_2]
+out_tire_1 = mg_erode.nodes[:, out_1]
+out_tire_2 = mg_erode.nodes[:, out_2]
 
+for k in range(0,354):
+    back_tire_1.append(mg_erode.nodes[k+1, tire_1])
+    back_tire_2.append(mg_erode.nodes[k+1, tire_2])
+
+#initialize truck pass and time arrays
 truck_pass = []
 time = []
 
-for i in range(0, 10):
+#define how long to run the model
+model_end = 10 #days
+
+for i in range(0, model_end): #loop through model days
+    #initialize/reset the times for each loop
     t_recover = 0
     t_pass = 0
     t_total = 0
@@ -74,6 +93,10 @@ for i in range(0, 10):
             t_b = rnd.expovariate(1/2.2)
             z_erode[tire_track_1] -= 0.001
             z_erode[tire_track_2] -= 0.001
+            z_erode[out_tire_1] += 0.0004
+            z_erode[out_tire_2] += 0.0004
+            z_erode[back_tire_1] += 0.0002
+            z_erode[back_tire_2] += 0.0002
             time.append(t_total+24*i)
             truck_pass.append(1)
             t_pass += t_b              
@@ -87,19 +110,19 @@ for i in range(0, 10):
    
 
 #%% Plot truck passes
-x_axis = np.linspace(0,240,11)
+x_axis = np.linspace(0, model_end*24, model_end+1)
 a = [0,1]
     
 plt.figure(figsize = (12, 5))
 plt.bar(time, truck_pass, color = 'r', edgecolor = 'k')
-plt.xticks(x_axis, np.linspace(0,11,12, dtype = int))
+plt.xticks(x_axis, np.linspace(0,model_end+1,model_end+2, dtype = int))
 plt.yticks(a, ('No','Yes'))
-plt.xlim(0,240)
+plt.xlim(0,model_end*24)
 plt.ylim(0,1.1)
 plt.xlabel('Time (Days)')
 plt.ylabel('Truck Pass?')
 #plt.savefig('C://Users/Amanda/Desktop/TruckPass_YN.png', bbox_inches = 'tight')
-plt.show()
+#plt.show()
 
 #%% Plot 2D surface with rills        
 plt.figure(figsize = (4,10))
@@ -107,7 +130,7 @@ imshow_grid(mg_erode, z_erode, var_name = 'Elevation',
             var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth')
 plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.01_rills.png', bbox_inches = 'tight')
-plt.show()
+#plt.show()
 
 #%% Plot 3D surface with rills
 X_erode = mg_erode.node_x.reshape(mg_erode.shape)
@@ -122,11 +145,11 @@ ax_erode.view_init(elev=15, azim=-105)
 
 ax_erode.set_xlim(0, 11)
 ax_erode.set_ylim(0, 80)
-ax_erode.set_zlim(0,2)
-ax_erode.set_zticks(np.arange(0, 2.5, 0.5))
+ax_erode.set_zlim(0, 4)
+ax_erode.set_zticks(np.arange(0, 5, 1))
 ax_erode.set_xlabel('Road Width (m)')
 ax_erode.set_ylabel('Road Length (m)')
 ax_erode.set_zlabel('Elevation (m)')
 plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.01_rills.png')
-plt.show()
+#plt.show()
