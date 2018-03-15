@@ -39,14 +39,14 @@ for i in range(0,355): #loop through road length
         else:
             elev -= down
 
-z = z + mg.node_y*0.01 #add longitudinal slope to road segment
+z = z + mg.node_y*0.05 #add longitudinal slope to road segment
     
 plt.figure(figsize = (4,10))
 imshow_grid(mg, z, var_name = 'Elevation', 
             var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth')
 plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.01.png', bbox_inches = 'tight')
-plt.show()
+#plt.show()
 
 #%% 3D plot of road surface
 
@@ -62,14 +62,14 @@ ax.view_init(elev=15, azim=-105)
 
 ax.set_xlim(0, 11)
 ax.set_ylim(0, 80)
-ax.set_zlim(0,2)
-ax.set_zticks(np.arange(0, 2.5, 0.5))
+ax.set_zlim(0, 4)
+ax.set_zticks(np.arange(0, 5, 1))
 ax.set_xlabel('Road Width (m)')
 ax.set_ylabel('Road Length (m)')
 ax.set_zlabel('Elevation (m)')
 plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.01.png')
-plt.show()
+#plt.show()
 
 
 
@@ -82,4 +82,4 @@ plt.plot((2.925, 2.925), (0,79.875), 'r-')
 plt.plot((4.275, 4.275), (0,79.875), 'r-')
 plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_truck_0.01.png', bbox_inches = 'tight')
-plt.show()
+#plt.show()
