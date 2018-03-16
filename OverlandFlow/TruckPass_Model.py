@@ -66,6 +66,9 @@ tire_track_2 = mg_erode.nodes[:, tire_2]
 out_tire_1 = mg_erode.nodes[:, out_1]
 out_tire_2 = mg_erode.nodes[:, out_2]
 
+back_tire_1.append(mg_erode.nodes[0, tire_1])
+back_tire_2.append(mg_erode.nodes[0, tire_2])
+
 for k in range(0,354):
     back_tire_1.append(mg_erode.nodes[k+1, tire_1])
     back_tire_2.append(mg_erode.nodes[k+1, tire_2])
@@ -76,6 +79,9 @@ time = []
 
 #define how long to run the model
 model_end = 10 #days
+
+#initialize LinearDiffuser component
+lin_diffuse = LinearDiffuser(mg_erode, linear_diffusivity = 0.001)
 
 for i in range(0, model_end): #loop through model days
     #initialize/reset the times for each loop
@@ -102,6 +108,7 @@ for i in range(0, model_end): #loop through model days
             t_pass += t_b              
         elif t_total > 15:
             T_B_night = rnd.expovariate(1/9)
+            lin_diffuse.run_one_step(T_B_night)
             time.append(t_total+24*i)
             truck_pass.append(0)
             t_recover += T_B_night                
@@ -140,7 +147,7 @@ Z_erode = z_erode.reshape(mg_erode.shape)
 fig = plt.figure()
 ax_erode = fig.add_subplot(111, projection='3d')
 ax_erode.get_proj = lambda: np.dot(Axes3D.get_proj(ax_erode), np.diag([1, 3, 0.5, 1]))
-ax_erode.plot_surface(X_erode, Y_erode, Z_erode, cmap = 'gist_earth')
+ax_erode.plot_surface(X_erode, Y_erode, Z_erode)
 ax_erode.view_init(elev=15, azim=-105)
 
 ax_erode.set_xlim(0, 11)
