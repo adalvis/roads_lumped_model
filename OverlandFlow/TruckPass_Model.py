@@ -11,7 +11,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from landlab import RasterModelGrid
+from landlab import RasterModelGrid 
 from landlab.components import LinearDiffuser
 from landlab.plot.imshow import imshow_grid
 
@@ -19,6 +19,9 @@ mpl.rcParams['font.sans-serif'] = 'Arial'
 mpl.rcParams['font.stretch'] = 1
 mpl.rcParams['font.weight'] = 'medium'
 mpl.rcParams['axes.labelweight'] = 'bold'
+
+#np.set_printoptions(threshold=np.inf)
+np.set_printoptions(threshold=1000)
 #%% Where are the truck tires on the elevation map?
 
 # From centerline (road_peak), the truck will extend 3 cells on either side. The tires 
@@ -40,6 +43,7 @@ back_tire_2 = [] #initialize the back of tire recovery for other tire
 mg_erode = RasterModelGrid(355,47,0.225) #produces an 80m x 10.67m grid w/ cell size of 0.225m (approx. tire width)
 init_elev = np.zeros(mg_erode.number_of_nodes, dtype = float) #initialize the elevation grid
 z_erode = mg_erode.add_field('topographic__elevation', init_elev, at = 'node') #create the topographic__elevation field
+
 
 road_peak = 16 #peak crowning height occurs at this x-location
 up = 0.0067 #rise of slope from ditchline to crown
@@ -78,10 +82,10 @@ truck_pass = []
 time = []
 
 #define how long to run the model
-model_end = 10 #days
+model_end = 100 #days
 
 #initialize LinearDiffuser component
-lin_diffuse = LinearDiffuser(mg_erode, linear_diffusivity = 0.001)
+lin_diffuse = LinearDiffuser(mg_erode, linear_diffusivity = 0.0001)
 
 for i in range(0, model_end): #loop through model days
     #initialize/reset the times for each loop
