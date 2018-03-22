@@ -45,7 +45,7 @@ plt.figure(figsize = (4,10))
 imshow_grid(mg, z, var_name = 'Elevation', 
             var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth')
 plt.title('Road Surface Elevation', fontweight = 'bold')
-#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.01.png', bbox_inches = 'tight')
+#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.05.png', bbox_inches = 'tight')
 #plt.show()
 
 #%% 3D plot of road surface
@@ -68,7 +68,7 @@ ax.set_xlabel('Road Width (m)')
 ax.set_ylabel('Road Length (m)')
 ax.set_zlabel('Elevation (m)')
 plt.title('Road Surface Elevation', fontweight = 'bold')
-#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.01.png')
+#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.05.png')
 #plt.show()
 
 
@@ -81,5 +81,5 @@ imshow_grid(mg, z, var_name = 'Elevation',
 plt.plot((2.925, 2.925), (0,79.875), 'r-')
 plt.plot((4.275, 4.275), (0,79.875), 'r-')
 plt.title('Road Surface Elevation', fontweight = 'bold')
-#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_truck_0.01.png', bbox_inches = 'tight')
+#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_truck_0.05.png', bbox_inches = 'tight')
 #plt.show()

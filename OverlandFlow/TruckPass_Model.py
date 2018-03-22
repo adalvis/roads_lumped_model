@@ -82,7 +82,7 @@ truck_pass = []
 time = []
 
 #define how long to run the model
-model_end = 100 #days
+model_end = 10 #days
 
 #initialize LinearDiffuser component
 lin_diffuse = LinearDiffuser(mg_erode, linear_diffusivity = 0.0001)
@@ -140,7 +140,7 @@ plt.figure(figsize = (4,10))
 imshow_grid(mg_erode, z_erode, var_name = 'Elevation', 
             var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth')
 plt.title('Road Surface Elevation', fontweight = 'bold')
-#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.01_rills.png', bbox_inches = 'tight')
+#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.05_rills.png', bbox_inches = 'tight')
 #plt.show()
 
 #%% Plot 3D surface with rills
@@ -162,5 +162,5 @@ ax_erode.set_xlabel('Road Width (m)')
 ax_erode.set_ylabel('Road Length (m)')
 ax_erode.set_zlabel('Elevation (m)')
 plt.title('Road Surface Elevation', fontweight = 'bold')
-#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.01_rills.png')
+#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.05_rills.png')
 #plt.show()
