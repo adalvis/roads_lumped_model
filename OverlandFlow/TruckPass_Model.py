@@ -29,33 +29,39 @@ np.set_printoptions(threshold=1000)
 # which the truck drives symmetrically about the road's crown. For this model, I assumed that
 # the truck is 1.8m wide, with the tires being 1.35m apart.
 
-tire_1 = 12 #x-position of one tire
-tire_2 = 20 #x-position of other tire
+tire_1 = 16 #x-position of one tire
+tire_2 = 24 #x-position of other tire
 
-out_1 = [11,13] #x-positions of the size cells of the first tire
-out_2 = [19,21] #x-positions of the size cells of the other tire
+out_1 = [15,17] #x-positions of the size cells of the first tire
+out_2 = [23,25] #x-positions of the size cells of the other tire
 
 back_tire_1 = [] #initialize the back of tire recovery for first tire
 back_tire_2 = [] #initialize the back of tire recovery for other tire
 
 #%% Create erodible grid
 
-mg_erode = RasterModelGrid(355,47,0.225) #produces an 80m x 10.67m grid w/ cell size of 0.225m (approx. tire width)
+mg_erode = RasterModelGrid(355,51,0.225) #produces an 80m x 10.67m grid w/ cell size of 0.225m (approx. tire width)
 init_elev = np.zeros(mg_erode.number_of_nodes, dtype = float) #initialize the elevation grid
 z_erode = mg_erode.add_field('topographic__elevation', init_elev, at = 'node') #create the topographic__elevation field
 
 
-road_peak = 16 #peak crowning height occurs at this x-location
+road_peak = 20 #peak crowning height occurs at this x-location
 up = 0.0067 #rise of slope from ditchline to crown
 down = 0.0035 #rise of slope from crown to hillslope
 
 for g in range(0,355): #loop through road length
     elev = 0 #initialize elevation placeholder
     
-    for h in range(0, 47): #loop through road width
-        z_erode[g*47 + h] = elev #update elevation based on x & y locations
+    for h in range(0, 51): #loop through road width
+        z_erode[g*51 + h] = elev #update elevation based on x & y locations
         
-        if h < road_peak: #update latitudinal slopes based on location related to road_peak
+        if h == 0 or h == 4:
+            elev = 0
+        elif h == 1 or h == 3:
+            elev = -0.5715
+        elif h == 2:
+            elev = -0.762
+        elif h < road_peak and h > 3: #update latitudinal slopes based on location related to road_peak
             elev += up
         else:
             elev -= down
