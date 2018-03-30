@@ -1,5 +1,6 @@
 """
-Purpose: Basic stochastic truck pass erosion model - no deposition
+Purpose: Basic stochastic truck pass erosion model
+Update: Added deposition, ditchline (03/27/2018)
 Date: 03/12/2018
 Author: Amanda Manaster
 """
@@ -12,7 +13,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 from landlab import RasterModelGrid 
-from landlab.components import LinearDiffuser
+from landlab.components import LinearDiffuser, KinwaveImplicitOverlandFlow
 from landlab.plot.imshow import imshow_grid
 
 mpl.rcParams['font.sans-serif'] = 'Arial'
@@ -170,3 +171,66 @@ ax_erode.set_zlabel('Elevation (m)')
 plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.05_rills.png')
 #plt.show()
+
+#%% Add KinwaveImplicitOverlandFlow
+
+outlet_id_1 = mg_erode.core_nodes[np.argmin(mg_erode.at_node['topographic__elevation'][mg_erode.core_nodes])]                     
+outlet_id_2 = tire_track_1[1]
+outlet_id_3 = tire_track_2[1]
+outlet_id_4 = 152
+
+elapsed_time=100
+model_run_time=7200
+storm_duration=3600
+rr = 20
+
+knwv = KinwaveImplicitOverlandFlow(mg_erode, runoff_rate = 0.0, roughness = 0.03, depth_exp = 1.6666667)
+
+hydrograph_time = [0]
+discharge_at_outlet_1 = [0]
+discharge_at_outlet_2 = [0]
+discharge_at_outlet_3 = [0]
+discharge_at_outlet_4 = [0]
+dt = 100
+vol = 0
+
+rr = rr*2.77778E-07
+
+#run the model
+while elapsed_time <= model_run_time:
+    if elapsed_time < storm_duration:
+        knwv.run_one_step(dt, current_time = elapsed_time, runoff_rate = rr)
+    else:
+        knwv.run_one_step(dt, current_time = elapsed_time, runoff_rate = 0.0)
+
+    q_at_outlet_1 = mg_erode.at_node['surface_water_inflow__discharge'][outlet_id_1]
+    q_at_outlet_2 = mg_erode.at_node['surface_water_inflow__discharge'][outlet_id_2]
+    q_at_outlet_3 = mg_erode.at_node['surface_water_inflow__discharge'][outlet_id_3]
+    q_at_outlet_4 = mg_erode.at_node['surface_water_inflow__discharge'][outlet_id_4]
+
+
+    hydrograph_time.append(elapsed_time/3600.)
+    discharge_at_outlet_1.append(q_at_outlet_1)
+    discharge_at_outlet_2.append(q_at_outlet_2)
+    discharge_at_outlet_3.append(q_at_outlet_3)
+    discharge_at_outlet_4.append(q_at_outlet_4)
+    
+    vol = vol + (dt*q_at_outlet_1 + dt*q_at_outlet_2 + dt*q_at_outlet_3 + dt*q_at_outlet_4)
+                      
+    elapsed_time += dt
+
+#plot the hydrograph
+fig = plt.figure()
+ax = plt.gca()
+ax.tick_params(axis='both', which='both', direction = 'in', bottom = 'on', 
+               left = 'on', top = 'on', right = 'on')
+plt.minorticks_on()
+plt.plot(hydrograph_time, discharge_at_outlet_1, 'k-')
+plt.plot(hydrograph_time, discharge_at_outlet_2, 'r-')
+plt.plot(hydrograph_time, discharge_at_outlet_3, 'b-')
+plt.plot(hydrograph_time, discharge_at_outlet_4, 'g-')
+#plt.ylim(0, 0.7)
+plt.xlabel('Time (hr)', fontweight = 'bold')
+plt.ylabel('Discharge (cms)', fontweight = 'bold')
+plt.title('Outlet Hydrograph', fontweight = 'bold')
+plt.show()
