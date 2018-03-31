@@ -60,8 +60,8 @@ new_x_extent=[45, 55]
 new_y_extent=[0, 10]
 
 # Extract range of rows and columns to extract
-rows=[int(np.round(new_y_extent[0]/1.)),int(np.round(new_y_extent[1]/1.))] # rows to extract from mg
-cols=[int(np.round(new_x_extent[0]/1.)),int(np.round(new_x_extent[1]/1.))] # columns to extract from mg
+rows=[int(np.round(new_y_extent[0]/1)),int(np.round(new_y_extent[1]/1))] # rows to extract from mg
+cols=[int(np.round(new_x_extent[0]/1)),int(np.round(new_x_extent[1]/1))] # columns to extract from mg
 
 start_row=rows[0]
 end_row=rows[1]
@@ -73,16 +73,17 @@ nrows=end_row-start_row # number of columns in new grid
 
 new_grid_size=[nrows*ncols]
 
-mg0_ind=np.empty(new_grid_size)
+mg0_ind=np.zeros(new_grid_size)
 mg0_z=np.zeros(new_grid_size)
 
-k=0
+k = 0
 
-for i in range (0,nrows):
-    for j in range (0,ncols):
-        mg0_ind[k]=int(100*(start_row+i)+start_col+j)
-        mg0_z[k]=z[mg0_ind[k]]
-        k=k+1
+for i in range(0,nrows):
+    for j in range(0,ncols):
+        mg0_ind[k]= int(100*(start_row+i)+start_col+j)
+        x = int(mg0_ind[k])
+        mg0_z[k]=z[x]
+        k += 1
 
 mg0=RasterModelGrid((nrows,ncols), spacing=(1.,1.))
 mg0.add_field('node','topographic__elevation', mg0_z)
@@ -96,5 +97,5 @@ fd = FlowDirectorMFD(mg0)
 fd.run_one_step()
 
 drainage_plot(mg0)
-plt.savefig('C:/Users/Amanda/Desktop/After.png')
+#plt.savefig('C:/Users/Amanda/Desktop/After.png')
 plt.show()
