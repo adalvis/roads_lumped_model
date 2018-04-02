@@ -45,6 +45,7 @@ mg_erode = RasterModelGrid(355,51,0.225) #produces an 80m x 10.67m grid w/ cell 
 init_elev = np.zeros(mg_erode.number_of_nodes, dtype = float) #initialize the elevation grid
 z_erode = mg_erode.add_field('topographic__elevation', init_elev, at = 'node') #create the topographic__elevation field
 
+mg_erode.set_closed_boundaries_at_grid_edges(True, True, True, True) 
 
 road_peak = 20 #peak crowning height occurs at this x-location
 up = 0.0067 #rise of slope from ditchline to crown
@@ -68,6 +69,7 @@ for g in range(0,355): #loop through road length
             elev -= down
 
 z_erode += mg_erode.node_y*0.05 #add longitudinal slope to road segment
+
 
 #%% Time to try a basic model!
 
@@ -177,7 +179,17 @@ plt.title('Road Surface Elevation', fontweight = 'bold')
 outlet_id_1 = mg_erode.core_nodes[np.argmin(mg_erode.at_node['topographic__elevation'][mg_erode.core_nodes])]                     
 outlet_id_2 = tire_track_1[1]
 outlet_id_3 = tire_track_2[1]
-outlet_id_4 = 152
+outlet_id_4 = 100
+outlet_id_5 = outlet_id_2 + 2
+outlet_id_6 = outlet_id_3 - 2
+
+
+mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_1, z_erode)
+mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_2, z_erode)
+mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_3, z_erode)
+mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_4, z_erode)
+mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_5, z_erode)
+mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_6, z_erode)
 
 elapsed_time=100
 model_run_time=7200
@@ -191,6 +203,8 @@ discharge_at_outlet_1 = [0]
 discharge_at_outlet_2 = [0]
 discharge_at_outlet_3 = [0]
 discharge_at_outlet_4 = [0]
+discharge_at_outlet_5 = [0]
+discharge_at_outlet_6 = [0]
 dt = 100
 vol = 0
 
@@ -207,15 +221,19 @@ while elapsed_time <= model_run_time:
     q_at_outlet_2 = mg_erode.at_node['surface_water_inflow__discharge'][outlet_id_2]
     q_at_outlet_3 = mg_erode.at_node['surface_water_inflow__discharge'][outlet_id_3]
     q_at_outlet_4 = mg_erode.at_node['surface_water_inflow__discharge'][outlet_id_4]
-
+    q_at_outlet_5 = mg_erode.at_node['surface_water_inflow__discharge'][outlet_id_5]
+    q_at_outlet_6 = mg_erode.at_node['surface_water_inflow__discharge'][outlet_id_6]
 
     hydrograph_time.append(elapsed_time/3600.)
     discharge_at_outlet_1.append(q_at_outlet_1)
     discharge_at_outlet_2.append(q_at_outlet_2)
     discharge_at_outlet_3.append(q_at_outlet_3)
     discharge_at_outlet_4.append(q_at_outlet_4)
+    discharge_at_outlet_5.append(q_at_outlet_5)
+    discharge_at_outlet_6.append(q_at_outlet_6)
     
-    vol = vol + (dt*q_at_outlet_1 + dt*q_at_outlet_2 + dt*q_at_outlet_3 + dt*q_at_outlet_4)
+    vol = vol + (dt*q_at_outlet_1 + dt*q_at_outlet_2 + dt*q_at_outlet_3 + dt*q_at_outlet_4
+                 + dt*q_at_outlet_5 + dt*q_at_outlet_6)
                       
     elapsed_time += dt
 
@@ -229,7 +247,8 @@ plt.plot(hydrograph_time, discharge_at_outlet_1, 'k-')
 plt.plot(hydrograph_time, discharge_at_outlet_2, 'r-')
 plt.plot(hydrograph_time, discharge_at_outlet_3, 'b-')
 plt.plot(hydrograph_time, discharge_at_outlet_4, 'g-')
-#plt.ylim(0, 0.7)
+plt.plot(hydrograph_time, discharge_at_outlet_5, 'b--')
+plt.plot(hydrograph_time, discharge_at_outlet_6, 'g--')
 plt.xlabel('Time (hr)', fontweight = 'bold')
 plt.ylabel('Discharge (cms)', fontweight = 'bold')
 plt.title('Outlet Hydrograph', fontweight = 'bold')
