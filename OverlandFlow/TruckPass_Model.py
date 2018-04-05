@@ -142,7 +142,7 @@ plt.ylim(0,1.1)
 plt.xlabel('Time (Days)')
 plt.ylabel('Truck Pass?')
 #plt.savefig('C://Users/Amanda/Desktop/TruckPass_YN.png', bbox_inches = 'tight')
-#plt.show()
+plt.show()
 
 #%% Plot 2D surface with rills        
 plt.figure(figsize = (4,10))
@@ -150,7 +150,7 @@ imshow_grid(mg_erode, z_erode, var_name = 'Elevation',
             var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth')
 plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.05_rills.png', bbox_inches = 'tight')
-#plt.show()
+plt.show()
 
 #%% Plot 3D surface with rills
 X_erode = mg_erode.node_x.reshape(mg_erode.shape)
@@ -172,7 +172,7 @@ ax_erode.set_ylabel('Road Length (m)')
 ax_erode.set_zlabel('Elevation (m)')
 plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.05_rills.png')
-#plt.show()
+plt.show()
 
 #%% Add KinwaveImplicitOverlandFlow
 
@@ -183,13 +183,27 @@ outlet_id_4 = 100
 outlet_id_5 = outlet_id_2 + 2
 outlet_id_6 = outlet_id_3 - 2
 
-
 mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_1, z_erode)
 mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_2, z_erode)
 mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_3, z_erode)
 mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_4, z_erode)
 mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_5, z_erode)
 mg_erode.set_watershed_boundary_condition_outlet_id(outlet_id_6, z_erode)
+
+plt.figure(figsize = (4,10))
+plt.plot(mg_erode.node_x[outlet_id_1], mg_erode.node_y[outlet_id_1],'o', color = '#33FFF0', markersize = 2)
+plt.plot(mg_erode.node_x[outlet_id_2], mg_erode.node_y[outlet_id_2],'o', color = '#FF3333', markersize = 2)
+plt.plot(mg_erode.node_x[outlet_id_3], mg_erode.node_y[outlet_id_3],'o', color = '#4CFF33', markersize = 2)
+plt.plot(mg_erode.node_x[outlet_id_4], mg_erode.node_y[outlet_id_4],'o', color = '#C679FF', markersize = 2)
+plt.plot(mg_erode.node_x[outlet_id_5], mg_erode.node_y[outlet_id_5],'o', color = '#E9FF33', markersize = 2)
+plt.plot(mg_erode.node_x[outlet_id_6], mg_erode.node_y[outlet_id_6],'o', color = '#FF339F', markersize = 2)
+imshow_grid(mg_erode, z_erode, var_name = 'Elevation', 
+            var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth')
+plt.title('Road Surface Elevation', fontweight = 'bold')
+#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.05_rills_outlets.png', bbox_inches = 'tight')
+plt.show()
+
+#%%
 
 elapsed_time=100
 model_run_time=7200
@@ -237,19 +251,21 @@ while elapsed_time <= model_run_time:
                       
     elapsed_time += dt
 
+
 #plot the hydrograph
 fig = plt.figure()
 ax = plt.gca()
 ax.tick_params(axis='both', which='both', direction = 'in', bottom = 'on', 
                left = 'on', top = 'on', right = 'on')
 plt.minorticks_on()
-plt.plot(hydrograph_time, discharge_at_outlet_1, 'k-')
-plt.plot(hydrograph_time, discharge_at_outlet_2, 'r-')
-plt.plot(hydrograph_time, discharge_at_outlet_3, 'b-')
-plt.plot(hydrograph_time, discharge_at_outlet_4, 'g-')
-plt.plot(hydrograph_time, discharge_at_outlet_5, 'b--')
-plt.plot(hydrograph_time, discharge_at_outlet_6, 'g--')
+plt.plot(hydrograph_time, discharge_at_outlet_1, '-', color = '#33FFF0')
+plt.plot(hydrograph_time, discharge_at_outlet_2, '-', color = '#FF3333')
+plt.plot(hydrograph_time, discharge_at_outlet_3, '-', color = '#4CFF33')
+plt.plot(hydrograph_time, discharge_at_outlet_4, '-', color = '#C679FF')
+plt.plot(hydrograph_time, discharge_at_outlet_5, '-', color = '#E9FF33')
+plt.plot(hydrograph_time, discharge_at_outlet_6, '-', color = '#FF339F')
 plt.xlabel('Time (hr)', fontweight = 'bold')
 plt.ylabel('Discharge (cms)', fontweight = 'bold')
 plt.title('Outlet Hydrograph', fontweight = 'bold')
+#plt.savefig('C://Users/Amanda/Desktop/OutletHydrograph.png')
 plt.show()
