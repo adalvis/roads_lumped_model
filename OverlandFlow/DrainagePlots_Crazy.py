@@ -5,7 +5,6 @@ Author: Amanda
 """
 
 import numpy as np
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import random as rnd
 
@@ -16,11 +15,7 @@ from landlab.components import LinearDiffuser, FlowDirectorMFD
 from landlab import RasterModelGrid
 from landlab.plot import imshow_grid
 from landlab.plot.drainage_plot import drainage_plot
-
-
-##set boundary conditions
-#mg.set_fixed_value_boundaries_at_grid_edges(True, False, True, False)
-#mg.set_closed_boundaries_at_grid_edges(False, True, False, True)              
+       
 
 #%% Create erodible grid
 
@@ -124,10 +119,7 @@ imshow_grid(mg_erode, z_erode, var_name = 'Elevation',
             var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth')
 plt.title('Road Surface Elevation', fontweight = 'bold')   
 
-#z_erode[outlet_id_1] -= 0.05
-#z_erode[outlet_id_2] -= 0.05
-#z_erode[outlet_id_3] -= 0.05
-#z_erode[100] -= 0.05     
+   
 #%% 
 
 new_x_extent=[0, 51]
