@@ -205,9 +205,9 @@ plt.show()
 
 #%%
 
-elapsed_time=100
-model_run_time=7200
-storm_duration=3600
+elapsed_time = 0
+model_run_time = 7200
+storm_duration = 3600
 rr = 20
 
 knwv = KinwaveImplicitOverlandFlow(mg_erode, runoff_rate = 0.0, roughness = 0.03, depth_exp = 1.6666667)
@@ -246,8 +246,8 @@ while elapsed_time <= model_run_time:
     discharge_at_outlet_5.append(q_at_outlet_5)
     discharge_at_outlet_6.append(q_at_outlet_6)
     
-    vol = vol + (dt*q_at_outlet_1 + dt*q_at_outlet_2 + dt*q_at_outlet_3 + dt*q_at_outlet_4
-                 + dt*q_at_outlet_5 + dt*q_at_outlet_6)
+    vol = vol + dt*(q_at_outlet_1 + q_at_outlet_2 + q_at_outlet_3 + q_at_outlet_4
+                 + q_at_outlet_5 + q_at_outlet_6)
                       
     elapsed_time += dt
 
