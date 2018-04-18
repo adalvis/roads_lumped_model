@@ -210,15 +210,15 @@ model_run_time = 7200
 storm_duration = 3600
 rr = 20
 
-knwv = KinwaveImplicitOverlandFlow(mg_erode, runoff_rate = 0.0, roughness = 0.03, depth_exp = 1.6666667)
+knwv = KinwaveImplicitOverlandFlow(mg_erode, runoff_rate = 0.0, roughness = 0.02, depth_exp = 1.6666667)
 
-hydrograph_time = [0]
-discharge_at_outlet_1 = [0]
-discharge_at_outlet_2 = [0]
-discharge_at_outlet_3 = [0]
-discharge_at_outlet_4 = [0]
-discharge_at_outlet_5 = [0]
-discharge_at_outlet_6 = [0]
+hydrograph_time = []
+discharge_at_outlet_1 = []
+discharge_at_outlet_2 = []
+discharge_at_outlet_3 = []
+discharge_at_outlet_4 = []
+discharge_at_outlet_5 = []
+discharge_at_outlet_6 = []
 dt = 100
 vol = 0
 
