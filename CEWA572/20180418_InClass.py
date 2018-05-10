@@ -1,6 +1,8 @@
 """
 Created on Wed Apr 18 13:10:39 2018
 
+Updated 04/25/2018
+
 Author: Amanda
 """
 
@@ -22,9 +24,10 @@ u_analytical = np.exp(-t)
 
 for i in range(n-1):
     u_fwd[i+1] = -u_fwd[i]*dT+ u_fwd[i]
-    
+
+plt.figure()    
 plt.semilogx(t, u_analytical, 'k-')
-plt.semilogx(t, u_fwd, 'c--')
+plt.semilogx(t, u_fwd, 'y--')
 plt.xlabel('Time (seconds)')
 plt.ylabel('Function')
 plt.legend()
@@ -59,11 +62,39 @@ for i in range(n-1):
     t_old = t_new
     u[i+1] = u_new
     t[i+1] = t_new
-    
+
+plt.figure()    
 plt.semilogx(t, u_analytical, 'k-')
-plt.semilogx(t, u_fwd, 'c--')
-plt.semilogx(t, u, 'm:')
+plt.semilogx(t, u, 'g--')
 plt.xlabel('Time (seconds)')
 plt.ylabel('Function')
 plt.title('Backward Euler Method')
+plt.plot()
+
+#%% Corrected Euler Method for du/dt = -u
+
+f = lambda u, t: -u
+
+(t, u_cor) = rk2(f, 0, 10, 1000, 1) 
+
+plt.figure() 
+plt.semilogx(t, u_analytical, 'k-')
+plt.semilogx(t, u_cor, 'c--')
+plt.xlabel('Time (seconds)')
+plt.ylabel('Function')
+plt.title('Corrected Euler Method')
+plt.plot()
+
+#%%
+
+f = lambda u, t: -u
+
+(t, u_4) = rk4(f, 0,10, 1000, 1)
+
+plt.figure()
+plt.semilogx(t, u_analytical, 'k-')
+plt.semilogx(t, u_4, 'm--')
+plt.xlabel('Time (seconds)')
+plt.ylabel('Function')
+plt.title('4th Order Runge-Kutta Method')
 plt.plot()
