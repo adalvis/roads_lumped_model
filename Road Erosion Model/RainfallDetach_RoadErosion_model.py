@@ -4,23 +4,6 @@ Date: 05/16/2018
 Author: Amanda
 """
 
-#%% Load python packages and set some defaults
-
-import numpy as np
-import random as rnd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-from landlab import RasterModelGrid 
-from landlab.components import LinearDiffuser
-from landlab.plot.imshow import imshow_grid
-
-mpl.rcParams['font.sans-serif'] = 'Arial'
-mpl.rcParams['font.stretch'] = 1
-mpl.rcParams['font.weight'] = 'medium'
-mpl.rcParams['axes.labelweight'] = 'bold'
-
 #%% Rainfall Detachment
 
 # Use ***modified*** equation from Nord & Esteves (2005) for rainfall detachment:
@@ -32,3 +15,11 @@ mpl.rcParams['axes.labelweight'] = 'bold'
 #             p = empirical parameter, set to 1.0
 #             h = flow depth [m]
 #             z_{m} = 3 * (2.23 * R^{0.182})
+
+def RainfallDetachment(mg, R, p = 1.0, alpha = 0.35):
+    
+    z_m = 3 * (2.23 * R^{0.182})
+    
+    D_rd = alpha*R^p * (1-mg.at_node('surface_water__depth')/z_m)
+    
+    return(D_rd)

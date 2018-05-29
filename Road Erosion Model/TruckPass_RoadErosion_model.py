@@ -59,7 +59,7 @@ def ErodibleGrid(nrows,ncols,spacing):
         
         for h in range(ncols): #loop through road width
             z_active[g*ncols + h] = elev #update elevation based on x & y locations
-            z_supply[g*ncols + h] = elev
+#            z_supply[g*ncols + h] = elev
             
             if h == 0 or h == 4:
                 elev = 0
@@ -73,7 +73,7 @@ def ErodibleGrid(nrows,ncols,spacing):
                 elev -= down
     
     z_active += mg.node_y*0.05 #add longitudinal slope to road segment
-    z_supply += mg.node_y*0.05
+#    z_supply += mg.node_y*0.05
 
     n = mg.add_zeros('node','roughness') #create roughness field
     
@@ -129,17 +129,26 @@ for i in range(0, model_end): #loop through model days
             time.append(t_total+24*i)
             truck_pass.append(0)
             t_recover += T_B_morning
+        
         elif t_total >= 4 and t_total <= 15:
             t_b = rnd.expovariate(1/2.2)
+            
             z_active[tire_track_1] -= 0.001
             z_active[tire_track_2] -= 0.001
+            z_active[out_tire_1] += 0.0004
+            z_active[out_tire_2] += 0.0004
+            z_active[back_tire_1] += 0.0002
+            z_active[back_tire_2] += 0.0002
+            
             z_supply[out_tire_1] += 0.0004
             z_supply[out_tire_2] += 0.0004
             z_supply[back_tire_1] += 0.0002
             z_supply[back_tire_2] += 0.0002
+            
             time.append(t_total+24*i)
             truck_pass.append(1)
-            t_pass += t_b              
+            t_pass += t_b
+              
         elif t_total > 15:
             T_B_night = rnd.expovariate(1/9)
             lin_diffuse.run_one_step(T_B_night)
