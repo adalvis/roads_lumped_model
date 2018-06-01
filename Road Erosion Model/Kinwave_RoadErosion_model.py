@@ -14,27 +14,6 @@ mpl.rcParams['font.stretch'] = 1
 mpl.rcParams['font.weight'] = 'medium'
 mpl.rcParams['axes.labelweight'] = 'bold'
 
-
-#%% Rainfall Detachment
-
-# Use ***modified*** equation from Nord & Esteves (2005) for rainfall detachment:
-
-#   D_{rd_d} = \alpha R^{p} (1 - \frac{h}{z_{m}}) [kg m^-2 s^-1]
-#       where D_{rd_d} = rainfall detachment (original soil)
-#             \alpha = rainfall erodibility of original soil [kg m^-2 mm^-1]
-#             R = rainfall intensity [m s^-1]
-#             p = empirical parameter, set to 1.0
-#             h = flow depth [m]
-#             z_{m} = 3 * (2.23 * R^{0.182})
-
-def RainfallDetachment(mg, R, p = 1.0, alpha = 0.35):
-    
-    z_m = 3 * (2.23 * R^{0.182})
-    
-    D_rd = alpha*R^p * (1-mg.at_node('surface_water__depth')/z_m)
-    
-    return(D_rd)
-
 #%% KinwaveImplicitOverlandFlow
 def OverlandFlow(mg, tire_track_1, tire_track_2, z_active):
     
@@ -67,7 +46,6 @@ def OverlandFlow(mg, tire_track_1, tire_track_2, z_active):
     discharge_at_outlet_4 = []
     discharge_at_outlet_5 = []
     discharge_at_outlet_6 = []
-    D_rd = []
     
     dt = 100
     vol = 0
@@ -77,8 +55,6 @@ def OverlandFlow(mg, tire_track_1, tire_track_2, z_active):
     while elapsed_time <= model_run_time:
         if elapsed_time < storm_duration:
             knwv.run_one_step(dt, current_time = elapsed_time)
-            detach_rain = RainfallDetachment(mg, rr, p = 1.0, alpha = 0.35)
-            D_rd.append(detach_rain)
         else:
             knwv.run_one_step(dt, current_time = elapsed_time, runoff_rate = 0.0)
     
@@ -112,8 +88,7 @@ def OverlandFlow(mg, tire_track_1, tire_track_2, z_active):
                           
         elapsed_time += dt
         
-    return(hydrograph_time, discharge_at_outlet_1, discharge_at_outlet_2, discharge_at_outlet_3, discharge_at_outlet_4,
-           discharge_at_outlet_5, discharge_at_outlet_6)
+    return(hydrograph_time, discharge_at_outlet_1, discharge_at_outlet_2, discharge_at_outlet_3, discharge_at_outlet_4, discharge_at_outlet_5, discharge_at_outlet_6)
     
     
 hydrograph_time, discharge_at_outlet_1, discharge_at_outlet_2, discharge_at_outlet_3, discharge_at_outlet_4, discharge_at_outlet_5, discharge_at_outlet_6 = OverlandFlow(mg, tire_track_1, tire_track_2, z_active)    
