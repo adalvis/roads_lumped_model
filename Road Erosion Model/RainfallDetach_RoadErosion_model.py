@@ -16,10 +16,17 @@ Author: Amanda
 #             h = flow depth [m]
 #             z_{m} = 3 * (2.23 * R^{0.182})
 
-def RainfallDetachment(mg, R, p = 1.0, alpha = 0.35):
+def RainfallDetachment(mg, R, D_rd, p = 1.0, alpha = 0.0902):
+    z_m = 3 * (2.23 * R**(0.182))
     
-    z_m = 3 * (2.23 * R^{0.182})
+    for n in range(len(mg.node_x)):
+        D_rd[n] = alpha*R**p * (1-mg.at_node['surface_water__depth'][n]/z_m)
     
-    D_rd = alpha*R^p * (1-mg.at_node('surface_water__depth')/z_m)
-    
+   
     return(D_rd)
+    
+#d = RainfallDetachment(mg, 20, D_rd)    
+#
+#plt.figure(figsize = (4,10))
+#imshow_grid(mg, d, var_name = 'Rainfall detachment rate', 
+#            var_units = 'kg m^-2 s^-1',grid_units = ('m','m'), cmap = 'gist_earth')
