@@ -55,6 +55,7 @@ def OverlandFlow(mg, tire_track_1, tire_track_2, z_active):
     while elapsed_time <= model_run_time:
         if elapsed_time < storm_duration:
             knwv.run_one_step(dt, current_time = elapsed_time)
+            d = RainfallDetachment(mg, rr, D_rd) 
         else:
             knwv.run_one_step(dt, current_time = elapsed_time, runoff_rate = 0.0)
     
@@ -75,13 +76,11 @@ def OverlandFlow(mg, tire_track_1, tire_track_2, z_active):
         
 #        time = elapsed_time/3600.
         
-#        if elapsed_time == 200 or elapsed_time == 400 or elapsed_time == 1800 or elapsed_time == 3600 or elapsed_time == 4100:
-#            plt.figure(figsize = (4,10))
-#            imshow_grid(mg, 'surface_water__depth', var_name = 'Water depth', 
-#                        var_units = 'm', grid_units = ('m','m'), cmap = 'jet', limits = (0, 0.04))
-#            plt.title('Water depth at time = %0.2f hr' % time, fontweight = 'bold')
-#    #        plt.savefig('C:/Users/Amanda/Desktop/WaterDepth_rasterN%0.2f.png' % time)
-#            plt.show()  
+        if elapsed_time == 200 or elapsed_time == 400 or elapsed_time == 1800 or elapsed_time == 3600 or elapsed_time == 4100:
+            plt.figure(figsize = (4,10))
+            imshow_grid(mg, d, var_name = 'Rainfall detachment rate', 
+            var_units = 'kg m^-2 s^-1',grid_units = ('m','m'), cmap = 'gist_earth')
+            plt.show()  
         
         vol = vol + dt*(q_at_outlet_1 + q_at_outlet_2 + q_at_outlet_3 + q_at_outlet_4
                      + q_at_outlet_5 + q_at_outlet_6)
