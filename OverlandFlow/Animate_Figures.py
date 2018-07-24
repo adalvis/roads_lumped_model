@@ -6,10 +6,11 @@ Purpose: Create animation of figures from OverlandFlow_create_own_grid.py
 import matplotlib.pyplot as plt 
 import matplotlib.image as mgimg
 from matplotlib import animation
-from JSAnimation import HTMLWriter
+plt.rcParams['animation.convert_path'] = r'C:\Program Files\ImageMagick-7.0.8-Q16\magick.exe'
+
 
 #initialize figure
-fig = plt.figure(frameon = False, figsize=(6,10))
+fig = plt.figure()
 ax = fig.add_axes([0, 0, 1, 1])
 ax.axis('off')
 
@@ -17,10 +18,10 @@ ax.axis('off')
 myimages = []
 
 #loops through images
-for i in range(9):
+for i in range(15):
 
     #read in figure
-    fname = 'C:/Users/Amanda/Desktop/Python/Slope%i_200.png' % i 
+    fname = 'C:/Users/Amanda/Desktop/test/RoadSurface_0.05_rills_%i.tif' % i 
     img = mgimg.imread(fname)
     imgplot = plt.imshow(img)
 
@@ -30,6 +31,7 @@ for i in range(9):
 #animate
 my_anim = animation.ArtistAnimation(fig, myimages)
 
+writer = animation.ImageMagickFileWriter(fps = 3)
+
 #save animation
-my_anim.save('C:/Users/Amanda/Desktop/Python/HydrographElevation_200.html',  
-             writer=HTMLWriter(embed_frames = True))
+my_anim.save('C:/Users/Amanda/Desktop/2D.gif', writer=writer, dpi = 300)
