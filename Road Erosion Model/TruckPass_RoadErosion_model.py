@@ -8,13 +8,12 @@ Author: Amanda Manaster
 #%% Load python packages and set some defaults
 
 import numpy as np
-import random as rnd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 from landlab import RasterModelGrid 
-from landlab.components import LinearDiffuser, TruckPassErosion
+from landlab.components import TruckPassErosion
 from landlab.plot.imshow import imshow_grid
 
 mpl.rcParams['font.sans-serif'] = 'Arial'
@@ -46,9 +45,8 @@ def ErodibleGrid(nrows,ncols,spacing):
     mg = RasterModelGrid(nrows,ncols,spacing) #produces an 80m x 10.67m grid w/ cell size of 0.225m (approx. tire width)
     z = mg.add_zeros('node','topographic__elevation') #create the topographic__elevation field
     z_sediment = mg.add_zeros('node','soil__depth')
-    z_bed = mg.add_zeros('node', 'bedrock__elevation')
     D_rd = mg.add_zeros('node','rainfall_detachment')
-    n = mg.add_zeros('node','roughness') #create roughness field
+    
     
     mg.set_closed_boundaries_at_grid_edges(True, True, True, True) 
     
@@ -60,7 +58,7 @@ def ErodibleGrid(nrows,ncols,spacing):
         elev = 0 #initialize elevation placeholder
         
         for h in range(ncols): #loop through road width
-            z_bed[g*ncols + h] = elev #update elevation based on x & y locations
+            z[g*ncols + h] = elev #update elevation based on x & y locations
             
             if h == 0 or h == 4:
                 elev = 0
@@ -73,13 +71,10 @@ def ErodibleGrid(nrows,ncols,spacing):
             else:
                 elev -= down
     
-    z_bed += mg.node_y*0.05 #add longitudinal slope to road segment
-    mg.at_node['bedrock__elevation'] = z_bed
-    mg.at_node['soil__depth'] += 0.2
-    
-    mg.at_node['topographic__elevation'] = mg.at_node['soil__depth'] + mg.at_node['bedrock__elevation']
+    z += mg.node_y*0.05 #add longitudinal slope to road segmen
 
-    
+
+    n = mg.add_zeros('node','roughness') #create roughness field
     
     roughness = 0.1 #initialize roughness placeholder            
     
@@ -92,11 +87,11 @@ def ErodibleGrid(nrows,ncols,spacing):
             else:
                 roughness = 0.02
                 
-    return(mg, D_rd, n)           
+    return(mg, z, z_sediment, D_rd, n)           
 
 #%% Time to try a basic model!
 
-mg, D_rd, n = ErodibleGrid(355,51,0.225)
+mg, z, z_sediment, D_rd, n = ErodibleGrid(355,51,0.225)
 
 #get node IDs for the important nodes
 tire_track_1 = mg.nodes[:, tire_1]
@@ -115,7 +110,9 @@ back_tire_1_new = np.array(back_tire_1)
 back_tire_2_new = np.array(back_tire_2)
 
 
-tire_tracks = np.array([tire_track_1, tire_track_2, out_tire_1[:,0], out_tire_1[:,1], out_tire_2[:,0], out_tire_2[:,1], back_tire_1_new, back_tire_2_new])
+tire_tracks = np.array([tire_track_1, tire_track_2, out_tire_1[:,0], \
+                        out_tire_1[:,1], out_tire_2[:,0], out_tire_2[:,1], \
+                        back_tire_1_new, back_tire_2_new])
 
 #%%
 #initialize truck pass and time arrays
@@ -125,16 +122,14 @@ time = []
 #define how long to run the model
 model_end = 10 #days
 
-##initialize LinearDiffuser component
-#lin_diffuse = LinearDiffuser(mg, linear_diffusivity = 0.0001)
-tpe = TruckPassErosion(mg)
+tpe = TruckPassErosion(mg, diffusivity = 0.0001)
 
 for i in range(0, model_end): #loop through model days
     time, truck_pass = tpe.run_one_step(tire_tracks, i)
         
 X = mg.node_x.reshape(mg.shape)
 Y = mg.node_y.reshape(mg.shape)
-Z = mg.at_node['topographic__elevation'].reshape(mg.shape)
+Z = z.reshape(mg.shape)
 
 fig = plt.figure(figsize = (5,3))
 ax = fig.add_subplot(111, projection='3d')
@@ -154,9 +149,8 @@ plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.05_rills_%i.tif' % i, dpi = 200)
 plt.show()
 
-
 plt.figure(figsize = (4,10))
-imshow_grid(mg, 'topographic__elevation', var_name = 'Elevation', 
+imshow_grid(mg, z, var_name = 'Elevation', 
             var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth', vmin = 0, vmax = 4)
 plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.05_rills_%i.tif' % i, dpi = 200, bbox_inches = 'tight')
@@ -184,7 +178,7 @@ plt.show()
 ##%% Plot 3D surface with rills
 #X = mg.node_x.reshape(mg.shape)
 #Y = mg.node_y.reshape(mg.shape)
-#z = z.reshape(mg.shape)
+#z = z_bed.reshape(mg.shape)
 #
 #fig = plt.figure()
 #ax = fig.add_subplot(111, projection='3d')
