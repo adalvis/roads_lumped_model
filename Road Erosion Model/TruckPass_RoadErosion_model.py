@@ -8,13 +8,12 @@ Author: Amanda Manaster
 #%% Load python packages and set some defaults
 
 import numpy as np
-import random as rnd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 from landlab import RasterModelGrid 
-from landlab.components import LinearDiffuser
+from landlab.components import TruckPassErosion
 from landlab.plot.imshow import imshow_grid
 
 mpl.rcParams['font.sans-serif'] = 'Arial'
@@ -44,8 +43,9 @@ back_tire_2 = [] #initialize the back of tire recovery for other tire
 #%% Create erodible grid
 def ErodibleGrid(nrows,ncols,spacing):    
     mg = RasterModelGrid(nrows,ncols,spacing) #produces an 80m x 10.67m grid w/ cell size of 0.225m (approx. tire width)
-    z_active = mg.add_zeros('node','topographic__elevation') #create the topographic__elevation field
-    z_supply = mg.add_zeros('node','supply__elevation')
+    z = mg.add_zeros('node','topographic__elevation') #create the topographic__elevation field
+    z_sediment = mg.add_zeros('node','soil__depth')
+    D_rd = mg.add_zeros('node','rainfall_detachment')
     
     
     mg.set_closed_boundaries_at_grid_edges(True, True, True, True) 
@@ -58,8 +58,7 @@ def ErodibleGrid(nrows,ncols,spacing):
         elev = 0 #initialize elevation placeholder
         
         for h in range(ncols): #loop through road width
-            z_active[g*ncols + h] = elev #update elevation based on x & y locations
-#            z_supply[g*ncols + h] = elev
+            z[g*ncols + h] = elev #update elevation based on x & y locations
             
             if h == 0 or h == 4:
                 elev = 0
@@ -72,8 +71,8 @@ def ErodibleGrid(nrows,ncols,spacing):
             else:
                 elev -= down
     
-    z_active += mg.node_y*0.05 #add longitudinal slope to road segment
-#    z_supply += mg.node_y*0.05
+    z += mg.node_y*0.05 #add longitudinal slope to road segmen
+
 
     n = mg.add_zeros('node','roughness') #create roughness field
     
@@ -88,11 +87,11 @@ def ErodibleGrid(nrows,ncols,spacing):
             else:
                 roughness = 0.02
                 
-    return(mg, z_active, z_supply, n)           
+    return(mg, z, z_sediment, D_rd, n)           
 
 #%% Time to try a basic model!
 
-mg, z_active, z_supply, n = ErodibleGrid(355,51,0.225)
+mg, z, z_sediment, D_rd, n = ErodibleGrid(355,51,0.225)
 
 #get node IDs for the important nodes
 tire_track_1 = mg.nodes[:, tire_1]
@@ -106,7 +105,16 @@ back_tire_2.append(mg.nodes[0, tire_2])
 for k in range(0,354):
     back_tire_1.append(mg.nodes[k+1, tire_1])
     back_tire_2.append(mg.nodes[k+1, tire_2])
+    
+back_tire_1_new = np.array(back_tire_1)    
+back_tire_2_new = np.array(back_tire_2)
 
+
+tire_tracks = np.array([tire_track_1, tire_track_2, out_tire_1[:,0], \
+                        out_tire_1[:,1], out_tire_2[:,0], out_tire_2[:,1], \
+                        back_tire_1_new, back_tire_2_new])
+
+#%%
 #initialize truck pass and time arrays
 truck_pass = []
 time = []
@@ -114,50 +122,40 @@ time = []
 #define how long to run the model
 model_end = 10 #days
 
-#initialize LinearDiffuser component
-lin_diffuse = LinearDiffuser(mg, linear_diffusivity = 0.0001)
+tpe = TruckPassErosion(mg, diffusivity = 0.0001)
 
 for i in range(0, model_end): #loop through model days
-    #initialize/reset the times for each loop
-    t_recover = 0
-    t_pass = 0
-    t_total = 0
+    time, truck_pass = tpe.run_one_step(tire_tracks, i)
+        
+X = mg.node_x.reshape(mg.shape)
+Y = mg.node_y.reshape(mg.shape)
+Z = z.reshape(mg.shape)
 
-    while t_total <=24:
-        if t_total < 4:
-            T_B_morning = rnd.expovariate(1/4)
-            time.append(t_total+24*i)
-            truck_pass.append(0)
-            t_recover += T_B_morning
-        
-        elif t_total >= 4 and t_total <= 15:
-            t_b = rnd.expovariate(1/2.2)
-            
-            z_active[tire_track_1] -= 0.001
-            z_active[tire_track_2] -= 0.001
-            z_active[out_tire_1] += 0.0004
-            z_active[out_tire_2] += 0.0004
-            z_active[back_tire_1] += 0.0002
-            z_active[back_tire_2] += 0.0002
-            
-            z_supply[out_tire_1] += 0.0004
-            z_supply[out_tire_2] += 0.0004
-            z_supply[back_tire_1] += 0.0002
-            z_supply[back_tire_2] += 0.0002
-            
-            time.append(t_total+24*i)
-            truck_pass.append(1)
-            t_pass += t_b
-              
-        elif t_total > 15:
-            T_B_night = rnd.expovariate(1/9)
-            lin_diffuse.run_one_step(T_B_night)
-            time.append(t_total+24*i)
-            truck_pass.append(0)
-            t_recover += T_B_night                
-        
-        t_total = t_pass + t_recover
-   
+fig = plt.figure(figsize = (5,3))
+ax = fig.add_subplot(111, projection='3d')
+ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([1, 3, 0.5, 1]))
+ax.plot_surface(X, Y, Z)
+ax.view_init(elev=10, azim=-105)
+
+ax.set_xlim(0, 11)
+ax.set_ylim(0, 80)
+ax.set_zlim(0, 4)
+ax.set_zticks(np.arange(0, 5, 1))
+ax.ticklabel_format(fontsize = 8)
+ax.set_xlabel('Road Width (m)', fontsize = 10)
+ax.set_ylabel('Road Length (m)', fontsize = 10)
+ax.set_zlabel('Elevation (m)', fontsize = 10)
+plt.title('Road Surface Elevation', fontweight = 'bold')
+#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.05_rills_%i.tif' % i, dpi = 200)
+plt.show()
+
+plt.figure(figsize = (4,10))
+imshow_grid(mg, z, var_name = 'Elevation', 
+            var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth', vmin = 0, vmax = 4)
+plt.title('Road Surface Elevation', fontweight = 'bold')
+#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.05_rills_%i.tif' % i, dpi = 200, bbox_inches = 'tight')
+plt.show()        
+       
 
 #%% Plot truck passes
 x_axis = np.linspace(0, model_end*24, model_end+1)
@@ -175,31 +173,26 @@ plt.ylabel('Truck Pass?')
 plt.show()
 
 #%% Plot 2D surface with rills        
-plt.figure(figsize = (4,10))
-imshow_grid(mg, z_active, var_name = 'Supply Layer', 
-            var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth')
-plt.title('Road Surface Elevation', fontweight = 'bold')
-#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.05_rills.png', bbox_inches = 'tight')
-plt.show()
 
-#%% Plot 3D surface with rills
-X = mg.node_x.reshape(mg.shape)
-Y = mg.node_y.reshape(mg.shape)
-z = z_active.reshape(mg.shape)
 
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([1, 3, 0.5, 1]))
-ax.plot_surface(X, Y, z)
-ax.view_init(elev=15, azim=-105)
-
-ax.set_xlim(0, 11)
-ax.set_ylim(0, 80)
-ax.set_zlim(0, 4)
-ax.set_zticks(np.arange(0, 5, 1))
-ax.set_xlabel('Road Width (m)')
-ax.set_ylabel('Road Length (m)')
-ax.set_zlabel('Elevation (m)')
-plt.title('Road Surface Elevation', fontweight = 'bold')
-#plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.05_rills.png')
-plt.show()
+##%% Plot 3D surface with rills
+#X = mg.node_x.reshape(mg.shape)
+#Y = mg.node_y.reshape(mg.shape)
+#z = z_bed.reshape(mg.shape)
+#
+#fig = plt.figure()
+#ax = fig.add_subplot(111, projection='3d')
+#ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([1, 3, 0.5, 1]))
+#ax.plot_surface(X, Y, z)
+#ax.view_init(elev=15, azim=-105)
+#
+#ax.set_xlim(0, 11)
+#ax.set_ylim(0, 80)
+#ax.set_zlim(0, 4)
+#ax.set_zticks(np.arange(0, 5, 1))
+#ax.set_xlabel('Road Width (m)')
+#ax.set_ylabel('Road Length (m)')
+#ax.set_zlabel('Elevation (m)')
+#plt.title('Road Surface Elevation', fontweight = 'bold')
+##plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.05_rills.png')
+#plt.show()

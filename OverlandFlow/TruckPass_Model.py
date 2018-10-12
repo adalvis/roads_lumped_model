@@ -118,17 +118,17 @@ lin_diffuse = LinearDiffuser(mg, linear_diffusivity = 0.0001)
 
 for i in range(0, model_end): #loop through model days
     #initialize/reset the times for each loop
-    t_recover = 0
-    t_pass = 0
-    t_total = 0
+    t_recover = 0 #recovery time
+    t_pass = 0 #pass time
+    t_total = 0 #total time
 
-    while t_total <=24:
-        if t_total < 4:
+    while t_total <=24: #during a 24-hour period
+        if t_total < 4: #if it's before 4am, no trucks will pass
             T_B_morning = rnd.expovariate(1/4)
             time.append(t_total+24*i)
             truck_pass.append(0)
             t_recover += T_B_morning
-        elif t_total >= 4 and t_total <= 15:
+        elif t_total >= 4 and t_total <= 15: #if it's between 4am and 3pm, trucks will pass
             t_b = rnd.expovariate(1/2.2)
             z_active[tire_track_1] -= 0.001
             z_active[tire_track_2] -= 0.001
@@ -139,7 +139,7 @@ for i in range(0, model_end): #loop through model days
             time.append(t_total+24*i)
             truck_pass.append(1)
             t_pass += t_b              
-        elif t_total > 15:
+        elif t_total > 15: #if it's after 3pm, no trucks will pass, recover road
             T_B_night = rnd.expovariate(1/9)
             lin_diffuse.run_one_step(T_B_night)
             time.append(t_total+24*i)
@@ -166,7 +166,7 @@ plt.show()
 
 #%% Plot 2D surface with rills        
 plt.figure(figsize = (4,10))
-imshow_grid(mg, z_active-z, var_name = 'Active Layer', 
+imshow_grid(mg, z_active, var_name = 'Active Layer', 
             var_units = 'm',grid_units = ('m','m'), cmap = 'gist_earth')
 plt.title('Road Surface Elevation', fontweight = 'bold')
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_0.05_rills.png', bbox_inches = 'tight')
@@ -195,95 +195,95 @@ plt.title('Road Surface Elevation', fontweight = 'bold')
 plt.show()
 
 #%% Add KinwaveImplicitOverlandFlow
-
-outlet_id_1 = mg.core_nodes[np.argmin(mg.at_node['topographic__elevation'][mg.core_nodes])]                     
-outlet_id_2 = tire_track_1[1]
-outlet_id_3 = tire_track_2[1]
-outlet_id_4 = 100
-outlet_id_5 = outlet_id_2 + 2
-outlet_id_6 = outlet_id_3 - 2
-
-mg.set_watershed_boundary_condition_outlet_id(outlet_id_1, z)
-mg.set_watershed_boundary_condition_outlet_id(outlet_id_2, z)
-mg.set_watershed_boundary_condition_outlet_id(outlet_id_3, z)
-mg.set_watershed_boundary_condition_outlet_id(outlet_id_4, z)
-mg.set_watershed_boundary_condition_outlet_id(outlet_id_5, z)
-mg.set_watershed_boundary_condition_outlet_id(outlet_id_6, z)
-
-#%%
-
-elapsed_time = 0
-model_run_time = 7200
-storm_duration = 3600
-rr = 20
-
-#knwv = KinwaveImplicitOverlandFlow(mg, roughness = 0.02, runoff_rate = rr, depth_exp = 1.6666667)
-knwv = KinwaveImplicitOverlandFlowADM(mg, runoff_rate = rr, depth_exp = 1.6666667)
-
-hydrograph_time = []
-discharge_at_outlet_1 = []
-discharge_at_outlet_2 = []
-discharge_at_outlet_3 = []
-discharge_at_outlet_4 = []
-discharge_at_outlet_5 = []
-discharge_at_outlet_6 = []
-dt = 100
-vol = 0
-
-
-#run the model
-while elapsed_time <= model_run_time:
-    if elapsed_time < storm_duration:
-        knwv.run_one_step(dt, current_time = elapsed_time)
-    else:
-        knwv.run_one_step(dt, current_time = elapsed_time, runoff_rate = 0.0)
-
-    q_at_outlet_1 = mg.at_node['surface_water_inflow__discharge'][outlet_id_1]
-    q_at_outlet_2 = mg.at_node['surface_water_inflow__discharge'][outlet_id_2]
-    q_at_outlet_3 = mg.at_node['surface_water_inflow__discharge'][outlet_id_3]
-    q_at_outlet_4 = mg.at_node['surface_water_inflow__discharge'][outlet_id_4]
-    q_at_outlet_5 = mg.at_node['surface_water_inflow__discharge'][outlet_id_5]
-    q_at_outlet_6 = mg.at_node['surface_water_inflow__discharge'][outlet_id_6]
-
-    hydrograph_time.append(elapsed_time/3600.)
-    discharge_at_outlet_1.append(q_at_outlet_1)
-    discharge_at_outlet_2.append(q_at_outlet_2)
-    discharge_at_outlet_3.append(q_at_outlet_3)
-    discharge_at_outlet_4.append(q_at_outlet_4)
-    discharge_at_outlet_5.append(q_at_outlet_5)
-    discharge_at_outlet_6.append(q_at_outlet_6)
-    
-    time = elapsed_time/3600.
-    
-    if elapsed_time == 200 or elapsed_time == 400 or elapsed_time == 1800 or elapsed_time == 3600 or elapsed_time == 4100:
-        plt.figure(figsize = (4,10))
-        imshow_grid(mg, 'surface_water__depth', var_name = 'Water depth', 
-                    var_units = 'm', grid_units = ('m','m'), cmap = 'jet', limits = (0, 0.04))
-        plt.title('Water depth at time = %0.2f hr' % time, fontweight = 'bold')
-#        plt.savefig('C:/Users/Amanda/Desktop/WaterDepth_rasterN%0.2f.png' % time)
-        plt.show()  
-    
-    vol = vol + dt*(q_at_outlet_1 + q_at_outlet_2 + q_at_outlet_3 + q_at_outlet_4
-                 + q_at_outlet_5 + q_at_outlet_6)
-                      
-    elapsed_time += dt
-    
-
-#plot the hydrograph
-fig = plt.figure()
-ax = plt.gca()
-ax.tick_params(axis='both', which='both', direction = 'in', bottom = 'on', 
-               left = 'on', top = 'on', right = 'on')
-plt.minorticks_on()
-plt.plot(hydrograph_time, discharge_at_outlet_1, '-', color = '#33FFF0', label = 'Ditchline outlet')
-plt.plot(hydrograph_time, discharge_at_outlet_2, '-', color = '#FF3333', label = 'Tire track 1')
-plt.plot(hydrograph_time, discharge_at_outlet_3, '-', color = '#4CFF33', label = 'Tire track 2')
-plt.plot(hydrograph_time, discharge_at_outlet_4, '-', color = '#C679FF', label = 'Road outlet')
-plt.plot(hydrograph_time, discharge_at_outlet_5, '-', color = '#E9FF33', label = 'Inside tire track 1')
-plt.plot(hydrograph_time, discharge_at_outlet_6, '-', color = '#FF339F', label = 'Inside tire track 2')
-plt.legend()
-plt.xlabel('Time (hr)', fontweight = 'bold')
-plt.ylabel('Discharge (cms)', fontweight = 'bold')
-plt.title('Outlet Hydrograph', fontweight = 'bold')
-#plt.savefig('C://Users/Amanda/Desktop/OutletHydrograph_rasterN_2.png')
-plt.show()
+#
+#outlet_id_1 = mg.core_nodes[np.argmin(mg.at_node['topographic__elevation'][mg.core_nodes])]                     
+#outlet_id_2 = tire_track_1[1]
+#outlet_id_3 = tire_track_2[1]
+#outlet_id_4 = 100
+#outlet_id_5 = outlet_id_2 + 2
+#outlet_id_6 = outlet_id_3 - 2
+#
+#mg.set_watershed_boundary_condition_outlet_id(outlet_id_1, z)
+#mg.set_watershed_boundary_condition_outlet_id(outlet_id_2, z)
+#mg.set_watershed_boundary_condition_outlet_id(outlet_id_3, z)
+#mg.set_watershed_boundary_condition_outlet_id(outlet_id_4, z)
+#mg.set_watershed_boundary_condition_outlet_id(outlet_id_5, z)
+#mg.set_watershed_boundary_condition_outlet_id(outlet_id_6, z)
+#
+##%%
+#
+#elapsed_time = 0
+#model_run_time = 7200
+#storm_duration = 3600
+#rr = 20
+#
+##knwv = KinwaveImplicitOverlandFlow(mg, roughness = 0.02, runoff_rate = rr, depth_exp = 1.6666667)
+#knwv = KinwaveImplicitOverlandFlowADM(mg, runoff_rate = rr, depth_exp = 1.6666667)
+#
+#hydrograph_time = []
+#discharge_at_outlet_1 = []
+#discharge_at_outlet_2 = []
+#discharge_at_outlet_3 = []
+#discharge_at_outlet_4 = []
+#discharge_at_outlet_5 = []
+#discharge_at_outlet_6 = []
+#dt = 100
+#vol = 0
+#
+#
+##run the model
+#while elapsed_time <= model_run_time:
+#    if elapsed_time < storm_duration:
+#        knwv.run_one_step(dt, current_time = elapsed_time)
+#    else:
+#        knwv.run_one_step(dt, current_time = elapsed_time, runoff_rate = 0.0)
+#
+#    q_at_outlet_1 = mg.at_node['surface_water_inflow__discharge'][outlet_id_1]
+#    q_at_outlet_2 = mg.at_node['surface_water_inflow__discharge'][outlet_id_2]
+#    q_at_outlet_3 = mg.at_node['surface_water_inflow__discharge'][outlet_id_3]
+#    q_at_outlet_4 = mg.at_node['surface_water_inflow__discharge'][outlet_id_4]
+#    q_at_outlet_5 = mg.at_node['surface_water_inflow__discharge'][outlet_id_5]
+#    q_at_outlet_6 = mg.at_node['surface_water_inflow__discharge'][outlet_id_6]
+#
+#    hydrograph_time.append(elapsed_time/3600.)
+#    discharge_at_outlet_1.append(q_at_outlet_1)
+#    discharge_at_outlet_2.append(q_at_outlet_2)
+#    discharge_at_outlet_3.append(q_at_outlet_3)
+#    discharge_at_outlet_4.append(q_at_outlet_4)
+#    discharge_at_outlet_5.append(q_at_outlet_5)
+#    discharge_at_outlet_6.append(q_at_outlet_6)
+#    
+#    time = elapsed_time/3600.
+#    
+#    if elapsed_time == 200 or elapsed_time == 400 or elapsed_time == 1800 or elapsed_time == 3600 or elapsed_time == 4100:
+#        plt.figure(figsize = (4,10))
+#        imshow_grid(mg, 'surface_water__depth', var_name = 'Water depth', 
+#                    var_units = 'm', grid_units = ('m','m'), cmap = 'jet', limits = (0, 0.04))
+#        plt.title('Water depth at time = %0.2f hr' % time, fontweight = 'bold')
+##        plt.savefig('C:/Users/Amanda/Desktop/WaterDepth_rasterN%0.2f.png' % time)
+#        plt.show()  
+#    
+#    vol = vol + dt*(q_at_outlet_1 + q_at_outlet_2 + q_at_outlet_3 + q_at_outlet_4
+#                 + q_at_outlet_5 + q_at_outlet_6)
+#                      
+#    elapsed_time += dt
+#    
+#
+##plot the hydrograph
+#fig = plt.figure()
+#ax = plt.gca()
+#ax.tick_params(axis='both', which='both', direction = 'in', bottom = 'on', 
+#               left = 'on', top = 'on', right = 'on')
+#plt.minorticks_on()
+#plt.plot(hydrograph_time, discharge_at_outlet_1, '-', color = '#33FFF0', label = 'Ditchline outlet')
+#plt.plot(hydrograph_time, discharge_at_outlet_2, '-', color = '#FF3333', label = 'Tire track 1')
+#plt.plot(hydrograph_time, discharge_at_outlet_3, '-', color = '#4CFF33', label = 'Tire track 2')
+#plt.plot(hydrograph_time, discharge_at_outlet_4, '-', color = '#C679FF', label = 'Road outlet')
+#plt.plot(hydrograph_time, discharge_at_outlet_5, '-', color = '#E9FF33', label = 'Inside tire track 1')
+#plt.plot(hydrograph_time, discharge_at_outlet_6, '-', color = '#FF339F', label = 'Inside tire track 2')
+#plt.legend()
+#plt.xlabel('Time (hr)', fontweight = 'bold')
+#plt.ylabel('Discharge (cms)', fontweight = 'bold')
+#plt.title('Outlet Hydrograph', fontweight = 'bold')
+##plt.savefig('C://Users/Amanda/Desktop/OutletHydrograph_rasterN_2.png')
+#plt.show()
