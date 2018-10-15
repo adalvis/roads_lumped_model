@@ -25,12 +25,13 @@ mpl.rcParams['ytick.direction'] = 'in'
 
 #%% Create grid and plot map
 
-init = np.ones([100])
+init = np.ones([10000])
 surface = (init*12) + np.random.rand(init.size)/100000.
 
 
-mg = RasterModelGrid(10, 10, spacing=(1,1))
+mg = RasterModelGrid(100, 100, spacing=(1,1))
 z = mg.add_field('topographic__elevation', surface + mg.node_y*0.05 + mg.node_x*0.05, at = 'node')
+qs = mg.add_zeros('node', 'sediment __discharge')
 
 #mg.set_fixed_value_boundaries_at_grid_edges(True, True, True, True)
 mg.set_closed_boundaries_at_grid_edges(True, True, True, True) 
@@ -49,16 +50,13 @@ def ExnerSolver(z, dqs_dx):
     
     return(z)
     
-def div_qs(qs, order, grid):
-    dqs = []
-    dx = []
-    for i in range(len(order)):
-        dqs.append(qs[grid.node[i+1]]-qs[grid.node[i]])
-        dx.append(grid.node[i+1]-grid.node[i])
-        dqs_dx = dqs/dx
+def div_qs(qs, grid):
+    qs_link = grid.map_link_tail_node_to_link(qs)
+    dqs_dx = grid.calc_flux_div_at_node(qs_link)
+    
     return(dqs_dx)
     
-def qs():
+def sed_disch(qs, grid,  drainage_area, dzdx, k_t=0.01, m=2, n=2):
     
     # $Q_s = k_t A^m S^n$
     # where Q_s = sediment discharge
@@ -67,9 +65,12 @@ def qs():
     #       S = slope
     #       m & n are empirical constants
     
+    for node in grid.core_nodes:
+        qs[node] = k_t * (drainage_area[node]**m) * (dzdx[node]**n)
+       
+    grid.at_node['sediment__discharge'] = qs
     
-    
-    return (qs)    
+    return (qs, grid)    
 
 
 #%% This is used to get ordered nodes for the sediment transport
@@ -103,8 +104,6 @@ def calculate_slope(grid,z):
 ordered_nodes, mg, da, q = ordered(mg)
 plt.figure()
 drainage_plot(mg, 'drainage_area')
-
-
 
 #%%
 
@@ -149,8 +148,22 @@ plt.ylim(10**(-4), 10**(-1))
 plt.show()
 
 
+#%% Calculate sediment discharge and plot
+
+qs, mg = sed_disch(qs, mg,  da, dzdx)
+
+plt.figure()
+imshow_grid(mg, qs, plot_name = 'Sediment Discharge at t = 0', var_name = 'Sediment Discharge', 
+            var_units = r'$\frac{Q^3}{s}$', grid_units = ('m','m'), cmap = 'jet')
 
 
+#%% Calculate sediment divergence and plot
+
+divergence = div_qs(qs, mg)
+
+plt.figure()
+imshow_grid(mg, divergence, plot_name = 'Divergence of Sediment Discharge at t = 0', var_name = 'Sediment Flux', 
+            var_units = r'$\frac{Q^2}{s}$', grid_units = ('m','m'), cmap = 'jet')
 
 
 
