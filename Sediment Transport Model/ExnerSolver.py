@@ -31,7 +31,7 @@ surface = (init*12) + np.random.rand(init.size)/100000.
 
 mg = RasterModelGrid(100, 100, spacing=(1,1))
 z = mg.add_field('topographic__elevation', surface + mg.node_y*0.05 + mg.node_x*0.05, at = 'node')
-qs = mg.add_zeros('node', 'sediment __discharge')
+qs = mg.add_zeros('node', 'sediment__discharge')
 
 #mg.set_fixed_value_boundaries_at_grid_edges(True, True, True, True)
 mg.set_closed_boundaries_at_grid_edges(True, True, True, True) 
@@ -40,24 +40,28 @@ plt.figure()
 ax = plt.gca()
 ax.tick_params(axis='both', which='both', direction = 'out', bottom = 'on', 
                left = 'on', top = 'off', right = 'off')
-imshow_grid(mg,z, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
+imshow_grid(mg, z, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
             var_units = 'm', grid_units = ('m','m'), cmap = 'jet')
 
 
 #%% Exner Solver
 
-def ExnerSolver(z, dqs_dx):
+def ExnerSolver(grid, ordered_desc, dqs_dx, dt):
     
-    return(z)
+    for node in ordered_desc:
+        z[node] -= -dqs_dx[node]*dt
+        
+    grid.at_node['topographic__elevation'] = z
+    return(grid)
     
 def div_qs(qs, grid):
+    
     qs_link = grid.map_link_tail_node_to_link(qs)
     dqs_dx = grid.calc_flux_div_at_node(qs_link)
     
     return(dqs_dx)
     
-def sed_disch(qs, grid,  drainage_area, dzdx, k_t=0.01, m=2, n=2):
-    
+def sed_disch(qs, grid, ordered_desc, drainage_area, dzdx, k_t=0.01, m=2, n=2):
     # $Q_s = k_t A^m S^n$
     # where Q_s = sediment discharge
     #       k_t = erodibility coefficient (choose arbitrarily)
@@ -65,7 +69,7 @@ def sed_disch(qs, grid,  drainage_area, dzdx, k_t=0.01, m=2, n=2):
     #       S = slope
     #       m & n are empirical constants
     
-    for node in grid.core_nodes:
+    for node in ordered_desc:
         qs[node] = k_t * (drainage_area[node]**m) * (dzdx[node]**n)
        
     grid.at_node['sediment__discharge'] = qs
@@ -87,6 +91,9 @@ def ordered(grid, outlet_id=None):
                          flow_director = FlowDirectorD8)
     fa.run_one_step()
     (da, q) = fa.accumulate_flow()
+    
+    da = grid.at_node['drainage_area']
+    
     ordered_nodes = grid.at_node['flow__upstream_node_order']
     
     return ordered_nodes, grid, da, q
@@ -98,16 +105,17 @@ def calculate_slope(grid,z):
     grid.at_node['gradient'] = grid.map_max_of_inlinks_to_node(dzdx)
     dzdx = grid.at_node['gradient']
     
-    return dzdx
+    return dzdx, grid
 
 #%%
 ordered_nodes, mg, da, q = ordered(mg)
+ordered_desc = ordered_nodes[::-1]
 plt.figure()
 drainage_plot(mg, 'drainage_area')
 
 #%%
 
-dzdx = calculate_slope(mg, z)
+dzdx, mg = calculate_slope(mg, z)
 
 plt.figure()
 plt.title('Slope-Area Plot for Initial Conditions')
@@ -150,7 +158,7 @@ plt.show()
 
 #%% Calculate sediment discharge and plot
 
-qs, mg = sed_disch(qs, mg,  da, dzdx)
+qs, mg = sed_disch(qs, mg, ordered_desc, da, dzdx)
 
 plt.figure()
 imshow_grid(mg, qs, plot_name = 'Sediment Discharge at t = 0', var_name = 'Sediment Discharge', 
@@ -159,12 +167,46 @@ imshow_grid(mg, qs, plot_name = 'Sediment Discharge at t = 0', var_name = 'Sedim
 
 #%% Calculate sediment divergence and plot
 
-divergence = div_qs(qs, mg)
+dqs_dx = div_qs(qs, mg)
 
 plt.figure()
-imshow_grid(mg, divergence, plot_name = 'Divergence of Sediment Discharge at t = 0', var_name = 'Sediment Flux', 
+imshow_grid(mg, dqs_dx, plot_name = 'Divergence of Sediment Discharge at t = 0', var_name = 'Sediment Flux', 
             var_units = r'$\frac{Q^2}{s}$', grid_units = ('m','m'), cmap = 'jet')
 
+#%% Solve for elevation change
+
+mg = ExnerSolver(mg, ordered_desc, dqs_dx, 1)
+
+plt.figure()
+imshow_grid(mg, z, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
+           var_units = 'm', grid_units = ('m','m'), cmap = 'jet')
 
 
+#%% Create model driver
+
+U = 5e-5
+equilibrium = U * da
+equilibrium[0] = 0
+t = 0
+dt = 1
+
+
+#%%
+
+while qs.all() >= equilibrium.all():
+    qs, mg = sed_disch(qs, mg, ordered_desc, da, dzdx)
+    dqs_dx = div_qs(qs, mg)
+    mg = ExnerSolver(mg, ordered_desc, dqs_dx, dt)
     
+    ordered_nodes, mg, da, q = ordered(mg)
+    ordered_desc = ordered_nodes[::-1]
+    
+    dzdx, mg = calculate_slope(mg, z)
+    
+    t += dt
+    print(da)
+    
+    
+plt.figure()
+imshow_grid(mg, z, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
+           var_units = 'm', grid_units = ('m','m'), cmap = 'jet')
