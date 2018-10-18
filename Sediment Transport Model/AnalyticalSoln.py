@@ -8,11 +8,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-from landlab.components import FlowAccumulator, FlowDirectorD8
-from landlab.plot.imshow import RasterModelGrid
-from landlab.plot.imshow import imshow_grid
-from landlab.plot.drainage_plot import drainage_plot
-
 mpl.rcParams['font.sans-serif'] = 'Arial'
 mpl.rcParams['font.stretch'] = 'condensed'
 mpl.rcParams['xtick.top'] = True
@@ -38,6 +33,9 @@ def analytical_soln(grid):
     
     return slope
 
+
+ordered_nodes, mg, da = ordered(mg)
+
 slope = analytical_soln(mg)
 drainage_area = mg.at_node['drainage_area'][mg.core_nodes]
 
@@ -46,6 +44,6 @@ plt.loglog(drainage_area, slope, 'b-')
 plt.title('Slope-Area Plot of Analytical Solution')
 plt.xlabel('Area (m$^2$)')
 plt.ylabel('Slope (-)')
-plt.xlim(10**(0)-10, 10**(4) + 5000)   
-plt.ylim(10**(-4), 10**(-1)) 
+plt.ylim(2*10**(-2), 8*10**(-2))   
+plt.xlim(0.9*10**(0), 8.5*10**(0)) 
 plt.show()
