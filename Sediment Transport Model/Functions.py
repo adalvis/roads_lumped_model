@@ -7,7 +7,7 @@ Purpose: Define functions used to calculate sediment transport on the grid
 import numpy as np
 import matplotlib as mpl
 
-from landlab.components import FlowAccumulator, FlowDirectorDINF
+from landlab.components import FlowAccumulator, FlowDirectorD8
 
 mpl.rcParams['font.sans-serif'] = 'Arial'
 mpl.rcParams['font.stretch'] = 'condensed'
@@ -31,7 +31,7 @@ def ordered(grid, outlet_id=None):
     grid.set_watershed_boundary_condition_outlet_id(outlet_id, grid.at_node['topographic__elevation'], 
                                                     nodata_value=-9999.)
 
-    fa = FlowAccumulator(grid, flow_director = FlowDirectorDINF)
+    fa = FlowAccumulator(grid, flow_director = FlowDirectorD8)
     fa.run_one_step()
     (da, q) = fa.accumulate_flow()
     
@@ -95,6 +95,6 @@ def Q_out(qs, dzdt, ordered_nodes, grid):
         else:
             qs[node] += -dzdt[node] * grid.cell_area_at_node[node]
         
-    return(qs)
+    return(qs)   
     
     
