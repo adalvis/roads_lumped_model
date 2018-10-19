@@ -29,17 +29,18 @@ dt = 1
 
 #%%
 
-while qs.all() >= Ua.all():
-    qs, mg = sed_disch(qs, mg, ordered_nodes, da, dzdx)
-    dqs_dx = div_qs(qs, mg)
-    z, dzdt = ExnerSolver(mg, z, dzdt, ordered_nodes, dqs_dx, dt)
-    
-    qs = Q_out(qs, dzdt, ordered_nodes, mg)   
-    
-    ordered_nodes, mg, da = ordered(mg)
-    dzdx, mg = calculate_slope(mg, z)
-    t += dt
-    print(t)
+for node in mg.core_nodes:
+    while qs[node] >= Ua[node]:
+        qs, mg = sed_disch(qs, mg, ordered_nodes, da, dzdx)
+        dqs_dx = div_qs(qs, mg)
+        z, dzdt = ExnerSolver(mg, z, dzdt, ordered_nodes, dqs_dx, dt)
+        
+        qs = Q_out(qs, dzdt, ordered_nodes, mg)   
+        
+        ordered_nodes, mg, da = ordered(mg)
+        dzdx, mg = calculate_slope(mg, z)
+        t += dt
+        print(t)
       
     
 plt.figure()
