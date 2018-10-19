@@ -9,7 +9,6 @@ import matplotlib as mpl
 
 #from landlab.plot.imshow import imshow_grid
 from landlab.plot.drainage_plot import drainage_plot
-from landlab.components import FastscapeEroder, DepressionFinderAndRouter
 
 mpl.rcParams['font.sans-serif'] = 'Arial'
 mpl.rcParams['font.stretch'] = 'condensed'
@@ -19,23 +18,6 @@ mpl.rcParams['ytick.right'] = True
 mpl.rcParams['ytick.left'] = True
 mpl.rcParams['xtick.direction'] = 'in'
 mpl.rcParams['ytick.direction'] = 'in'
-
-#%% Create initial drainage network using FastScapeEroder
-
-
-fr = FlowAccumulator(mg, flow_director='D8')
-fsc = FastscapeEroder(mg, K_sp=.01, m_sp=.5, n_sp=1)
-df = DepressionFinderAndRouter(mg)
-
-fsc_dt = 100.
-
-for x in range(100):
-    fr.run_one_step()
-    df.map_depressions()
-    flooded = np.where(df.flood_status == 3)[0]
-    fsc.run_one_step(dt=fsc_dt, flooded_nodes=flooded)
-    mg.at_node['topographic__elevation'][0] -= 0.001 # Uplift
-
 
 
 #%% Plot drainage area and flow accumulation initially
@@ -54,8 +36,6 @@ plt.title('Slope-Area Plot for Initial Conditions')
 plt.xlabel('Area (m$^2$)')
 plt.ylabel('Slope (-)')
 plt.loglog(mg.at_node['drainage_area'], dzdx, 'ko')
-plt.xlim(10**(0)-10, 10**(4) + 5000)   
-plt.ylim(10**(-4), 10**(-1)) 
 plt.show()
 
 
