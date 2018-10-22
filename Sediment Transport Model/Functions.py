@@ -7,7 +7,7 @@ Purpose: Define functions used to calculate sediment transport on the grid
 import numpy as np
 import matplotlib as mpl
 
-from landlab.components import FlowAccumulator, FlowDirectorD8
+from landlab.components import FlowAccumulator, FlowDirectorD8, DepressionFinderAndRouter
 
 mpl.rcParams['font.sans-serif'] = 'Arial'
 mpl.rcParams['font.stretch'] = 'condensed'
@@ -20,25 +20,29 @@ mpl.rcParams['ytick.direction'] = 'in'
 
 #%% Functions needed for calculating sediment transport
 
+fa = FlowAccumulator(mg, flow_director = FlowDirectorD8)
+df = DepressionFinderAndRouter(mg)
+
 
 # ordered() calculates the drainage area for each node and also 
 #   returns the upstream to downstream node order
-def ordered(grid, outlet_id=None):
+def ordered(grid, fa, df, outlet_id=None):
     
     if outlet_id == None:
         outlet_id = np.argmin(grid.at_node['topographic__elevation'])
    
-    grid.set_watershed_boundary_condition_outlet_id(outlet_id, grid.at_node['topographic__elevation'], 
-                                                    nodata_value=-9999.)
-
-    fa = FlowAccumulator(grid, flow_director = FlowDirectorD8)
+        grid.set_watershed_boundary_condition_outlet_id(outlet_id, grid.at_node['topographic__elevation'], 
+                                                        nodata_value=-9999.) 
+    
     fa.run_one_step()
+    df.map_depressions()
+    flooded = np.where(df.flood_status == 3)[0]
     (da, q) = fa.accumulate_flow()
     
     ordered_nodes = grid.at_node['flow__upstream_node_order']
     ordered_nodes = ordered_nodes[::-1]
     
-    return (ordered_nodes, grid, da)
+    return (ordered_nodes, grid, da, flooded)
 
 # calculate_slope() determines the slope at each of the links and
 #   maps the maximum slope of the inlinks to the node
@@ -52,7 +56,7 @@ def calculate_slope(grid, z):
 
 # sed_disch() calculates sediment discharge used in finding 
 #   the change in elevation of the surface
-def sed_disch(qs, grid, ordered_nodes, drainage_area, dzdx, k_t=0.01, m=2, n=2):
+def sed_disch(qs, grid, z, ordered_nodes, drainage_area, dzdx, flooded, k_t=0.01, m=2, n=2):
     # $Q_s = k_t A^m S^n$
     # where Q_s = sediment discharge
     #       k_t = erodibility coefficient (choose arbitrarily)
@@ -62,19 +66,26 @@ def sed_disch(qs, grid, ordered_nodes, drainage_area, dzdx, k_t=0.01, m=2, n=2):
     
     for node in ordered_nodes:
         qs[node] = k_t * (drainage_area[node]**m) * (dzdx[node]**n)
-       
+    
+    
+    if flooded is not None:
+        qs[flooded] = 0.
+    else:
+        reversed_flow = z < z[grid.at_node['flow__receiver_node']]
+        qs[reversed_flow] = 0.
+    
     grid.at_node['sediment__discharge'] = qs
     
     return (qs, grid)   
 
 # div_qs() calculates the divergence of sediment discharge at
 #   each node
-def div_qs(qs, grid):
+def div_qs(qs, z, grid):
     
-    qs_link = grid.map_link_head_node_to_link(qs)
+    qs_link = grid.map_value_at_max_node_to_link(z, qs)
     dqs_dx = grid.calc_flux_div_at_node(qs_link)
     
-    return(dqs_dx)
+    return(dqs_dx, qs_link)
     
 # ExnerSolver() is the final step in determining how the topography
 #   changes over time; both z and dzdt are solved for

@@ -24,11 +24,17 @@ mpl.rcParams['ytick.direction'] = 'in'
 
 #%% Create grid and plot map
 
-init = np.ones([100])
+init = np.ones([625])
 surface = (init*12) + np.random.rand(init.size)/100000.
 
+mg_init = RasterModelGrid((25, 25), spacing=(1,1))
+z_init = mg_init.add_field('topographic__elevation', surface + mg_init.node_y*0.05 + mg_init.node_x*0.05, at = 'node')
+dzdt_init = mg_init.add_zeros('node', 'erosion__rate')
+qs_init = mg_init.add_zeros('node', 'sediment__discharge')
 
-mg = RasterModelGrid((10, 10), spacing=(1,1))
+
+
+mg = RasterModelGrid((25, 25), spacing=(1,1))
 z = mg.add_field('topographic__elevation', surface + mg.node_y*0.05 + mg.node_x*0.05, at = 'node')
 dzdt = mg.add_zeros('node', 'erosion__rate')
 qs = mg.add_zeros('node', 'sediment__discharge')
@@ -45,25 +51,25 @@ plt.figure()
 ax = plt.gca()
 ax.tick_params(axis='both', which='both', direction = 'out', bottom = True, 
                left = True, top = False, right = False)
-imshow_grid(mg, z, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
+imshow_grid(mg_init, z_init, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
             var_units = 'm', grid_units = ('m','m'), cmap = 'jet')
 
 
 #%% Create initial drainage network using FastScapeEroder
-
-
-fr = FlowAccumulator(mg, flow_director='D8')
-fsc = FastscapeEroder(mg, K_sp=.01, m_sp=2, n_sp=2)
-df = DepressionFinderAndRouter(mg)
-
-fsc_dt = 100.
-
-for x in range(100):
-    fr.run_one_step()
-    df.map_depressions()
-    flooded = np.where(df.flood_status == 3)[0]
-    fsc.run_one_step(dt=fsc_dt, flooded_nodes=flooded)
-    mg.at_node['topographic__elevation'][0] += 0.001 # Uplift
-    
-plt.figure()
-imshow_grid(mg, z)
+#
+#
+#fr = FlowAccumulator(mg, flow_director='D8')
+#fsc = FastscapeEroder(mg, K_sp=.01, m_sp=2, n_sp=2)
+#df = DepressionFinderAndRouter(mg)
+#
+#fsc_dt = 100.
+#
+#for x in range(100):
+#    fr.run_one_step()
+#    df.map_depressions()
+#    flooded = np.where(df.flood_status == 3)[0]
+#    fsc.run_one_step(dt=fsc_dt, flooded_nodes=flooded)
+#    mg.at_node['topographic__elevation'][0] += 0.001 # Uplift
+#    
+#plt.figure()
+#imshow_grid(mg, z)

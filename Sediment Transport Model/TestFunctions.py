@@ -22,7 +22,7 @@ mpl.rcParams['ytick.direction'] = 'in'
 
 #%% Plot drainage area and flow accumulation initially
 
-ordered_nodes, mg, da = ordered(mg)
+ordered_nodes, mg, da, flooded = ordered(mg, fa, df, outlet_id = outlet_id)
 
 plt.figure()
 drainage_plot(mg, 'drainage_area')
@@ -41,7 +41,7 @@ plt.show()
 
 #%% Calculate initial sediment discharge and plot
 
-qs, mg = sed_disch(qs, mg, ordered_nodes, da, dzdx)
+qs, mg = sed_disch(qs, mg, z, ordered_nodes, da, dzdx, flooded)
 
 plt.figure()
 imshow_grid(mg, qs, plot_name = 'Sediment Discharge at t = 0', var_name = 'Sediment Discharge', 
@@ -50,7 +50,7 @@ imshow_grid(mg, qs, plot_name = 'Sediment Discharge at t = 0', var_name = 'Sedim
 
 #%% Calculate initial sediment divergence and plot
 
-dqs_dx = div_qs(qs, mg)
+dqs_dx, qs_link = div_qs(qs, z, mg)
 
 plt.figure()
 imshow_grid(mg, dqs_dx, plot_name = 'Divergence of Sediment Discharge at t = 0', var_name = 'Sediment Flux', 

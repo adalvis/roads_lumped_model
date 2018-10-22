@@ -34,13 +34,16 @@ def analytical_soln(grid):
     return slope
 
 
-ordered_nodes, mg, da = ordered(mg)
+ordered_nodes, mg, da, flooded = ordered(mg, fa, df, outlet_id = outlet_id)
+
+dzdx, mg = calculate_slope(mg, z)
 
 slope = analytical_soln(mg)
 drainage_area = mg.at_node['drainage_area'][mg.core_nodes]
 
 plt.figure()
 plt.loglog(drainage_area, slope, 'b-')
+plt.loglog(drainage_area, dzdx[mg.core_nodes], 'ko')
 plt.title('Slope-Area Plot of Analytical Solution')
 plt.xlabel('Area (m$^2$)')
 plt.ylabel('Slope (-)')
