@@ -29,9 +29,9 @@ dt = 1
 
 #%%
 
-while qs.all() >= Ua.all():
-    qs, mg = sed_disch(qs, mg, z, ordered_nodes, da, dzdx, flooded)
-    dqs_dx, qs_link = div_qs(qs ,z, mg)
+while t <= 1000:
+#    qs, mg = sed_disch(qs, mg, z, ordered_nodes, da, dzdx, flooded)
+    dqs_dx, qs_link = div_qs(qs, z, mg)
     z, dzdt = ExnerSolver(mg, z, dzdt, ordered_nodes, dqs_dx, dt)        
     qs = Q_out(qs, dzdt, ordered_nodes, mg)   
     

@@ -23,21 +23,20 @@ mpl.rcParams['ytick.direction'] = 'in'
 fa = FlowAccumulator(mg, flow_director = FlowDirectorD8)
 df = DepressionFinderAndRouter(mg)
 
-
 # ordered() calculates the drainage area for each node and also 
 #   returns the upstream to downstream node order
 def ordered(grid, fa, df, outlet_id=None):
     
     if outlet_id == None:
         outlet_id = np.argmin(grid.at_node['topographic__elevation'])
-   
         grid.set_watershed_boundary_condition_outlet_id(outlet_id, grid.at_node['topographic__elevation'], 
                                                         nodata_value=-9999.) 
-    
+
     fa.run_one_step()
     df.map_depressions()
     flooded = np.where(df.flood_status == 3)[0]
-    (da, q) = fa.accumulate_flow()
+    
+    da = grid.at_node['drainage_area']
     
     ordered_nodes = grid.at_node['flow__upstream_node_order']
     ordered_nodes = ordered_nodes[::-1]
@@ -48,7 +47,7 @@ def ordered(grid, fa, df, outlet_id=None):
 #   maps the maximum slope of the inlinks to the node
 def calculate_slope(grid, z):
     dzdx = grid.calc_grad_at_link(z)
-    grid.at_node['gradient'] = grid.map_max_of_inlinks_to_node(dzdx)
+    grid.at_node['gradient'] = grid.map_downwind_node_link_max_to_node(dzdx)
     dzdx = grid.at_node['gradient']
     
     return (dzdx, grid)
@@ -65,7 +64,7 @@ def sed_disch(qs, grid, z, ordered_nodes, drainage_area, dzdx, flooded, k_t=0.01
     #       m & n are empirical constants
     
     for node in ordered_nodes:
-        qs[node] = k_t * (drainage_area[node]**m) * (dzdx[node]**n)
+        qs[node] = (k_t * (drainage_area[node]**m) * (dzdx[node]**n))
     
     
     if flooded is not None:
@@ -104,7 +103,7 @@ def Q_out(qs, dzdt, ordered_nodes, grid):
         if node == 0:
             qs[node] = -dzdt[node] * grid.cell_area_at_node[node]
         else:
-            qs[node] += -dzdt[node] * grid.cell_area_at_node[node]
+            qs[node] = qs[node-1] -dzdt[node] * grid.cell_area_at_node[node]
         
     return(qs)   
     
