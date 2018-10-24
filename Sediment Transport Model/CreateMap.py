@@ -24,20 +24,20 @@ mpl.rcParams['ytick.direction'] = 'in'
 
 #%% Create grid and plot map
 
-init = np.ones([625])
+init = np.ones([25])
 surface = (init*12) + np.random.rand(init.size)/100000.
 
-mg_init = RasterModelGrid((25, 25), spacing=(1,1))
+mg_init = RasterModelGrid((5, 5), spacing=(1,1))
 z_init = mg_init.add_field('topographic__elevation', surface + mg_init.node_y*0.05 + mg_init.node_x*0.05, at = 'node')
 dzdt_init = mg_init.add_zeros('node', 'erosion__rate')
 qs_init = mg_init.add_zeros('node', 'sediment__discharge')
 
-
-
-mg = RasterModelGrid((25, 25), spacing=(1,1))
+mg = RasterModelGrid((5, 5), spacing=(1,1))
 z = mg.add_field('topographic__elevation', surface + mg.node_y*0.05 + mg.node_x*0.05, at = 'node')
 dzdt = mg.add_zeros('node', 'erosion__rate')
 qs = mg.add_zeros('node', 'sediment__discharge')
+
+qs_in = np.zeros(mg.number_of_nodes)
 
 
 mg.set_closed_boundaries_at_grid_edges(True, True, True, True)
@@ -51,7 +51,7 @@ plt.figure()
 ax = plt.gca()
 ax.tick_params(axis='both', which='both', direction = 'out', bottom = True, 
                left = True, top = False, right = False)
-imshow_grid(mg_init, z_init, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
+imshow_grid(mg, z, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
             var_units = 'm', grid_units = ('m','m'), cmap = 'jet')
 
 
