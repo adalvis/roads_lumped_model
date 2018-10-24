@@ -34,9 +34,9 @@ def analytical_soln(grid):
     return slope
 
 
-ordered_nodes, mg, da, flooded = ordered(mg, fa, df, outlet_id = outlet_id)
+ordered_nodes, mg, da = ordered(mg, fa)
 
-dzdx, mg = calculate_slope(mg, z)
+dzdx = calculate_slope(mg, z)
 
 slope = analytical_soln(mg)
 drainage_area = mg.at_node['drainage_area'][mg.core_nodes]
