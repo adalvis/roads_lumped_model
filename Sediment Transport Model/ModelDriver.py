@@ -29,14 +29,16 @@ dt = 1
 
 #%%
 
-while t <= 1000:
-#    qs, mg = sed_disch(qs, mg, z, ordered_nodes, da, dzdx, flooded)
-    dqs_dx, qs_link = div_qs(qs, z, mg)
-    z, dzdt = ExnerSolver(mg, z, dzdt, ordered_nodes, dqs_dx, dt)        
-    qs = Q_out(qs, dzdt, ordered_nodes, mg)   
+while t <= 100:
+
+    ordered_nodes, mg, da = ordered(mg, fa)
+    dzdx = calculate_slope(mg, z)
     
-    ordered_nodes, mg, da, flooded = ordered(mg, fa, df, outlet_id)
-    dzdx, mg = calculate_slope(mg, z)
+    qs_in[:]=0
+    qs, qs_in, mg = sed_disch(qs, qs_in, mg, z, ordered_nodes, da, dzdx, dzdt)
+    dqs_dx, qs_link = div_qs(qs, z, mg)
+    z, dzdt = ExnerSolver(mg, z, dzdt, ordered_nodes, dqs_dx, dt)
+    
     t += dt
     print(t)
       
@@ -45,3 +47,4 @@ plt.figure()
 imshow_grid(mg, z, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
            var_units = 'm', grid_units = ('m','m'), cmap = 'jet')
 
+print(np.sum(z-z_init))
