@@ -22,14 +22,14 @@ mpl.rcParams['ytick.direction'] = 'in'
 
 #%% Plot drainage area and flow accumulation initially
 
-ordered_nodes, mg, da, flooded = ordered(mg, fa, df, outlet_id = outlet_id)
+ordered_nodes, mg, da = ordered(mg, fa)
 
 plt.figure()
 drainage_plot(mg, 'drainage_area')
 
 #%% Initial conditions slope-area plot
 
-dzdx, mg = calculate_slope(mg, z)
+dzdx = calculate_slope(mg, z)
 
 plt.figure()
 plt.title('Slope-Area Plot for Initial Conditions')
@@ -41,7 +41,7 @@ plt.show()
 
 #%% Calculate initial sediment discharge and plot
 
-qs, mg = sed_disch(qs, mg, z, ordered_nodes, da, dzdx, flooded)
+qs, qs_in, mg= sed_disch(qs, qs_in, mg, z, ordered_nodes, da, dzdx,  dzdt)
 
 plt.figure()
 imshow_grid(mg, qs, plot_name = 'Sediment Discharge at t = 0', var_name = 'Sediment Discharge', 
@@ -64,13 +64,13 @@ plt.figure()
 imshow_grid(mg, z, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
            var_units = 'm', grid_units = ('m','m'), cmap = 'jet')
 
-#%% Solve for Q_out
-
-qs = Q_out(qs, dzdt, ordered_nodes, mg)
-
-plt.figure()
-imshow_grid(mg, qs, plot_name = 'Sediment discharge moving out', var_name = 'Sediment Discharge',
-            var_units = r'$\frac{Q^3}{s}$', grid_units = ('m','m'), cmap = 'jet')
+##%% Solve for Q_out
+#
+#qs_in = Q_out(qs, qs_in, dzdt, ordered_nodes, mg)
+#
+#plt.figure()
+#imshow_grid(mg, qs, plot_name = 'Sediment discharge moving out', var_name = 'Sediment Discharge',
+#            var_units = r'$\frac{Q^3}{s}$', grid_units = ('m','m'), cmap = 'jet')
 
 
 
