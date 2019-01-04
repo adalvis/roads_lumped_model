@@ -45,7 +45,7 @@ dqs = np.zeros(mg.number_of_nodes)
 dqs_dx = np.zeros(mg.number_of_nodes)
 
 dzdt = np.zeros(mg.number_of_nodes)
-dt = 0.0001
+dt = 1
 
 plt.figure()
 ax = plt.gca()
@@ -75,7 +75,7 @@ drainage_area = drainage_area.copy()
 
 #%% Calculate sediment discharge, divergence, and elevation change     
 t = 0
-while t < 100:
+while t < 460:
 
     fa.run_one_step()
     flooded = np.where(fa.depression_finder.flood_status == 3)[0]
@@ -88,6 +88,10 @@ while t < 100:
     
     flow_receiver = mg.at_node['flow__receiver_node']
     
+    
+    
+ #If dzdt (or -dqs_dx) exceeds the size of a cell (i.e., 1 m), 
+ #need to reduce the time step  
     for i in range(mg.number_of_nodes):
         node = ordered_nodes[i]
         
