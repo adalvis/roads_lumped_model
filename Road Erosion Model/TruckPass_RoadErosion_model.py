@@ -48,7 +48,7 @@ def ErodibleGrid(nrows,ncols,spacing):
     D_rd = mg.add_zeros('node','rainfall_detachment')
     
     
-    mg.set_closed_boundaries_at_grid_edges(True, True, True, True) 
+    mg.set_closed_boundaries_at_grid_edges(False, False, False, False) 
     
     road_peak = 20 #peak crowning height occurs at this x-location
     up = 0.0067 #rise of slope from ditchline to crown
@@ -93,6 +93,12 @@ def ErodibleGrid(nrows,ncols,spacing):
 
 mg, z, z_sediment, D_rd, n = ErodibleGrid(355,51,0.225)
 
+
+X = mg.node_x.reshape(mg.shape)
+Y = mg.node_y.reshape(mg.shape)
+Z = z.reshape(mg.shape)
+
+#%%
 #get node IDs for the important nodes
 tire_track_1 = mg.nodes[:, tire_1]
 tire_track_2 = mg.nodes[:, tire_2]
@@ -126,7 +132,7 @@ tpe = TruckPassErosion(mg, diffusivity = 0.0001)
 
 for i in range(0, model_end): #loop through model days
     time, truck_pass = tpe.run_one_step(tire_tracks, i)
-        
+#%%       
 X = mg.node_x.reshape(mg.shape)
 Y = mg.node_y.reshape(mg.shape)
 Z = z.reshape(mg.shape)
@@ -135,17 +141,16 @@ fig = plt.figure(figsize = (5,3))
 ax = fig.add_subplot(111, projection='3d')
 ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([1, 3, 0.5, 1]))
 ax.plot_surface(X, Y, Z)
-ax.view_init(elev=10, azim=-105)
+ax.view_init(elev=15, azim=-105)
 
 ax.set_xlim(0, 11)
 ax.set_ylim(0, 80)
 ax.set_zlim(0, 4)
 ax.set_zticks(np.arange(0, 5, 1))
-ax.ticklabel_format(fontsize = 8)
-ax.set_xlabel('Road Width (m)', fontsize = 10)
-ax.set_ylabel('Road Length (m)', fontsize = 10)
-ax.set_zlabel('Elevation (m)', fontsize = 10)
-plt.title('Road Surface Elevation', fontweight = 'bold')
+ax.set_xlabel('Road Width (m)', fontsize = 12)
+ax.set_ylabel('Road Length (m)', fontsize = 12)
+ax.set_zlabel('Elevation (m)', fontsize = 12)
+plt.title('Road Surface Elevation', fontweight = 'bold',  fontsize = 20)
 #plt.savefig('C://Users/Amanda/Desktop/RoadSurface_3D_0.05_rills_%i.tif' % i, dpi = 200)
 plt.show()
 

@@ -21,8 +21,8 @@ def OverlandFlow(mg, tire_track_1, tire_track_2, z_active):
     outlet_id_2 = tire_track_1[1]
     outlet_id_3 = tire_track_2[1]
     outlet_id_4 = 100
-    outlet_id_5 = outlet_id_2 + 2
-    outlet_id_6 = outlet_id_3 - 2
+    outlet_id_5 = outlet_id_2 + 3
+    outlet_id_6 = outlet_id_3 - 3
     
     mg.set_watershed_boundary_condition_outlet_id(outlet_id_1, z_active)
     mg.set_watershed_boundary_condition_outlet_id(outlet_id_2, z_active)
@@ -39,15 +39,15 @@ def OverlandFlow(mg, tire_track_1, tire_track_2, z_active):
     #knwv = KinwaveImplicitOverlandFlow(mg, roughness = 0.02, runoff_rate = rr, depth_exp = 1.6666667)
     knwv = KinwaveImplicitOverlandFlowADM(mg, runoff_rate = rr, depth_exp = 1.6666667)
     
-    hydrograph_time = []
-    discharge_at_outlet_1 = []
-    discharge_at_outlet_2 = []
-    discharge_at_outlet_3 = []
-    discharge_at_outlet_4 = []
-    discharge_at_outlet_5 = []
-    discharge_at_outlet_6 = []
+    hydrograph_time = [0]
+    discharge_at_outlet_1 = [0]
+    discharge_at_outlet_2 = [0]
+    discharge_at_outlet_3 = [0]
+    discharge_at_outlet_4 = [0]
+    discharge_at_outlet_5 = [0]
+    discharge_at_outlet_6 = [0]
     
-    dt = 100
+    dt = 10
     vol = 0
     
     
@@ -55,7 +55,7 @@ def OverlandFlow(mg, tire_track_1, tire_track_2, z_active):
     while elapsed_time <= model_run_time:
         if elapsed_time < storm_duration:
             knwv.run_one_step(dt, current_time = elapsed_time)
-            d = RainfallDetachment(mg, rr, D_rd) 
+#            d = RainfallDetachment(mg, rr, D_rd) 
         else:
             knwv.run_one_step(dt, current_time = elapsed_time, runoff_rate = 0.0)
     
@@ -76,11 +76,11 @@ def OverlandFlow(mg, tire_track_1, tire_track_2, z_active):
         
 #        time = elapsed_time/3600.
         
-        if elapsed_time == 200 or elapsed_time == 400 or elapsed_time == 1800 or elapsed_time == 3600 or elapsed_time == 4100:
-            plt.figure(figsize = (4,10))
-            imshow_grid(mg, d, var_name = 'Rainfall detachment rate', 
-            var_units = 'kg m^-2 s^-1',grid_units = ('m','m'), cmap = 'gist_earth')
-            plt.show()  
+#        if elapsed_time == 200 or elapsed_time == 400 or elapsed_time == 1800 or elapsed_time == 3600 or elapsed_time == 4100:
+#            plt.figure(figsize = (4,10))
+#            imshow_grid(mg, d, var_name = 'Rainfall detachment rate', 
+#            var_units = 'kg m^-2 s^-1',grid_units = ('m','m'), cmap = 'gist_earth')
+#            plt.show()  
         
         vol = vol + dt*(q_at_outlet_1 + q_at_outlet_2 + q_at_outlet_3 + q_at_outlet_4
                      + q_at_outlet_5 + q_at_outlet_6)
@@ -90,13 +90,15 @@ def OverlandFlow(mg, tire_track_1, tire_track_2, z_active):
     return(hydrograph_time, discharge_at_outlet_1, discharge_at_outlet_2, discharge_at_outlet_3, discharge_at_outlet_4, discharge_at_outlet_5, discharge_at_outlet_6)
     
     
-hydrograph_time, discharge_at_outlet_1, discharge_at_outlet_2, discharge_at_outlet_3, discharge_at_outlet_4, discharge_at_outlet_5, discharge_at_outlet_6 = OverlandFlow(mg, tire_track_1, tire_track_2, z_active)    
-    
+hydrograph_time, discharge_at_outlet_1, discharge_at_outlet_2, discharge_at_outlet_3, discharge_at_outlet_4, discharge_at_outlet_5, discharge_at_outlet_6 = OverlandFlow(mg, tire_track_1, tire_track_2, z)    
+
+
+#%%    
 #plot the hydrograph
 plt.figure()
 ax = plt.gca()
-ax.tick_params(axis='both', which='both', direction = 'in', bottom = 'on', 
-               left = 'on', top = 'on', right = 'on')
+ax.tick_params(axis='both', which='both', direction = 'in', bottom = True, 
+               left = True, top = True, right = True, labelsize = 12)
 plt.minorticks_on()
 plt.plot(hydrograph_time, discharge_at_outlet_1, '-', color = '#33FFF0', label = 'Ditchline outlet')
 plt.plot(hydrograph_time, discharge_at_outlet_2, '-', color = '#FF3333', label = 'Tire track 1')
@@ -104,9 +106,11 @@ plt.plot(hydrograph_time, discharge_at_outlet_3, '-', color = '#4CFF33', label =
 plt.plot(hydrograph_time, discharge_at_outlet_4, '-', color = '#C679FF', label = 'Road outlet')
 plt.plot(hydrograph_time, discharge_at_outlet_5, '-', color = '#E9FF33', label = 'Inside tire track 1')
 plt.plot(hydrograph_time, discharge_at_outlet_6, '-', color = '#FF339F', label = 'Inside tire track 2')
-plt.legend()
-plt.xlabel('Time (hr)', fontweight = 'bold')
-plt.ylabel('Discharge (cms)', fontweight = 'bold')
-plt.title('Outlet Hydrograph', fontweight = 'bold')
+plt.legend(frameon = True, fontsize = 16)
+plt.xlabel('Time (hr)', fontweight = 'bold', fontsize = 16)
+plt.ylabel(r'Discharge ( $\frac{m^3}{s}$ )', fontweight = 'bold', fontsize = 16)
+#plt.xlim(0,2)
+#plt.ylim(0, 0.0025)
+plt.title('Outlet Hydrograph', fontweight = 'bold', fontsize = 24)
 #plt.savefig('C://Users/Amanda/Desktop/OutletHydrograph_rasterN_2.png')
 plt.show()
