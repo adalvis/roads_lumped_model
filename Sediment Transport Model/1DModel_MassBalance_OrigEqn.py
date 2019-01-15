@@ -61,7 +61,7 @@ dqsdx = np.empty(na) #divergence of sediment flux
 s = np.zeros(na) #local slope
 
 #look at how the profile evolves through the years
-T = [0, 10, 50, 100, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 8999] #years
+T = [0, 10, 50, 100, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000] #years
 
 #timestep is small
 dt = 0.1 #fraction of years
@@ -84,7 +84,7 @@ for l in range(len(T)):
             if i == 0:
                 s[i] = (z[i+1]-z[i])/dx #forward difference @ upstream
             elif i == na-1:    
-                s[i] = (z[i]-z[i-1])/(dx) #backward difference @ downstream
+                s[i] = (z[i]-z[i-2])/(2*dx) #backward difference @ downstream
             else:    
                 s[i] = (z[i+1]-z[i-1])/(2*dx) #central difference everywhere else
             
@@ -93,11 +93,8 @@ for l in range(len(T)):
             if i == 0 or i == na-1:
                 dqsdx[i] = 0 
             else:
-                dqsdx[i] = (qs_out[i] - qs_in[i])/dx
-            
-            #calculate updated outgoing sediment based on Exner equation
-            qs_out[i] = qs_in[i] + dqsdx[i]*dx 
-            
+                dqsdx[i] = (qs_out[i] - qs_in[i])/(dx)
+                      
             #route the new outgoing sediment to be the next data point's 
             #    incoming sediment
             if i != na-1:  
