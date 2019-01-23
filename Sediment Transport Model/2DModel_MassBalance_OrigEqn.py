@@ -34,22 +34,21 @@ start_time = datetime.now()
 init = np.ones([625])
 surface = (init*12) + np.random.rand(init.size)/100000.
 
-mg_init = RasterModelGrid((25,25), 1)
-z_init = mg_init.add_field('topographic__elevation', surface + mg_init.node_y*0.05 + mg_init.node_x*0.05, at = 'node')
-
 mg = RasterModelGrid((25,25), 1)
 z = mg.add_field('topographic__elevation', surface + mg.node_y*0.05 + mg.node_x*0.05, at = 'node')
 
-# outlet_id = np.argmin(mg.at_node['topographic__elevation'])
-# mg.set_watershed_boundary_condition_outlet_id(outlet_id, mg.at_node['topographic__elevation'], 
-#                                               nodata_value=-9999.)
+outlet_id = np.argmin(mg.at_node['topographic__elevation'])
+mg.set_watershed_boundary_condition_outlet_id(outlet_id, mg.at_node['topographic__elevation'], 
+                                   nodata_value=-9999.)
 
 qs_in = np.zeros(mg.number_of_nodes)
 qs_out = np.zeros(mg.number_of_nodes)
 dqs_dx = np.zeros(mg.number_of_nodes)
 
 dzdt = np.zeros(mg.number_of_nodes)
-dt = 1
+dt = 0.1
+T = np.array([0, 50, 100, 500])
+
 
 plt.figure()
 ax = plt.gca()
@@ -60,9 +59,6 @@ imshow_grid(mg, z, plot_name = 'Topographic Map of Synthetic Grid', var_name = '
 
 fa = FlowAccumulator(mg, surface = 'topographic__elevation', flow_director = 'FlowDirectorD8',
                      depression_finder = 'DepressionFinderAndRouter', routing = 'D8')
-
-fa.run_one_step()
-
 
 #%% Calculate slope at each node - initial, analytical
 n = 2.
@@ -81,49 +77,40 @@ drainage_area = drainage_area.copy()
 
 #%% Calculate sediment discharge, divergence, and elevation change     
 t = 0
-while t < 300:
+for l in range(len(T)):
+    while t < T[l]:
 
-    fa.run_one_step()
-    flooded = np.where(fa.depression_finder.flood_status == 3)[0]
-    
-    da = mg.at_node['drainage_area']
-    
-    ordered_nodes = np.flipud(mg.at_node['flow__upstream_node_order'])
-    
-    dzdx = mg.calc_slope_at_node(z)
-    
-    flow_receiver = mg.at_node['flow__receiver_node']
-     
- #If dzdt (or -dqs_dx) exceeds the size of a cell (i.e., 1 m), 
- #need to reduce the time step  
-    for i in range(mg.number_of_nodes):
-        node = ordered_nodes[i]
+        fa.run_one_step()
         
-        qs_out[node] = k_t * da[node]**m * dzdx[node]**n
+        da = mg.at_node['drainage_area']
         
-        if mg.cell_area_at_node[node] == 0:
-            dqs_dx[node] = 0
-        else:
-            dqs_dx[node] = (qs_out[node] - qs_in[node])/ mg.cell_area_at_node[node]
-    
-        qs_out[node] = qs_in[node] + dqs_dx[node]*mg.cell_area_at_node[node]
-
-        # if flooded is not None:
-        #     qs_out[flooded] = 0.
-        # else:
-        #     reversed_flow = z < z[flow_receiver]
-        #     qs_out[reversed_flow] = 0.  
+        ordered_nodes = np.flipud(mg.at_node['flow__upstream_node_order'])
         
-        qs_in[flow_receiver[node]] = qs_out[node]
-
-    z0 = z.copy()
-    z = z0 - dqs_dx*dt
-
+        dzdx = mg.calc_slope_at_node(z)
+        
+        flow_receiver = mg.at_node['flow__receiver_node']
+          
+        for i in range(mg.number_of_nodes):
+            node = ordered_nodes[i]
+            
+            qs_out[node] = k_t * da[node]**m * dzdx[node]**n
+            
+            if mg.cell_area_at_node[node] == 0:
+                dqs_dx[node] = 0
+            else:
+                dqs_dx[node] = (qs_out[node] - qs_in[node])/ mg.cell_area_at_node[node]
     
-    t += dt
-    print(t)
-
-
+            
+            qs_in[flow_receiver[node]] = qs_out[node]
+    
+        z0 = z.copy()
+        z = z0 - dqs_dx*dt
+    
+        
+        t += dt
+        print(t)
+    
+#%%
 plt.figure()
 drainage_plot(mg, 'drainage_area')
 
@@ -154,7 +141,6 @@ plt.loglog(drainage_area, slope[mg.core_nodes], 'b-')
 plt.loglog(da[mg.core_nodes], dzdx[mg.core_nodes], 'ko')
 plt.show()
 
-print(sum(z-z_init))
 
 #for keeping track of how long the model runs
 end_time = datetime.now()
