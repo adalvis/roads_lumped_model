@@ -44,6 +44,7 @@ mg.set_watershed_boundary_condition_outlet_id(outlet_id, mg.at_node['topographic
 qs_in = np.zeros(mg.number_of_nodes)
 qs_out = np.zeros(mg.number_of_nodes)
 dqs_dx = np.zeros(mg.number_of_nodes)
+dzdx = np.zeros(mg.number_of_nodes)
 
 dzdt = np.zeros(mg.number_of_nodes)
 dt = 0.1
@@ -59,6 +60,8 @@ imshow_grid(mg, z, plot_name = 'Topographic Map of Synthetic Grid', var_name = '
 
 fa = FlowAccumulator(mg, surface = 'topographic__elevation', flow_director = 'FlowDirectorD8',
                      depression_finder = 'DepressionFinderAndRouter', routing = 'D8')
+
+fa.run_one_step()
 
 #%% Calculate slope at each node - initial, analytical
 n = 2.
@@ -86,11 +89,13 @@ for l in range(len(T)):
         
         ordered_nodes = np.flipud(mg.at_node['flow__upstream_node_order'])
         
-        dzdx = mg.calc_slope_at_node(z)
-        
+        defined_flow_receivers = np.not_equal(mg.at_node["flow__link_to_receiver_node"], -1)
+        flow_link_lengths = mg.length_of_d8[mg.at_node["flow__link_to_receiver_node"]]
         flow_receiver = mg.at_node['flow__receiver_node']
           
         for i in range(mg.number_of_nodes):
+            if i != mg.number_of_nodes-1:
+                dzdx[ordered_nodes[i]] = (z[ordered_nodes[i+1]]-z[ordered_nodes[i]])/flow_link_lengths[ordered_nodes[i]]
             node = ordered_nodes[i]
             
             qs_out[node] = k_t * da[node]**m * dzdx[node]**n

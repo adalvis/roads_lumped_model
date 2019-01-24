@@ -32,14 +32,14 @@ start_time = datetime.now()
 # which the truck drives symmetrically about the road's crown. For this model, I assumed that
 # the truck is 1.8m wide, with the tires being 1.35m apart.
 
-tire_1 = 16 #x-position of one tire
-tire_2 = 24 #x-position of other tire
-
-out_1 = [15,17] #x-positions of the size cells of the first tire
-out_2 = [23,25] #x-positions of the size cells of the other tire
-
-back_tire_1 = [] #initialize the back of tire recovery for first tire
-back_tire_2 = [] #initialize the back of tire recovery for other tire
+#tire_1 = 16 #x-position of one tire
+#tire_2 = 24 #x-position of other tire
+#
+#out_1 = [15,17] #x-positions of the size cells of the first tire
+#out_2 = [23,25] #x-positions of the size cells of the other tire
+#
+#back_tire_1 = [] #initialize the back of tire recovery for first tire
+#back_tire_2 = [] #initialize the back of tire recovery for other tire
 
 #%% Create erodible grid
 def ErodibleGrid(nrows,ncols,spacing):    
