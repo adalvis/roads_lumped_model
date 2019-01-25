@@ -37,9 +37,9 @@ surface = (init*12) + np.random.rand(init.size)/100000.
 mg = RasterModelGrid((25,25), 1)
 z = mg.add_field('topographic__elevation', surface + mg.node_y*0.05 + mg.node_x*0.05, at = 'node')
 
-outlet_id = np.argmin(mg.at_node['topographic__elevation'])
-mg.set_watershed_boundary_condition_outlet_id(outlet_id, mg.at_node['topographic__elevation'], 
-                                   nodata_value=-9999.)
+#outlet_id = np.argmin(mg.at_node['topographic__elevation'])
+#mg.set_watershed_boundary_condition_outlet_id(outlet_id, mg.at_node['topographic__elevation'], 
+#                                   nodata_value=-9999.)
 
 qs_in = np.zeros(mg.number_of_nodes)
 qs_out = np.zeros(mg.number_of_nodes)
@@ -84,37 +84,47 @@ for l in range(len(T)):
     while t < T[l]:
 
         fa.run_one_step()
+        flooded_nodes = np.where(fa.depression_finder.flood_status == 3)[0]
         
         da = mg.at_node['drainage_area']
         
-        ordered_nodes = np.flipud(mg.at_node['flow__upstream_node_order'])
+        dzdx = mg.calc_slope_at_node(z)
+        
+        src_nodes = mg.at_node['flow__upstream_node_order']
+        dst_nodes = mg.at_node['flow__receiver_node']
         
         defined_flow_receivers = np.not_equal(mg.at_node["flow__link_to_receiver_node"], -1)
         flow_link_lengths = mg.length_of_d8[mg.at_node["flow__link_to_receiver_node"]]
-        flow_receiver = mg.at_node['flow__receiver_node']
           
         for i in range(mg.number_of_nodes):
-            if i != mg.number_of_nodes-1:
-                dzdx[ordered_nodes[i]] = (z[ordered_nodes[i+1]]-z[ordered_nodes[i]])/flow_link_lengths[ordered_nodes[i]]
-            node = ordered_nodes[i]
+            src_id = src_nodes[i]
+            dst_id = dst_nodes[src_id]
             
-            qs_out[node] = k_t * da[node]**m * dzdx[node]**n
+            qs_out[src_id] = k_t * da[src_id]**m * dzdx[src_id]**n
             
-            if mg.cell_area_at_node[node] == 0:
-                dqs_dx[node] = 0
+            if mg.cell_area_at_node[src_id] == 0:
+                dqs_dx[src_id] = 0
             else:
-                dqs_dx[node] = (qs_out[node] - qs_in[node])/ mg.cell_area_at_node[node]
-    
+                dqs_dx[src_id] = (qs_out[src_id] - qs_in[src_id]) / mg.cell_area_at_node[src_id]
             
-            qs_in[flow_receiver[node]] = qs_out[node]
-    
-        z0 = z.copy()
-        z = z0 - dqs_dx*dt
-    
+            if flooded_nodes is not None:
+                qs_out[flooded_nodes] = 0.
+            else:
+                reversed_flow = z < z[dst_id]
+                # this check necessary if flow has been routed across depressions
+                qs_out[reversed_flow] = 0.
+                 
+            dzdt[src_id] = -dqs_dx[src_id]        
+
+            qs_in[dst_id] = qs_out[src_id]
         
+        z0 = z.copy()
+        z = z0 + dzdt*dt
+            
+                
         t += dt
         print(t)
-    
+
 #%%
 plt.figure()
 drainage_plot(mg, 'drainage_area')

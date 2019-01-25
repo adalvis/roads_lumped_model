@@ -105,7 +105,7 @@ qs_out = np.zeros(mg.number_of_nodes)
 dqs_dx = np.zeros(mg.number_of_nodes)
 
 dzdt = np.zeros(mg.number_of_nodes)
-dt = 0.1
+dt = 0.01
 T = np.array([0,1])
 
 
@@ -145,13 +145,12 @@ for l in range(len(T)):
         da = mg.at_node['drainage_area']
         
         ordered_nodes = np.flipud(mg.at_node['flow__upstream_node_order'])
-        
         dzdx = mg.calc_slope_at_node(z)
         
         flow_receiver = mg.at_node['flow__receiver_node']
         
         if t == 0:
-            qs_out = k_t * da**m * 0.5**n
+            qs_out = k_t * da**m * 0.05**n
         else:
             qs_out = k_t * da**m * dzdx**n
         
@@ -163,8 +162,7 @@ for l in range(len(T)):
             else:
                 dqs_dx[node] = (qs_out[node] - qs_in[node])/ mg.cell_area_at_node[node]
     
-            if i != len(ordered_nodes)-1:
-                qs_in[ordered_nodes[i+1]] = qs_out[ordered_nodes[i]]
+        qs_in[flow_receiver[node]] = qs_out[node]
     
         z0 = z.copy()
         z = z0 - dqs_dx*dt
@@ -190,7 +188,7 @@ ax2 = plt.axes(projection = '3d')
 X = mg.node_x.reshape(mg.shape)
 Y = mg.node_y.reshape(mg.shape)
 Z = z.reshape(mg.shape)
-#plt.title('300 years of evolution')
+plt.title('1 year of evolution')
 ax2.set_xlabel('X (m)', fontsize = 10)
 ax2.set_ylabel('Y (m)', fontsize = 10)
 ax2.set_zlabel('Elevation (m)', fontsize = 10)
