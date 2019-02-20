@@ -22,7 +22,14 @@ mpl.rcParams['axes.labelweight'] = 'bold'
 
 mg = RasterModelGrid(355,47,0.225) #produces an 80m x 10.67m grid w/ cell size of 0.225m (approx. tire width)
 init_elev = np.zeros(mg.number_of_nodes, dtype = float) #initialize the elevation grid
-z = mg.add_field('topographic__elevation', init_elev, at = 'node') #create the topographic__elevation field
+
+np.random.seed(2)
+surface = init_elev + np.random.rand(init_elev.size)/25
+
+
+
+#%%
+z = mg.add_zeros('topographic__elevation', at = 'node') #create the topographic__elevation field
 
 road_peak = 16 #peak crowning height occurs at this x-location
 up = 0.0067 #rise of slope from ditchline to crown
@@ -32,14 +39,16 @@ for i in range(0,355): #loop through road length
     elev = 0 #initialize elevation placeholder
     
     for j in range(0, 47): #loop through road width
-        z[i*47 + j] = elev #update elevation based on x & y locations
+        
         
         if j < road_peak: #update latitudinal slopes based on location related to road_peak
             elev += up
         else:
             elev -= down
+            
+        z[i*47 + j] = elev #update elevation based on x & y locations    
 
-z = z + mg.node_y*0.05 #add longitudinal slope to road segment
+z = z + mg.node_y*0.05 + surface #add longitudinal slope to road segment
     
 plt.figure(figsize = (4,10))
 imshow_grid(mg, z, var_name = 'Elevation', 
