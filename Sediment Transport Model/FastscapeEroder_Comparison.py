@@ -30,14 +30,13 @@ start_time = datetime.now()
 
 #%% Create grid and plot map
 init = np.ones([625])
-surface = (init*12) + np.random.rand(init.size)/100000.
+np.random.seed(2)
+surface = init + np.random.rand(init.size)/55.
 
 mg = RasterModelGrid((25,25), 1)
-z = mg.add_field('topographic__elevation', surface + mg.node_y*0.05 + mg.node_x*0.05, at = 'node')
+z = mg.add_field('topographic__elevation', surface + mg.node_y*0.05, at = 'node')
 
-outlet_id = np.argmin(mg.at_node['topographic__elevation'])
-mg.set_watershed_boundary_condition_outlet_id(outlet_id, mg.at_node['topographic__elevation'], 
-                                   nodata_value=-9999.)
+mg.set_closed_boundaries_at_grid_edges(True, True, True, False)
 
 qs_in = np.zeros(mg.number_of_nodes)
 qs_out = np.zeros(mg.number_of_nodes)
