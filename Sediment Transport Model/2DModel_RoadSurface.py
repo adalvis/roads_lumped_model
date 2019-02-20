@@ -44,12 +44,14 @@ start_time = datetime.now()
 #%% Create erodible grid
 def ErodibleGrid(nrows,ncols,spacing):    
     mg = RasterModelGrid(nrows,ncols,spacing) #produces an 80m x 10.67m grid w/ cell size of 0.225m (approx. tire width)
+    init = np.zeros(mg.number_of_nodes, dtype = float) #initialize the elevation grid
+
+    np.random.seed(2)
+    surface = init + np.random.rand(init.size)/55
+    
     z = mg.add_zeros('node','topographic__elevation') #create the topographic__elevation field
-    z_sediment = mg.add_zeros('node','soil__depth')
-    D_rd = mg.add_zeros('node','rainfall_detachment')
     
-    
-    mg.set_closed_boundaries_at_grid_edges(False, False, False, False) 
+    mg.set_closed_boundaries_at_grid_edges(False, True, False, True) 
     
     road_peak = 20 #peak crowning height occurs at this x-location
     up = 0.0067 #rise of slope from ditchline to crown
@@ -72,8 +74,7 @@ def ErodibleGrid(nrows,ncols,spacing):
             else:
                 elev -= down
     
-    z += mg.node_y*0.05 #add longitudinal slope to road segmen
-
+    z += mg.node_y*0.05 + surface #add longitudinal slope to road segmen
 
     n = mg.add_zeros('node','roughness') #create roughness field
     
@@ -88,24 +89,24 @@ def ErodibleGrid(nrows,ncols,spacing):
             else:
                 roughness = 0.02
                 
-    return(mg, z, z_sediment, D_rd, n)           
+    return(mg, z, n)           
 
 #%% Time to try a basic model!
 
-mg, z, z_sediment, D_rd, n = ErodibleGrid(355,51,0.225)
+mg, z, n = ErodibleGrid(355,51,0.225)
 
 
 X = mg.node_x.reshape(mg.shape)
 Y = mg.node_y.reshape(mg.shape)
 Z = z.reshape(mg.shape)
 
-
+#%%
 qs_in = np.zeros(mg.number_of_nodes)
 qs_out = np.zeros(mg.number_of_nodes)
 dqs_dx = np.zeros(mg.number_of_nodes)
 
 dzdt = np.zeros(mg.number_of_nodes)
-dt = 0.01
+dt = 0.1
 T = np.array([0,1])
 
 
@@ -144,30 +145,36 @@ for l in range(len(T)):
         
         da = mg.at_node['drainage_area']
         
-        ordered_nodes = np.flipud(mg.at_node['flow__upstream_node_order'])
         dzdx = mg.calc_slope_at_node(z)
         
-        flow_receiver = mg.at_node['flow__receiver_node']
+        src_nodes = mg.at_node['flow__upstream_node_order']
+        dst_nodes = mg.at_node['flow__receiver_node']
         
-        if t == 0:
-            qs_out = k_t * da**m * 0.05**n
-        else:
-            qs_out = k_t * da**m * dzdx**n
-        
+        defined_flow_receivers = np.not_equal(mg.at_node["flow__link_to_receiver_node"], -1)
+        flow_link_lengths = mg.length_of_d8[mg.at_node["flow__link_to_receiver_node"]]
+          
         for i in range(mg.number_of_nodes):
-            node = ordered_nodes[i]
+            src_id = src_nodes[i]
+            dst_id = dst_nodes[src_id]
             
-            if mg.cell_area_at_node[node] == 0:
-                dqs_dx[node] = 0
+            qs_out[src_id] = k_t * da[src_id]**m * dzdx[src_id]**n
+            
+            if mg.cell_area_at_node[src_id] == 0:
+                dqs_dx[src_id] = 0
             else:
-                dqs_dx[node] = (qs_out[node] - qs_in[node])/ mg.cell_area_at_node[node]
-    
-        qs_in[flow_receiver[node]] = qs_out[node]
-    
+                dqs_dx[src_id] = (qs_out[src_id] - qs_in[src_id]) / mg.cell_area_at_node[src_id]
+                
+            dzdt[src_id] = -dqs_dx[src_id]    
+
+            qs_in[dst_id] = qs_out[src_id]
+            
+            if z[src_id] < z[dst_id]:
+                z[src_id] = z[dst_id]*1.00001
+            
         z0 = z.copy()
-        z = z0 - dqs_dx*dt
-    
-        
+        z = z0 + dzdt*dt
+            
+                
         t += dt
         print(t)
     
