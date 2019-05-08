@@ -35,10 +35,12 @@ init = np.ones([625])
 np.random.seed(2)
 surface = init + np.random.rand(init.size)/55.
 
-mg = RasterModelGrid((25,25), 1)
+mg = RasterModelGrid((25,25),1)
 z = mg.add_field('topographic__elevation', surface + mg.node_y*0.05, at = 'node')
 
 mg.set_closed_boundaries_at_grid_edges(True, True, True, False)
+
+#mg.set_watershed_boundary_condition_outlet_id(12, z)
 
 qs_in = np.zeros(mg.number_of_nodes)
 qs_out = np.zeros(mg.number_of_nodes)
@@ -47,7 +49,7 @@ dzdx = np.zeros(mg.number_of_nodes)
 
 dzdt = np.zeros(mg.number_of_nodes)
 dt = 0.1
-T = np.arange(0, 1100, 50)
+T = np.arange(0, 1000, 100)
 
 
 plt.figure(1)
@@ -63,7 +65,7 @@ fa = FlowAccumulator(mg, surface = 'topographic__elevation', flow_director = 'Fl
 fa.run_one_step()
 da = mg.at_node['drainage_area']
 
-ld = LinearDiffuser(mg, linear_diffusivity=0.005)
+ld = LinearDiffuser(mg, linear_diffusivity=0.00002)
 
 #%% Calculate slope at each node - initial, analytical
 n = 2.
@@ -85,9 +87,9 @@ t = 0
 
 for l in range(len(T)):
     while t < T[l]:
+        qs_out = np.zeros(mg.number_of_nodes)
         
         fa.run_one_step()
-#        flooded_nodes = np.where(fa.depression_finder.flood_status == 3)[0]
         
         ld.run_one_step(dt)
         
@@ -95,12 +97,9 @@ for l in range(len(T)):
         
         dzdx = mg.calc_slope_at_node(z)
         
-        src_nodes = mg.at_node['flow__upstream_node_order']
+        src_nodes = np.flipud(mg.at_node['flow__upstream_node_order'])
         dst_nodes = mg.at_node['flow__receiver_node']
         
-        defined_flow_receivers = np.not_equal(mg.at_node["flow__link_to_receiver_node"], -1)
-        flow_link_lengths = mg.length_of_d8[mg.at_node["flow__link_to_receiver_node"]]
-          
         for i in range(mg.number_of_nodes):
             src_id = src_nodes[i]
             dst_id = dst_nodes[src_id]
@@ -110,31 +109,24 @@ for l in range(len(T)):
             if mg.cell_area_at_node[src_id] == 0:
                 dqs_dx[src_id] = 0
             else:
-                dqs_dx[src_id] = (qs_out[src_id] - qs_in[src_id]) / mg.cell_area_at_node[src_id]
-            
-#            if flooded_nodes is not None:
-#                dqs_dx[flooded_nodes] = 0.
-#            else:
-#                reversed_flow = z < z[dst_id]
-#                dqs_dx[reversed_flow] = 0.
-                
-            dzdt[src_id] = -dqs_dx[src_id]    
+                dqs_dx[src_id] = (qs_out[src_id] - qs_in[src_id]) / mg.cell_area_at_node[src_id]  
+
+            dzdt[src_id] = -dqs_dx[src_id]
 
             qs_in[dst_id] = qs_out[src_id]
-            
+                        
             if z[src_id] < z[dst_id]:
                 z[src_id] = z[dst_id]*1.00001
-            
+               
         z0 = z.copy()
         z = z0 + dzdt*dt
-            
                 
         t += dt
         print(t)
 
-#    plt.figure()
-#    drainage_plot(mg, 'drainage_area')
-#
+    plt.figure()
+    drainage_plot(mg, 'drainage_area')
+
 #    plt.figure()
 #    imshow_grid(mg, z, plot_name = '%i years' % T[l], var_name = 'Elevation', 
 #                var_units = 'm', grid_units = ('m','m'), cmap = 'gist_earth', vmin = 1.0, vmax = 2.2)
@@ -148,16 +140,16 @@ for l in range(len(T)):
     ax2.set_xlabel('X (m)', fontsize = 10)
     ax2.set_ylabel('Y (m)', fontsize = 10)
     ax2.set_zlabel('Elevation (m)', fontsize = 10)
-    ax2.plot_surface(X, Y, Z, cmap = 'gist_earth')
+    ax2.plot_surface(X, Y, Z, cmap = 'terrain')
 #    plt.savefig('C:/Users/Amanda/Desktop/3DFigs/year%i.png' % T[l])
 
-    plt.figure()
-    plt.title('Slope-Area Plot for Initial Conditions')
-    plt.xlabel('Area (m$^2$)')
-    plt.ylabel('Slope (-)')
-    plt.loglog(drainage_area, slope[mg.core_nodes], 'b-')
-    plt.loglog(da[mg.core_nodes], dzdx[mg.core_nodes], 'ko')
-    plt.show()
+plt.figure()
+plt.title('Slope-Area Plot for Initial Conditions')
+plt.xlabel('Area (m$^2$)')
+plt.ylabel('Slope (-)')
+plt.loglog(drainage_area, slope[mg.core_nodes], 'b-')
+plt.loglog(da[mg.core_nodes], dzdx[mg.core_nodes], 'ko')
+plt.show()
 
 
 #for keeping track of how long the model runs

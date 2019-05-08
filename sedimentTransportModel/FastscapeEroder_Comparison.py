@@ -29,14 +29,17 @@ start_time = datetime.now()
 
 
 #%% Create grid and plot map
-init = np.ones([625])
+init = np.ones([100])
 np.random.seed(2)
 surface = init + np.random.rand(init.size)/55.
 
-mg = RasterModelGrid((25,25), 1)
+mg = RasterModelGrid((10,10), 1)
 z = mg.add_field('topographic__elevation', surface + mg.node_y*0.05, at = 'node')
 
 mg.set_closed_boundaries_at_grid_edges(True, True, True, False)
+
+#mg.set_watershed_boundary_condition_outlet_id(12, z)
+
 
 qs_in = np.zeros(mg.number_of_nodes)
 qs_out = np.zeros(mg.number_of_nodes)
@@ -44,7 +47,7 @@ dqs_dx = np.zeros(mg.number_of_nodes)
 
 dzdt = np.zeros(mg.number_of_nodes)
 dt = 0.1
-T = np.array([0, 50, 100, 500])
+T = np.array([0, 50, 100, 500, 1000])
 
 
 plt.figure()
@@ -71,20 +74,23 @@ for l in range(len(T)):
         print(t)
         
 #%%
-plt.figure()
-imshow_grid(mg, z, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
-           var_units = 'm', grid_units = ('m','m'), cmap = 'jet')
+    plt.figure()
+    imshow_grid(mg, z, plot_name = 'Topographic Map of Synthetic Grid', var_name = 'Elevation', 
+               var_units = 'm', grid_units = ('m','m'), cmap = 'jet')
+    
+    plt.figure()
+    drainage_plot(mg, 'drainage_area')
 
-plt.figure()
-ax2 = plt.axes(projection = '3d')
-X = mg.node_x.reshape(mg.shape)
-Y = mg.node_y.reshape(mg.shape)
-Z = z.reshape(mg.shape)
-plt.title('500 years of evolution')
-ax2.set_xlabel('X (m)', fontsize = 10)
-ax2.set_ylabel('Y (m)', fontsize = 10)
-ax2.set_zlabel('Elevation (m)', fontsize = 10)
-ax2.plot_surface(X, Y, Z, cmap = 'jet')
+    plt.figure()
+    ax2 = plt.axes(projection = '3d')
+    X = mg.node_x.reshape(mg.shape)
+    Y = mg.node_y.reshape(mg.shape)
+    Z = z.reshape(mg.shape)
+    plt.title('500 years of evolution')
+    ax2.set_xlabel('X (m)', fontsize = 10)
+    ax2.set_ylabel('Y (m)', fontsize = 10)
+    ax2.set_zlabel('Elevation (m)', fontsize = 10)
+    ax2.plot_surface(X, Y, Z, cmap = 'jet')
 
 
 #for keeping track of how long the model runs

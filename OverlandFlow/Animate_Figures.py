@@ -37,4 +37,4 @@ my_anim = animation.ArtistAnimation(fig, myimages)
 writer = animation.ImageMagickFileWriter(fps = 2)
 
 #save animation
-my_anim.save('C:/Users/Amanda/Desktop/3D_1000yrs.gif', writer=writer, dpi = 300)
+my_anim.save('C:/Users/Amanda/Desktop/test.gif', writer=writer, dpi = 300)
