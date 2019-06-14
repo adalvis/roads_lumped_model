@@ -51,6 +51,7 @@ outlet = mg.set_watershed_boundary_condition_outlet_id(outlet_id, z)
 outlet_link = mg.links_at_node[outlet_id]
 
 #plot the grid showing its topographic elevation
+plt.figure()
 imshow_grid(mg, 'topographic__elevation', plot_name = 'Topographic Elevation', 
             var_name = 'Elevation', var_units = 'm',grid_units = ('m','m'), 
             cmap = 'gist_earth')
@@ -86,6 +87,7 @@ while elapsed_time < model_run_time:
     elapsed_time += of.delta_t
 
 #plot the hydrograph
+plt.figure()
 plt.plot(hydrograph_time, discharge_at_outlet, 'k-')
 axes = plt.gca()
 plt.xlabel('Time (hr)', fontweight = 'bold')
@@ -120,7 +122,8 @@ for i in range(10):
         elapsed_time += of.dt  
     
     time = model_run_time_new/3600.
-
+    
+    plt.figure()
     imshow_grid(mg, 'surface_water__depth', plot_name 
                 = 'Water depth at time = %0.2f hr' % time, 
                 var_name = 'Water depth', var_units = 'm', 
