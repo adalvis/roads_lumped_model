@@ -17,7 +17,7 @@ storm_length = []
 truck_pass = []
 total_t = []
 
-model_end = 876000 #20 yrs = 175200 hrs; 100 yrs = 876000 hrs
+model_end = 175200 #20 yrs = 175200 hrs; 100 yrs = 876000 hrs
 
 #%%
 np.random.seed(1) #Use seed to ensure consistent results with each run
@@ -111,13 +111,13 @@ h_s = 0.23
 f_sf = 0.275
 f_sc = 0.725
 
-h_b = 5
+h_b = 0.6
 f_bf = 0.20
 f_br = 0.80
 
 #The following four constants can be adjusted based on observations
-kas = 1.37e-7 #crushing constant... value is easily changeable
-kab = 1.0e-7
+kas = 1.37e-8 #crushing constant... value is easily changeable
+kab = 1.0e-8
 u_p = 4.69e-6 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 u_f = 2.345e-6 #m
 p = 0.20 #[-] (Applied Hydrogeology 3rd Ed. by C.W. Fetter, Table 3.4)
