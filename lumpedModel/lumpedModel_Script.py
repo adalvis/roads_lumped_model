@@ -253,7 +253,14 @@ df_storage['Hs_out'] = Hs_out
 df_storage['sed_avail'] = sed_avail
 df_storage['sed_cap'] = sed_cap
 #%%
+plt.ylim(0.9,1)
 _= df_storage.f_s.plot()
+
+plt.xlabel('Date')
+plt.ylabel(r'$f_s$')
+plt.tight_layout()
+plt.savefig(r'C:\Users\Amanda\Desktop\New_SSP.png', dpi=300)
+
 f_s.max()
 #%%
 #Resample to daily data again
@@ -341,7 +348,7 @@ df5.plot(y='S_sc', ax=ax5, color = '#b0077d', legend=False, label='Coarse surfac
 df5.plot(y='S_sf', ax=ax5, color = '#027fcc', legend=False, label='Fine surfacing')
 
 ax5.set_ylabel(r'Surfacing storage, $S_f$ $(m)$', fontweight='bold', fontsize=14)
-#ax5.set_ylim(0, 0.25)
+ax5.set_ylim(0, 0.25)
 #ax5.set_title('Surfacing storage', fontweight='bold', fontsize=14)
 fig5.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax5.transAxes)
 plt.xlabel('Date', fontweight='bold', fontsize=14)
@@ -353,7 +360,7 @@ fig7, ax7 = plt.subplots(figsize=(7,4.5))
 df5.plot(y='S_b', ax=ax7, color = '#12586b', legend=False, label='Total ballast')
 df5.plot(y='S_bc', ax=ax7, color = '#099c49', legend=False, label='Coarse ballast')
 df5.plot(y='S_bf', ax=ax7, color = '#2949e6', legend=False, label='Fine ballast')
-#ax7.set_ylim(0, 0.7)
+ax7.set_ylim(0, 0.7)
 plt.xlabel('Date', fontweight='bold', fontsize=14)
 plt.ylabel(r'Ballast storage, $S_b$ $(m)$', fontweight='bold', fontsize=14)
 fig7.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax7.transAxes)
