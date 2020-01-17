@@ -17,7 +17,7 @@ storm_length = []
 truck_pass = []
 total_t = []
 
-model_end = 175200 #20 yrs = 175200 hrs; 100 yrs = 876000 hrs
+model_end = 876000 #20 yrs = 175200 hrs; 100 yrs = 876000 hrs
 
 #%%
 np.random.seed(1) #Use seed to ensure consistent results with each run
@@ -117,7 +117,7 @@ f_br = 0.80
 
 #The following four constants can be adjusted based on observations
 kas = 1.37e-8 #crushing constant... value is easily changeable
-kab = 1.0e-8
+kab = 1.0e-7
 u_p = 4.69e-6 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 u_f = 2.345e-6 #m
 p = 0.20 #[-] (Applied Hydrogeology 3rd Ed. by C.W. Fetter, Table 3.4)
@@ -253,13 +253,14 @@ df_storage['Hs_out'] = Hs_out
 df_storage['sed_avail'] = sed_avail
 df_storage['sed_cap'] = sed_cap
 #%%
+plt.figure(figsize=(6,4))
 plt.ylim(0.9,1)
 _= df_storage.f_s.plot()
 
 plt.xlabel('Date')
 plt.ylabel(r'$f_s$')
 plt.tight_layout()
-plt.savefig(r'C:\Users\Amanda\Desktop\New_SSP.png', dpi=300)
+#plt.savefig(r'C:\Users\Amanda\Desktop\New_SSP.png', dpi=300)
 
 f_s.max()
 #%%
@@ -283,7 +284,7 @@ df4['S_f_mm'] = df4.S_f*1000
 df4['sed_cap_mm'] = df4.sed_cap/1e-3
 df4['Hs_out_mm'] = df4.Hs_out/1e-3
 #%%
-fig13, ax13 = plt.subplots(figsize=(7,4))
+fig13, ax13 = plt.subplots(figsize=(6,4))
 df4.sed_cap_mm.plot(color = '#9e80c2', label='Transport capacity')
 df4.Hs_out_mm.plot(color='#442766', label='Actual transport')
 plt.xlabel('Date', fontsize=14, fontweight='bold')
@@ -292,7 +293,7 @@ plt.ylabel(r'Sediment depth $(mm)$', fontsize=14, fontweight='bold')
 
 fig13.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax13.transAxes)
 plt.tight_layout()
-#plt.savefig(r'C:\Users\Amanda\Desktop\CapacityVTransport.png', dpi=300)
+#plt.savefig(r'C:\Users\Amanda\Desktop\CapacityVTransport_New.png', dpi=300)
 plt.show()
 #%%
 fig3, ax3 = plt.subplots(figsize=(9,4.5))
@@ -341,35 +342,35 @@ plt.show()
 df5 = df_storage.resample('D').mean().fillna(method='ffill')
 #df5['hour'] = np.arange(0, len(df5), 1)
 #%%
-fig5, ax5 = plt.subplots(figsize=(7,4.5))
+fig5, ax5 = plt.subplots(figsize=(6,4))
 
 df5.plot(y='S_s', ax=ax5, color = '#532287', legend=False, label='Total surfacing')
 df5.plot(y='S_sc', ax=ax5, color = '#b0077d', legend=False, label='Coarse surfacing')
 df5.plot(y='S_sf', ax=ax5, color = '#027fcc', legend=False, label='Fine surfacing')
 
 ax5.set_ylabel(r'Surfacing storage, $S_f$ $(m)$', fontweight='bold', fontsize=14)
-ax5.set_ylim(0, 0.25)
+#ax5.set_ylim(0, 0.25)
 #ax5.set_title('Surfacing storage', fontweight='bold', fontsize=14)
 fig5.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax5.transAxes)
 plt.xlabel('Date', fontweight='bold', fontsize=14)
 plt.tight_layout()
-#plt.savefig(r'C:\Users\Amanda\Desktop\SurfStorage.png', dpi=300)
+#plt.savefig(r'C:\Users\Amanda\Desktop\SurfStorage_Ch10.png', dpi=300)
 plt.show()
 #%%
-fig7, ax7 = plt.subplots(figsize=(7,4.5))
+fig7, ax7 = plt.subplots(figsize=(6,4))
 df5.plot(y='S_b', ax=ax7, color = '#12586b', legend=False, label='Total ballast')
 df5.plot(y='S_bc', ax=ax7, color = '#099c49', legend=False, label='Coarse ballast')
 df5.plot(y='S_bf', ax=ax7, color = '#2949e6', legend=False, label='Fine ballast')
-ax7.set_ylim(0, 0.7)
+#ax7.set_ylim(0, 0.7)
 plt.xlabel('Date', fontweight='bold', fontsize=14)
 plt.ylabel(r'Ballast storage, $S_b$ $(m)$', fontweight='bold', fontsize=14)
 fig7.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax7.transAxes)
 #plt.title('Ballast storage', fontweight='bold', fontsize=14)
 plt.tight_layout()
-#plt.savefig(r'C:\Users\Amanda\Desktop\BalStorage.png', dpi=300)
+#plt.savefig(r'C:\Users\Amanda\Desktop\BalStorage_Ch10.png', dpi=300)
 plt.show()
 #%%
-fig10, ax10 = plt.subplots(3, figsize=(9,4), sharex=True)
+fig10, ax10 = plt.subplots(3, figsize=(9,7), sharex=True)
 df4.plot(y='S_f_mm', ax=ax10[0], color = 'mediumseagreen', legend=False, label='TAF elevation')
 df5.plot(y='S_s', ax=ax10[1], color = '#532287', legend=False, label='Surfacing elevation')
 df5.plot(y='S_b', ax=ax10[2], color = '#12586b', legend=False, label='Ballast elevation')
@@ -379,7 +380,7 @@ ax10[0].set_ylabel(r'$S_f$ $(mm)$', fontweight='bold', fontsize=14)
 ax10[1].set_ylabel(r'$S_s$ $(m)$', fontweight='bold', fontsize=14)
 ax10[2].set_ylabel(r'$S_b$ $(m)$', fontweight='bold', fontsize=14)
 plt.tight_layout()
-#plt.savefig(r'C:\Users\Amanda\Desktop\100yrs.png', dpi=300)
+#plt.savefig(r'C:\Users\Amanda\Desktop\100yrs_Ch10.png', dpi=300)
 plt.show()
 #%%
 #Subset data by water year
@@ -414,14 +415,14 @@ years = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, \
          2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038]
 #%%
 ticks = years
-fig8, ax8 = plt.subplots(figsize=(7,4))
+fig8, ax8 = plt.subplots(figsize=(6,4))
 plt.bar(years, sed_load, color = '#1d4f54')
 plt.xlabel('Water year', fontweight='bold', fontsize=14)
 plt.ylabel(r'Mass per meter of road $(kg/m)$', fontweight='bold', fontsize=14)
 #plt.title('Yearly sediment load per meter of road', fontweight='bold', fontsize=14)
 plt.xticks(range(ticks[0],ticks[len(ticks)-1]+1), ticks, rotation=45)
 plt.tight_layout()
-#plt.savefig(r'C:\Users\Amanda\Desktop\AnnualYield.png', dpi=300)
+#plt.savefig(r'C:\Users\Amanda\Desktop\AnnualYield_New.png', dpi=300)
 plt.show()
 #%%
 sed_sum_m2 = df_storage.Hs_out.sum()
