@@ -102,9 +102,9 @@ rho_s = 2650 #kg/m^3
 g = 9.81 #m/s^2
 S = 0.0825 #m/m; 8% long slope, 2% lat slope
 tau_c = 0.0939 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
-d50 = 5.8e-5 #m
+d50 = 6.25e-5 #m
 d95 = 0.055 #m
-n_t = 0.03 #approx Manning's n total
+n_f = 0.0475*d50**(1/6) #approx Manning's n total
 #%%
 #define constants
 h_s = 0.23
@@ -117,7 +117,7 @@ f_br = 0.80
 
 #The following four constants can be adjusted based on observations
 kas = 1.37e-8 #crushing constant... value is easily changeable
-kab = 1.0e-7
+kab = 1.0e-8
 u_p = 4.69e-6 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 u_f = 2.345e-6 #m
 p = 0.20 #[-] (Applied Hydrogeology 3rd Ed. by C.W. Fetter, Table 3.4)
@@ -146,8 +146,9 @@ k_s = np.zeros(len(df))
 H = np.zeros(len(df))
 tau = np.zeros(len(df))
 shear_stress = np.zeros(len(df))
-n_s = np.zeros(len(df))
 f_s = np.zeros(len(df))
+n_c = np.zeros(len(df))
+n_t = np.zeros(len(df))
 
 n_tp = df.truck_pass.to_numpy()
 t = df.delta_t.to_numpy()
@@ -163,8 +164,9 @@ sed_cap = np.zeros(len(df))
 value = np.zeros(len(df))
 
 #Initial conditions for fines, surfacing, ballast
-n_s[0] = 0.0475*(d95)**(1/6)
-f_s[0] = (n_s[0]/n_t)**(1.5)
+n_c[0] = 0.0475*(d95)**(1/6)
+n_t[0] = n_f+n_c[0]
+f_s[0] = (n_f/n_t[0])**(1.5)
 S_f[0] = 0
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
@@ -191,18 +193,18 @@ for i in range(1, len(df)):
     
     h_f[i] = (1/p)*(q_f1[i]*(t[i]*3600) + S_f[i-1])
     
-    if d95 > h_f[i]:
+    if d95 >= h_f[i]:
         k_s[i] = d95 - h_f[i]
-        n_s[i] = 0.0475*(k_s[i])**(1/6)
+        n_c[i] = 0.0475*(k_s[i])**(1/6)
     else:
-        k_s[i] = d50
-        n_s[i] = 0.0475*(k_s[i])**(1/6)
-        n_t = 0.01
+        n_c[i] = 0
     
-    f_s[i] = (n_s[i]/n_t)**(1.5)
+    n_t[i] = n_f+n_c[i]
     
+    f_s[i] = (n_f/n_t[i])**(1.5)
+        
     #Calculate water depth assuming uniform overland flow
-    H[i] = ((n_t*(rainfall[i]/3.6e6)*L)/(S**(1/2)))**(3/5)
+    H[i] = ((n_t[i]*(rainfall[i]/3.6e6)*L)/(S**(1/2)))**(3/5)
     
     tau[i] = rho_w*g*H[i]*S
     
@@ -254,7 +256,7 @@ df_storage['sed_avail'] = sed_avail
 df_storage['sed_cap'] = sed_cap
 #%%
 plt.figure(figsize=(6,4))
-plt.ylim(0.9,1)
+
 _= df_storage.f_s.plot()
 
 plt.xlabel('Date')
