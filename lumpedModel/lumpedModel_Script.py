@@ -101,17 +101,17 @@ rho_w = 1000 #kg/m^3
 rho_s = 2650 #kg/m^3
 g = 9.81 #m/s^2
 S = 0.0825 #m/m; 8% long slope, 2% lat slope
-tau_c = 0.0939 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
+tau_c = 0 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
 d50 = 6.25e-5 #m
 d95 = 0.055 #m
-n_f = 0.0475*d50**(1/6) #approx Manning's n total
+n_f = 0.0475*(d50)**(1/6) #approx Manning's n total
 #%%
 #define constants
 h_s = 0.23
 f_sf = 0.275
 f_sc = 0.725
 
-h_b = 0.6
+h_b = 2
 f_bf = 0.20
 f_br = 0.80
 
@@ -164,10 +164,11 @@ sed_cap = np.zeros(len(df))
 value = np.zeros(len(df))
 
 #Initial conditions for fines, surfacing, ballast
-n_c[0] = 0.0475*(d95)**(1/6)
+h_f[0] = d95/2
+n_c[0] = 0.0475*(d95-h_f[0])**(1/6)
 n_t[0] = n_f+n_c[0]
 f_s[0] = (n_f/n_t[0])**(1.5)
-S_f[0] = 0
+S_f[0] = d95/2
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
@@ -193,7 +194,7 @@ for i in range(1, len(df)):
     
     h_f[i] = (1/p)*(q_f1[i]*(t[i]*3600) + S_f[i-1])
     
-    if d95 >= h_f[i]:
+    if d95 > h_f[i]:
         k_s[i] = d95 - h_f[i]
         n_c[i] = 0.0475*(k_s[i])**(1/6)
     else:
@@ -254,6 +255,21 @@ df_storage['S_bf'] = S_bf
 df_storage['Hs_out'] = Hs_out
 df_storage['sed_avail'] = sed_avail
 df_storage['sed_cap'] = sed_cap
+
+#%%
+
+plt.figure(figsize=(6,4))
+
+_= df_storage.hf.plot()
+
+plt.xlabel('Date')
+plt.ylabel(r'$h_f$')
+plt.tight_layout()
+#plt.savefig(r'C:\Users\Amanda\Desktop\New_SSP.png', dpi=300)
+
+plt.figure(figsize=(6,4))
+_ = df_storage.plot(x='f_s', y='hf')
+
 #%%
 plt.figure(figsize=(6,4))
 
