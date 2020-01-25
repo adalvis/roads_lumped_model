@@ -101,7 +101,7 @@ rho_w = 1000 #kg/m^3
 rho_s = 2650 #kg/m^3
 g = 9.81 #m/s^2
 S = 0.0825 #m/m; 8% long slope, 2% lat slope
-tau_c = 0.04 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
+tau_c = 0.0 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
 d50 = 6.25e-5 #m
 d95 = 0.055 #m
 n_f = 0.0475*(d50)**(1/6) #approx Manning's n total
@@ -159,16 +159,16 @@ q_f1 = np.zeros(len(df))
 q_f2 = np.zeros(len(df))
 q_as = np.zeros(len(df))
 q_ab = np.zeros(len(df))
-sed_avail = np.zeros(len(df))
+sed_added = np.zeros(len(df))
 sed_cap = np.zeros(len(df))
 value = np.zeros(len(df))
 
 #Initial conditions for fines, surfacing, ballast
-h_f[0] = (1/p)*(d95/2)
+h_f[0] = (1-p)*(d95/2)
 n_c[0] = 0.0475*(d95-h_f[0])**(1/6)
 n_t[0] = n_f+n_c[0]
 f_s[0] = (n_f/n_t[0])**(1.5)
-S_f[0] = 0
+S_f[0] = 0.0005
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
@@ -192,10 +192,10 @@ for i in range(1, len(df)):
     S_s[i] = S_sc[i] + S_sf[i]
     S_b[i] = S_bc[i] + S_bf[i]
     
-    S_f[i] = (1/p)*(q_f1[i]*(t[i]*3600) + S_f[i-1]) if d95 > S_f[i] else q_f1[i]*(t[i]*3600) + S_f[i-1] #porosity is only for added sediment!
+    h_f[i] = (1-p)*(q_f1[i]*(t[i]*3600)) + h_f[i-1] if d95 > h_f[i-1] else q_f1[i]*(t[i]*3600) + h_f[i-1] #porosity is only for added sediment!
     
-    if d95 > S_f[i]:
-        k_s[i] = d95 - S_f[i]
+    if d95 > h_f[i]:
+        k_s[i] = d95 - h_f[i]
         n_c[i] = 0.0475*(k_s[i])**(1/6)
     else:
         n_c[i] = 0
@@ -219,17 +219,17 @@ for i in range(1, len(df)):
         q_s[i] = 0
 
     #Create a condition column based on sediment transport capacity vs sediment supply
-    sed_avail[i] = (1/p)*q_f1[i]*(t[i]*3600.) #change to be sediment added and use this to calculate value
+    sed_added[i] = (1-p)*q_f1[i]*(t[i]*3600.) if d95 > S_f[i-1] else q_f1[i]*(t[i]*3600.) #change to be sediment added and use this to calculate value
     sed_cap[i] = q_s[i]*(t_storm[i]*3600.)
-    value[i] = (sed_avail[i]-sed_cap[i])
+    value[i] = (sed_added[i]-sed_cap[i])
         
     if value[i] < 0:
-        Hs_out[i] = np.minimum(sed_avail[i]+(1/p)*S_f[i-1], sed_cap[i]) #first term becomes sed_added + prev sed
-        dS_f[i] = sed_avail[i] - Hs_out[i]
+        Hs_out[i] = np.minimum(sed_added[i]+S_f[i-1], sed_cap[i]) #first term becomes sed_added + prev sed
+        dS_f[i] = sed_added[i] - Hs_out[i]
 
     else:
         Hs_out[i] = sed_cap[i]
-        dS_f[i] = sed_avail[i] - Hs_out[i]
+        dS_f[i] = sed_added[i] - Hs_out[i]
 
     S_f[i] = S_f[i-1] + dS_f[i] if (S_f[i-1] + dS_f[i]) > 0 else 0
     
@@ -253,7 +253,7 @@ df_storage['S_b'] = S_b
 df_storage['S_bc'] = S_bc
 df_storage['S_bf'] = S_bf
 df_storage['Hs_out'] = Hs_out
-df_storage['sed_avail'] = sed_avail
+df_storage['sed_added'] = sed_added
 df_storage['sed_cap'] = sed_cap
 
 #%%
