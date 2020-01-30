@@ -17,7 +17,7 @@ storm_length = []
 truck_pass = []
 total_t = []
 
-model_end = 876000 #20 yrs = 175200 hrs; 100 yrs = 876000 hrs
+model_end = 87600 #20 yrs = 175200 hrs; 10 yrs = 87600 hrs
 
 #%%
 np.random.seed(1) #Use seed to ensure consistent results with each run
@@ -101,7 +101,7 @@ rho_w = 1000 #kg/m^3
 rho_s = 2650 #kg/m^3
 g = 9.81 #m/s^2
 S = 0.0825 #m/m; 8% long slope, 2% lat slope
-tau_c = 0.0 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
+tau_c = 0 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
 d50 = 6.25e-5 #m
 d95 = 0.055 #m
 n_f = 0.0475*(d50)**(1/6) #approx Manning's n total
@@ -120,7 +120,7 @@ kas = 1.37e-8 #crushing constant... value is easily changeable
 kab = 1.0e-8
 u_p = 4.69e-6 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 u_f = 2.345e-6 #m
-p = 0.20 #[-] (Applied Hydrogeology 3rd Ed. by C.W. Fetter, Table 3.4)
+e = 0.20 #[-] fraction of coarse material
 #%%
 df_storage = pd.DataFrame()
 
@@ -149,6 +149,7 @@ shear_stress = np.zeros(len(df))
 f_s = np.zeros(len(df))
 n_c = np.zeros(len(df))
 n_t = np.zeros(len(df))
+Z_taf = np.zeros(len(df))
 
 n_tp = df.truck_pass.to_numpy()
 t = df.delta_t.to_numpy()
@@ -164,11 +165,11 @@ sed_cap = np.zeros(len(df))
 value = np.zeros(len(df))
 
 #Initial conditions for fines, surfacing, ballast
-h_f[0] = (1-p)*(d95/2)
+h_f[0] = 0
 n_c[0] = 0.0475*(d95-h_f[0])**(1/6)
 n_t[0] = n_f+n_c[0]
 f_s[0] = (n_f/n_t[0])**(1.5)
-S_f[0] = 0.0005
+S_f[0] = 0
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
@@ -192,10 +193,10 @@ for i in range(1, len(df)):
     S_s[i] = S_sc[i] + S_sf[i]
     S_b[i] = S_bc[i] + S_bf[i]
     
-    h_f[i] = (1-p)*(q_f1[i]*(t[i]*3600)) + h_f[i-1] if d95 > h_f[i-1] else q_f1[i]*(t[i]*3600) + h_f[i-1] #porosity is only for added sediment!
+    S_f[i] = (S_f[i-1] + q_f1[i]*(t[i]*3600.))/(1-e)
     
-    if d95 > h_f[i]:
-        k_s[i] = d95 - h_f[i]
+    if d95 > S_f[i]:
+        k_s[i] = d95 - S_f[i]
         n_c[i] = 0.0475*(k_s[i])**(1/6)
     else:
         n_c[i] = 0
@@ -219,12 +220,12 @@ for i in range(1, len(df)):
         q_s[i] = 0
 
     #Create a condition column based on sediment transport capacity vs sediment supply
-    sed_added[i] = (1-p)*q_f1[i]*(t[i]*3600.) if d95 > S_f[i-1] else q_f1[i]*(t[i]*3600.) #change to be sediment added and use this to calculate value
+    sed_added[i] = q_f1[i]*(t[i]*3600.)
     sed_cap[i] = q_s[i]*(t_storm[i]*3600.)
     value[i] = (sed_added[i]-sed_cap[i])
         
     if value[i] < 0:
-        Hs_out[i] = np.minimum(sed_added[i]+S_f[i-1], sed_cap[i]) #first term becomes sed_added + prev sed
+        Hs_out[i] = np.minimum(sed_added[i]+S_f[i-1], sed_cap[i])
         dS_f[i] = sed_added[i] - Hs_out[i]
 
     else:
@@ -239,7 +240,7 @@ df_storage['n_t'] = n_t
 df_storage['ks'] = k_s
 df_storage['water_depth'] = H
 df_storage['shear_stress'] = shear_stress
-df_storage['hf'] = h_f
+df_storage['Z_taf'] = Z_taf
 df_storage['f_s'] = f_s
 df_storage['q_s'] = q_s
 df_storage['qf1'] = q_f1
@@ -255,15 +256,18 @@ df_storage['S_bf'] = S_bf
 df_storage['Hs_out'] = Hs_out
 df_storage['sed_added'] = sed_added
 df_storage['sed_cap'] = sed_cap
+df_storage['val'] = value
 
+#%%
+df_storage.plot(x= 'S_f', y = 'f_s')
 #%%
 
 plt.figure(figsize=(6,4))
 
-_= df_storage.hf.plot()
+_= df_storage.Z_taf.plot()
 
 plt.xlabel('Date')
-plt.ylabel(r'$h_f$')
+plt.ylabel(r'$Z_{taf}$')
 plt.tight_layout()
 #plt.savefig(r'C:\Users\Amanda\Desktop\New_SSP.png', dpi=300)
 
@@ -409,25 +413,14 @@ yr_7 = df_storage.Hs_out['2024-10-01':'2025-09-30'].sum()
 yr_8 = df_storage.Hs_out['2025-10-01':'2026-09-30'].sum()
 yr_9 = df_storage.Hs_out['2026-10-01':'2027-09-30'].sum()
 yr_10 = df_storage.Hs_out['2027-10-01':'2028-09-30'].sum()
-yr_11 = df_storage.Hs_out['2028-10-01':'2029-09-30'].sum()
-yr_12 = df_storage.Hs_out['2029-10-01':'2030-09-30'].sum()
-yr_13 = df_storage.Hs_out['2030-10-01':'2031-09-30'].sum()
-yr_14 = df_storage.Hs_out['2031-10-01':'2032-09-30'].sum()
-yr_15 = df_storage.Hs_out['2032-10-01':'2033-09-30'].sum()
-yr_16 = df_storage.Hs_out['2033-10-01':'2034-09-30'].sum()
-yr_17 = df_storage.Hs_out['2034-10-01':'2035-09-30'].sum()
-yr_18 = df_storage.Hs_out['2035-10-01':'2036-09-30'].sum()
-yr_19 = df_storage.Hs_out['2036-10-01':'2037-09-30'].sum()
-yr_20 = df_storage.Hs_out['2037-10-01':'2038-09-30'].sum()
+
 
 
 #Multiply Hs_out
 sed_area = np.multiply([yr_1, yr_2, yr_3, yr_4, yr_5, yr_6, yr_7, \
-                        yr_8, yr_9, yr_10, yr_11, yr_12, yr_13, yr_14, \
-                        yr_15, yr_16, yr_17, yr_18, yr_19, yr_20], L)
+                        yr_8, yr_9, yr_10], L)
 sed_load = np.multiply(sed_area, rho_s)
-years = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, \
-         2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038]
+years = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028]
 #%%
 ticks = years
 fig8, ax8 = plt.subplots(figsize=(6,4))
