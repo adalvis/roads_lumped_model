@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jan 31 12:52:27 2020
+
+@author: Amanda
+"""
+
 """
 Author: Amanda Manaster
 Date: 01/09/2020
@@ -68,7 +75,7 @@ df['truck_pass'] = truck_pass
 day0 = datetime(2018, 10, 1)
 df.set_index(pd.DatetimeIndex([day0+timedelta(hours=time) for time in df.time]), inplace=True)
 #%%
-df_day = df.resample('D').sum().fillna(0)
+df_day = df.resample('D').sum().fill(method = 'ffill')
 df_day.truck_pass = df_day.truck_pass.round()
 df_day['day'] = np.arange(0, len(df_day), 1)
 #%%
@@ -131,38 +138,38 @@ df_storage.set_index(pd.DatetimeIndex([day0+timedelta(hours=time) for time in df
 #%%
 #Step 1!
 #Initialize numpy arrays for calculations
-dS_f = np.zeros(len(df))
-S_f = np.zeros(len(df))
-S_s = np.zeros(len(df))
-S_sc = np.zeros(len(df))
-S_sf = np.zeros(len(df))
-S_b = np.zeros(len(df))
-S_bc = np.zeros(len(df))
-S_bf = np.zeros(len(df))
-Hs_out = np.zeros(len(df))
-q_s = np.zeros(len(df))
-h_f = np.zeros(len(df))
-k_s = np.zeros(len(df))
-H = np.zeros(len(df))
-tau = np.zeros(len(df))
-shear_stress = np.zeros(len(df))
-f_s = np.zeros(len(df))
-n_c = np.zeros(len(df))
-n_t = np.zeros(len(df))
-S_f_init = np.zeros(len(df))
+dS_f = np.zeros(len(df_day))
+S_f = np.zeros(len(df_day))
+S_s = np.zeros(len(df_day))
+S_sc = np.zeros(len(df_day))
+S_sf = np.zeros(len(df_day))
+S_b = np.zeros(len(df_day))
+S_bc = np.zeros(len(df_day))
+S_bf = np.zeros(len(df_day))
+Hs_out = np.zeros(len(df_day))
+q_s = np.zeros(len(df_day))
+h_f = np.zeros(len(df_day))
+k_s = np.zeros(len(df_day))
+H = np.zeros(len(df_day))
+tau = np.zeros(len(df_day))
+shear_stress = np.zeros(len(df_day))
+f_s = np.zeros(len(df_day))
+n_c = np.zeros(len(df_day))
+n_t = np.zeros(len(df_day))
+S_f_init = np.zeros(len(df_day))
 
-n_tp = df.truck_pass.to_numpy()
-t = df.delta_t.to_numpy()
-t_storm = df.storm_length.to_numpy()
-rainfall = df.rainfall_rate.to_numpy()
+n_tp = df_day.truck_pass.to_numpy()
+t = df_day.delta_t.to_numpy()
+t_storm = df_day.storm_length.to_numpy()
+rainfall = df_day.rainfall_rate.to_numpy()
 
-q_f1 = np.zeros(len(df))
-q_f2 = np.zeros(len(df))
-q_as = np.zeros(len(df))
-q_ab = np.zeros(len(df))
-sed_added = np.zeros(len(df))
-sed_cap = np.zeros(len(df))
-value = np.zeros(len(df))
+q_f1 = np.zeros(len(df_day))
+q_f2 = np.zeros(len(df_day))
+q_as = np.zeros(len(df_day))
+q_ab = np.zeros(len(df_day))
+sed_added = np.zeros(len(df_day))
+sed_cap = np.zeros(len(df_day))
+value = np.zeros(len(df_day))
 
 #Initial conditions for fines, surfacing, ballast
 h_f[0] = 0
@@ -179,7 +186,7 @@ S_bc[0] = h_b*(f_br)
 S_bf[0] = h_b*(f_bf)
 #%% 
 #Step 2!
-for i in range(1, len(df)):
+for i in range(1, len(df_day)):
     q_f1[i] = u_p*(S_sf[i-1]/S_s[i-1])*n_tp[i]/(t[i]*3600)
     q_f2[i] = u_f*(S_bf[i-1]/S_b[i-1])*n_tp[i]/(t[i]*3600)
     q_as[i] = kas*(S_sc[i-1]/S_s[i-1])*n_tp[i]/(t[i]*3600)
@@ -226,7 +233,7 @@ for i in range(1, len(df)):
     #Calculate sediment transport rate
     if (shear_stress[i]-tau_c) >= 0:
         q_s[i] = ((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
-                 (tau[i]-tau_c)**(2.457)/L
+                 (shear_stress[i]-tau_c)**(2.457)/L
     else:
         q_s[i] = 0
 
@@ -245,36 +252,36 @@ for i in range(1, len(df)):
     S_f[i] = S_f_init[i] - Hs_out[i] #if (S_f_init[i] - Hs_out[i]) > 0 else 0
     
 #Add all numpy arrays to the Pandas dataframe
-df['q_s'] = q_s
-df_storage['n_t'] = n_t
-df_storage['ks'] = k_s
-df_storage['water_depth'] = H
-df_storage['shear_stress'] = shear_stress
-df_storage['S_f_init'] = S_f_init
-df_storage['f_s'] = f_s
-df_storage['q_s'] = q_s
-df_storage['qf1'] = q_f1
-df_storage['qf2'] = q_f2
-df_storage['dS_f'] = dS_f
-df_storage['S_f'] = S_f
-df_storage['S_s'] = S_s
-df_storage['S_sc'] = S_sc
-df_storage['S_sf'] = S_sf
-df_storage['S_b'] = S_b
-df_storage['S_bc'] = S_bc
-df_storage['S_bf'] = S_bf
-df_storage['Hs_out'] = Hs_out
-df_storage['sed_added'] = sed_added
-df_storage['sed_cap'] = sed_cap
-df_storage['val'] = value
+df_day['q_s'] = q_s
+df_day['n_t'] = n_t
+df_day['ks'] = k_s
+df_day['water_depth'] = H
+df_day['shear_stress'] = shear_stress
+df_day['S_f_init'] = S_f_init
+df_day['f_s'] = f_s
+df_day['q_s'] = q_s
+df_day['qf1'] = q_f1
+df_day['qf2'] = q_f2
+df_day['dS_f'] = dS_f
+df_day['S_f'] = S_f
+df_day['S_s'] = S_s
+df_day['S_sc'] = S_sc
+df_day['S_sf'] = S_sf
+df_day['S_b'] = S_b
+df_day['S_bc'] = S_bc
+df_day['S_bf'] = S_bf
+df_day['Hs_out'] = Hs_out
+df_day['sed_added'] = sed_added
+df_day['sed_cap'] = sed_cap
+df_day['val'] = value
 
 #%%
-df_storage.plot(x= 'S_f_init', y = 'f_s')
+df_day.plot(x= 'S_f_init', y = 'f_s')
 
 #%%
 plt.figure(figsize=(6,4))
 
-_= df_storage.f_s.plot()
+_= df_day.f_s.plot()
 
 plt.xlabel('Date')
 plt.ylabel(r'$f_s$')
@@ -284,7 +291,7 @@ plt.tight_layout()
 f_s.max()
 #%%
 #Resample to daily data again
-df_day_sed = df.resample('D').sum().fillna(0)
+df_day_sed = df_day.resample('D').sum().fillna(0)
 df_day_sed['day'] = np.arange(0, len(df_day_sed), 1)
 
 #Plot sediment transport rates over time
@@ -297,7 +304,7 @@ plt.tight_layout()
 #plt.savefig(r'C:\Users\Amanda\Desktop\Sediment.png', dpi=300)
 plt.show()
 #%%
-df4 = df_storage.resample('D').mean().fillna(method='ffill')
+df4 = df_day.resample('D').mean().fillna(method='ffill')
 df4['day'] = np.arange(0, len(df4), 1)
 df4['S_f_mm'] = df4.S_f*1000
 df4['sed_cap_mm'] = df4.sed_cap/1e-3
@@ -358,7 +365,7 @@ ax11.set_ylabel(r'Flux difference, $(mm/s)$')
 ax11.set_xlabel('Date')
 plt.show()
 #%%
-df5 = df_storage.resample('D').mean().fillna(method='ffill')
+df5 = df_day.resample('D').mean().fillna(method='ffill')
 #df5['hour'] = np.arange(0, len(df5), 1)
 #%%
 fig5, ax5 = plt.subplots(figsize=(6,4))
@@ -403,16 +410,16 @@ plt.tight_layout()
 plt.show()
 #%%
 #Subset data by water year
-yr_1 = df_storage.Hs_out['2018-10-01':'2019-09-30'].sum()
-yr_2 = df_storage.Hs_out['2019-10-01':'2020-09-30'].sum()
-yr_3 = df_storage.Hs_out['2020-10-01':'2021-09-30'].sum()
-yr_4 = df_storage.Hs_out['2021-10-01':'2022-09-30'].sum()
-yr_5 = df_storage.Hs_out['2022-10-01':'2023-09-30'].sum()
-yr_6 = df_storage.Hs_out['2023-10-01':'2024-09-30'].sum()
-yr_7 = df_storage.Hs_out['2024-10-01':'2025-09-30'].sum()
-yr_8 = df_storage.Hs_out['2025-10-01':'2026-09-30'].sum()
-yr_9 = df_storage.Hs_out['2026-10-01':'2027-09-30'].sum()
-yr_10 = df_storage.Hs_out['2027-10-01':'2028-09-30'].sum()
+yr_1 = df_day.Hs_out['2018-10-01':'2019-09-30'].sum()
+yr_2 = df_day.Hs_out['2019-10-01':'2020-09-30'].sum()
+yr_3 = df_day.Hs_out['2020-10-01':'2021-09-30'].sum()
+yr_4 = df_day.Hs_out['2021-10-01':'2022-09-30'].sum()
+yr_5 = df_day.Hs_out['2022-10-01':'2023-09-30'].sum()
+yr_6 = df_day.Hs_out['2023-10-01':'2024-09-30'].sum()
+yr_7 = df_day.Hs_out['2024-10-01':'2025-09-30'].sum()
+yr_8 = df_day.Hs_out['2025-10-01':'2026-09-30'].sum()
+yr_9 = df_day.Hs_out['2026-10-01':'2027-09-30'].sum()
+yr_10 = df_day.Hs_out['2027-10-01':'2028-09-30'].sum()
 
 
 
@@ -433,12 +440,12 @@ plt.tight_layout()
 #plt.savefig(r'C:\Users\Amanda\Desktop\AnnualYield_New.png', dpi=300)
 plt.show()
 #%%
-sed_sum_m2 = df_storage.Hs_out.sum()
+sed_sum_m2 = df_day.Hs_out.sum()
 sed_sum_kg_m = sed_sum_m2*rho_s*L
 round(sed_sum_kg_m)
 #%%
-s = (df_storage.S_s[0]-df_storage.S_s[len(df_storage)-1])
-b = (df_storage.S_b[0]-df_storage.S_b[len(df_storage)-1])
-f = (df_storage.S_f[0]-df_storage.S_f[len(df_storage)-1])
+s = (df_day.S_s[0]-df_day.S_s[len(df_day)-1])
+b = (df_day.S_b[0]-df_day.S_b[len(df_day)-1])
+f = (df_day.S_f[0]-df_day.S_f[len(df_day)-1])
 
 round((s+b+f)*rho_s*L)
