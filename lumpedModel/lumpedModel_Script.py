@@ -116,10 +116,10 @@ f_bf = 0.20
 f_br = 0.80
 
 #The following four constants can be adjusted based on observations
-kas = 1.37e-8 #crushing constant... value is easily changeable
-kab = 1.0e-8
+kas = 1.37e-6 #crushing constant... value is easily changeable
+kab = 1.0e-7
 u_p = 4.69e-6 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
-u_f = 2.345e-6 #m
+u_f = 2.345e-5 #m
 e = 0.20 #[-] fraction of coarse material
 #%%
 df_storage = pd.DataFrame()
@@ -149,7 +149,7 @@ shear_stress = np.zeros(len(df))
 f_s = np.zeros(len(df))
 n_c = np.zeros(len(df))
 n_t = np.zeros(len(df))
-Z_taf = np.zeros(len(df))
+#Z_taf = np.zeros(len(df))
 
 n_tp = df.truck_pass.to_numpy()
 t = df.delta_t.to_numpy()
@@ -193,7 +193,15 @@ for i in range(1, len(df)):
     S_s[i] = S_sc[i] + S_sf[i]
     S_b[i] = S_bc[i] + S_bf[i]
     
-    S_f[i] = (S_f[i-1] + q_f1[i]*(t[i]*3600.))/(1-e)
+    if d95 >= S_f[i-1]:
+        #Let's try using an Sf_init variable because when sediment is added to
+        # TAF, that doesn't change the final S_f value, but it does affect how
+        # the sediment is transported!
+        sed_added[i] = (q_f1[i]*(t[i]*3600.))/(1-e)
+        S_f[i] = S_f[i-1] + sed_added[i]
+    else:
+        sed_added[i] = q_f1[i]*(t[i]*3600.)
+        S_f[i] = d95*(1-e) + sed_added[i]
     
     if d95 > S_f[i]:
         k_s[i] = d95 - S_f[i]
@@ -219,8 +227,7 @@ for i in range(1, len(df)):
     else:
         q_s[i] = 0
 
-    #Create a condition column based on sediment transport capacity vs sediment supply
-    sed_added[i] = q_f1[i]*(t[i]*3600.)
+    #Create a condition column based on sediment transport capacity vs sediment supply     
     sed_cap[i] = q_s[i]*(t_storm[i]*3600.)
     value[i] = (sed_added[i]-sed_cap[i])
         
@@ -240,7 +247,7 @@ df_storage['n_t'] = n_t
 df_storage['ks'] = k_s
 df_storage['water_depth'] = H
 df_storage['shear_stress'] = shear_stress
-df_storage['Z_taf'] = Z_taf
+#df_storage['Z_taf'] = Z_taf
 df_storage['f_s'] = f_s
 df_storage['q_s'] = q_s
 df_storage['qf1'] = q_f1
@@ -260,16 +267,6 @@ df_storage['val'] = value
 
 #%%
 df_storage.plot(x= 'S_f', y = 'f_s')
-#%%
-
-plt.figure(figsize=(6,4))
-
-_= df_storage.Z_taf.plot()
-
-plt.xlabel('Date')
-plt.ylabel(r'$Z_{taf}$')
-plt.tight_layout()
-#plt.savefig(r'C:\Users\Amanda\Desktop\New_SSP.png', dpi=300)
 
 #%%
 plt.figure(figsize=(6,4))
