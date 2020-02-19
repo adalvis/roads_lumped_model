@@ -118,8 +118,8 @@ f_br = 0.80
 #The following four constants can be adjusted based on observations
 kas = 1.37e-6 #crushing constant... value is easily changeable
 kab = 1.0e-6
-u_p = 4.69e-5 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
-u_f = 2.345e-5 #m
+u_p = 4.69e-6 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
+u_f = 2.345e-6 #m
 e = 0.20 #[-] fraction of coarse material
 #%%
 df_storage = pd.DataFrame()
@@ -141,7 +141,6 @@ S_bc = np.zeros(len(df))
 S_bf = np.zeros(len(df))
 Hs_out = np.zeros(len(df))
 q_s = np.zeros(len(df))
-h_f = np.zeros(len(df))
 k_s = np.zeros(len(df))
 H = np.zeros(len(df))
 tau = np.zeros(len(df))
@@ -165,8 +164,8 @@ sed_cap = np.zeros(len(df))
 value = np.zeros(len(df))
 
 #Initial conditions for fines, surfacing, ballast
-h_f[0] = 0
-n_c[0] = 0.0475*(d95-h_f[0])**(1/6)
+S_f_init[0] = 0
+n_c[0] = 0.0475*(d95-S_f_init[0])**(1/6)
 n_t[0] = n_f+n_c[0]
 f_s[0] = (n_f/n_t[0])**(1.5)
 S_f[0] = 0
@@ -226,7 +225,7 @@ for i in range(1, len(df)):
     #Calculate sediment transport rate
     if (shear_stress[i]-tau_c) >= 0:
         q_s[i] = ((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
-                 (tau[i]-tau_c)**(2.457)/L
+                 (shear_stress[i]-tau_c)**(2.457)/L
     else:
         q_s[i] = 0
 
@@ -269,7 +268,7 @@ df_storage['sed_cap'] = sed_cap
 df_storage['val'] = value
 
 #%%
-df_storage.plot(x= 'S_f_init', y = 'f_s')
+df_storage.plot(x= 'S_f', y = 'f_s')
 
 #%%
 plt.figure(figsize=(6,4))
