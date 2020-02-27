@@ -1,7 +1,7 @@
 """
 Author: Amanda Manaster
 Date: 02/26/2020
-Purpose:
+Purpose: Lumped model of road prism forced using PNNL hourly rainfall data.
 """
 
 import numpy as np
