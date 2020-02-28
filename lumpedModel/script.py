@@ -17,12 +17,20 @@ ax.tick_params('x', length=2, which='minor')
 ax.tick_params('both', bottom=True, top=True, left=True, right=True, which='both')
 ax.set_xticklabels([x.strftime('%Y') for x in xticks])
 
-ax.set_xlim(pd.Timestamp('1981'), pd.Timestamp('2016'))
-plt.ylim(-0.5, 18.0)
+ax.set_xlim(pd.Timestamp('1981'), pd.Timestamp('1982'))
+#plt.ylim(-0.5, 18.0)
 plt.xlabel('Year')
 plt.ylabel('Rainfall depth (mm)')
 
 plt.text(0.6875, 0.925 , r'Location = (46.162$\degree$N, 122.61$\degree$W)',\
          bbox=dict(facecolor='white', edgecolor='lightgray'), transform=ax.transAxes)
 plt.tight_layout()
-plt.savefig(r'C:\Users\Amanda\Desktop\ESS519_Figure.svg')
+#plt.savefig(r'C:\Users\Amanda\Desktop\ESS519_Figure.svg')
+
+#%%
+
+minTb = 3 #hours
+
+staOne = pnnl_precip.iloc[:,0]
+
+test1 = staOne[staOne.iloc[:] == 0]
