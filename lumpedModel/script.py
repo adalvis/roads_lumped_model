@@ -26,22 +26,18 @@ for (i, entry) in enumerate(df.values):
         
         
 storm_index = np.empty(len(df))
-storm_index[:] = np.nan
+storm_index[:] = None
 storm_no = 0
 
 for (j, val) in enumerate(hours_since_rain):
     if val == 0:
         storm_index[j] = storm_no
     elif val == 3:
-        storm_no +=1
-        
-# for (j, row) in enumerate(storm_index):
-#     if storm_index[j] == np.nan and storm_index[j-1] != np.nan and storm_index[j+1] != np.nan:
-#         storm_index[j] = storm_no
-#     elif storm_index[j] == np.nan and storm_index[j-1] == np.nan and storm_index[j-2] != np.nan and storm_index[j+1] != np.nan:
-#         storm_index[j] = storm_no
-#     elif storm_index[j] == np.nan and storm_index[j+1] == np.nan and storm_index[j+2] != np.nan and storm_index[j-1] != np.nan:
-#         storm_index[j] = storm_no
+        storm_no += 1
+    elif val == 1:
+        storm_index[j] = storm_no if hours_since_rain[j+2] != 3 else None
+    elif val == 2:
+        storm_index[j] = storm_no if hours_since_rain[j+1] != 3 else None
 #%%
 # fig, ax = plt.subplots(figsize=(9,4))
 # xticks = pd.date_range(datetime.datetime(1981,1,1), datetime.datetime(2016,1,1), freq='5YS')
