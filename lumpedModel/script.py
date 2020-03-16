@@ -38,6 +38,14 @@ for (j, val) in enumerate(hours_since_rain):
         storm_index[j] = storm_no if hours_since_rain[j+2] != 3 else None
     elif val == 2:
         storm_index[j] = storm_no if hours_since_rain[j+1] != 3 else None
+        
+#%%
+storm_df = pd.DataFrame(data= df.Station_1)
+storm_df['hours_since_rain'] = hours_since_rain
+storm_df['storm_index'] = storm_index
+
+new = storm_df.fillna(-1).groupby('storm_index', as_index=False).sum()
+new.plot(y ='Station_1')
 #%%
 # fig, ax = plt.subplots(figsize=(9,4))
 # xticks = pd.date_range(datetime.datetime(1981,1,1), datetime.datetime(2016,1,1), freq='5YS')
@@ -54,6 +62,6 @@ for (j, val) in enumerate(hours_since_rain):
 # plt.ylabel('Rainfall depth (mm)')
 
 # plt.text(0.6875, 0.925 , r'Location = (46.162$\degree$N, 122.61$\degree$W)',\
-#          bbox=dict(facecolor='white', edgecolor='lightgray'), transform=ax.transAxes)
+#           bbox=dict(facecolor='white', edgecolor='lightgray'), transform=ax.transAxes)
 # plt.tight_layout()
 # #plt.savefig(r'C:\Users\Amanda\Desktop\ESS519_Figure.svg')
