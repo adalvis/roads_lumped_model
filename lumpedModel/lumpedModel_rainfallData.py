@@ -1,6 +1,6 @@
 """
 Author: Amanda Manaster
-Date: 02/26/2020
+Date: 03/16/2020
 Purpose: Lumped model of road prism forced using PNNL hourly rainfall data.
 """
 
@@ -8,23 +8,64 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime, timedelta
+#%%
+minTb = 3 #hours; threshold for determining an interstorm time period
+
+data = pd.read_pickle(r"C:\Users\Amanda\Documents\volcanic_data.pkl")
+pnnl_precip = data['PREC_ACC_NC_hourlywrf_pnnl']
+
+staOne = pnnl_precip.iloc[:,0] #Get data for one station only
+
+df = staOne.to_frame(name = 'stationOne')
+no_rain = df.iloc[4,:]
+t0 = df.index[0]
+deltaT = datetime.timedelta(hours=1)
 
 #%%
-storm_depth = []
-rainfall_rate = []
+hours_since_rain = np.zeros(len(df))
+
+for (i, entry) in enumerate(df.values):
+    if entry == 0 and i != 0:
+        hours_since_rain[i] = hours_since_rain[i-1] + 1
+        
+        
+storm_index = np.empty(len(df))
+storm_index[:] = None
+storm_no = 0
+
+for (j, val) in enumerate(hours_since_rain):
+    if val == 0:
+        storm_index[j] = storm_no
+    elif val == 3:
+        storm_no += 1
+    elif val == 1:
+        storm_index[j] = storm_no if hours_since_rain[j+2] != 3 else None
+    elif val == 2:
+        storm_index[j] = storm_no if hours_since_rain[j+1] != 3 else None
+        
+#%%
+df['stormNo'] = storm_index
+df['stormDepth'] = df.groupby('stormNo')['stationOne'].transform('sum')
+df['stormDuration'] = df.groupby('stormNo')['stationOne'].transform('count')
+df['stormIntensity'] = df.stormDepth/df.stormDuration
+
+df.fillna(0, inplace=True)
+
+#%%
+storm_depth = df.stormDepth
+rainfall_rate = df.stormIntensity
+storm_length = df.stormDuration
 delta_t = []
-storm_length = []
 truck_pass = []
 total_t = []
 
-model_end = 87600 #20 yrs = 175200 hrs; 10 yrs = 87600 hrs
+model_end = len(df) #20 yrs = 175200 hrs; 10 yrs = 87600 hrs
 
 #%%
 np.random.seed(1) #Use seed to ensure consistent results with each run
 time = 0 #model time; initial
 T_b = 0  #average inter-storm duration; initial
 T_r = 0  #average storm duration; initial
-r = 0    #average intensity; initial
 
 while time < model_end:
     truck = 0
@@ -42,17 +83,11 @@ while time < model_end:
         frac_day = time_step/24 - int(time_step/24)
         truck = round(np.random.randint(0,10)*frac_day)
     
-    storm_length.append(T_r)             #length of storm
-    storm_depth.append(r*T_r)            #depth of storm
-    rainfall_rate.append(r)              #rate of rainfall
+    #What is the delta_t???????
     delta_t.append(time_step)            #length of each time step; variable
     total_t.append(time)                 #model time
     truck_pass.append(truck)             #number of truck passes
-    
-    T_b = np.random.exponential(90.5)    #average inter-storm duration, hr
-    T_r = np.random.exponential(2.705/2) #average storm duration, hr
-    r = np.random.exponential(8)         #average intensity, mm/hr
-    
+       
     time += T_b+T_r
 #%%
 df = pd.DataFrame() #Create dataframe
