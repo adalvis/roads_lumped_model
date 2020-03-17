@@ -12,7 +12,7 @@ pnnl_precip = data['PREC_ACC_NC_hourlywrf_pnnl']
 
 staOne = pnnl_precip.iloc[:,0] #Get data for one station only
 
-df = staOne.to_frame(name = 'Station_1')
+df = staOne.to_frame(name = 'stationOne')
 no_rain = df.iloc[4,:]
 t0 = df.index[0]
 deltaT = datetime.timedelta(hours=1)
@@ -40,28 +40,51 @@ for (j, val) in enumerate(hours_since_rain):
         storm_index[j] = storm_no if hours_since_rain[j+1] != 3 else None
         
 #%%
-storm_df = pd.DataFrame(data= df.Station_1)
-storm_df['hours_since_rain'] = hours_since_rain
-storm_df['storm_index'] = storm_index
+df['stormNo'] = storm_index
+df['stormDepth'] = df.groupby('stormNo')['stationOne'].transform('sum')
+df['stormDuration'] = df.groupby('stormNo')['stationOne'].transform('count')
+df['stormIntensity'] = df.stormDepth/df.stormDuration
 
-new = storm_df.fillna(-1).groupby('storm_index', as_index=False).sum()
-new.plot(y ='Station_1')
+df.fillna(0, inplace=True)
+
 #%%
-# fig, ax = plt.subplots(figsize=(9,4))
-# xticks = pd.date_range(datetime.datetime(1981,1,1), datetime.datetime(2016,1,1), freq='5YS')
-# staOne.iloc[:].plot(ax=ax, color ='navy', linewidth =0.75, xticks=xticks.to_pydatetime())
+fig1, ax1 = plt.subplots(figsize=(9,4))
+xticks1 = pd.date_range(datetime.datetime(1981,1,1), datetime.datetime(2016,1,1), freq='5YS')
+df.stormDepth.plot(ax=ax1, color='magenta', linewidth=0.75, xticks=xticks1.to_pydatetime())
 
-# ax.tick_params('x', length=5, which='major')
-# ax.tick_params('x', length=2, which='minor')
-# ax.tick_params('both', bottom=True, top=True, left=True, right=True, which='both')
-# ax.set_xticklabels([x.strftime('%Y') for x in xticks])
+ax1.tick_params('x', length=5, which='major')
+ax1.tick_params('x', length=2, which='minor')
+ax1.tick_params('both', bottom=True, top=True, left=True, right=True, which='both')
+ax1.set_xticklabels([x.strftime('%Y') for x in xticks1])
 
-# ax.set_xlim(pd.Timestamp('1981'), pd.Timestamp('2016'))
-# plt.ylim(-0.5, 18.0)
-# plt.xlabel('Year')
-# plt.ylabel('Rainfall depth (mm)')
+ax1.set_xlim(pd.Timestamp('1981'), pd.Timestamp('2016'))
+plt.ylim(-0.5, 500)
+plt.xlabel('Year')
+plt.ylabel('Rainfall depth (mm)')
+plt.title('Per storm rainfall depth over 35 years', fontweight='bold')
 
-# plt.text(0.6875, 0.925 , r'Location = (46.162$\degree$N, 122.61$\degree$W)',\
-#           bbox=dict(facecolor='white', edgecolor='lightgray'), transform=ax.transAxes)
-# plt.tight_layout()
+plt.text(0.6875, 0.925 , r'Location = (46.162$\degree$N, 122.61$\degree$W)',\
+          bbox=dict(facecolor='white', edgecolor='lightgray'), transform=ax1.transAxes)
+plt.tight_layout()
+
+
+#%%
+fig2, ax2 = plt.subplots(figsize=(9,4))
+xticks2 = pd.date_range(datetime.datetime(1981,1,1), datetime.datetime(2016,1,1), freq='5YS')
+staOne.iloc[:].plot(ax=ax2, color ='navy', linewidth =0.75, xticks=xticks2.to_pydatetime())
+
+ax2.tick_params('x', length=5, which='major')
+ax2.tick_params('x', length=2, which='minor')
+ax2.tick_params('both', bottom=True, top=True, left=True, right=True, which='both')
+ax2.set_xticklabels([x.strftime('%Y') for x in xticks2])
+
+ax2.set_xlim(pd.Timestamp('1981'), pd.Timestamp('2016'))
+plt.ylim(-0.5, 18.0)
+plt.xlabel('Year')
+plt.ylabel('Rainfall depth (mm)')
+plt.title('Per hour rainfall depth over 35 years', fontweight='bold')
+
+plt.text(0.6875, 0.925 , r'Location = (46.162$\degree$N, 122.61$\degree$W)',\
+          bbox=dict(facecolor='white', edgecolor='lightgray'), transform=ax2.transAxes)
+plt.tight_layout()
 # #plt.savefig(r'C:\Users\Amanda\Desktop\ESS519_Figure.svg')
