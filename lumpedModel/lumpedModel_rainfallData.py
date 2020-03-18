@@ -19,7 +19,7 @@ staOne = pnnl_precip.iloc[:,0] #Get data for one station only
 df = staOne.to_frame(name = 'stationOne')
 no_rain = df.iloc[4,:]
 t0 = df.index[0]
-deltaT = datetime.timedelta(hours=1)
+deltaT = timedelta(hours=1)
 
 #%%
 hours_since_rain = np.zeros(len(df))
@@ -32,78 +32,82 @@ for (i, entry) in enumerate(df.values):
 storm_index = np.empty(len(df))
 storm_index[:] = None
 storm_no = 0
+total = np.zeros(len(df))
+
 
 for (j, val) in enumerate(hours_since_rain):
     if val == 0:
         storm_index[j] = storm_no
+        total[j] = storm_no
     elif val == 3:
         storm_no += 1
+        total[j] = storm_no - 1
     elif val == 1:
         storm_index[j] = storm_no if hours_since_rain[j+2] != 3 else None
+        total[j] = storm_no
     elif val == 2:
         storm_index[j] = storm_no if hours_since_rain[j+1] != 3 else None
+        total[j] = storm_no
+    else:
+        storm_index[j] = None
+        total[j] = storm_no-1 if hours_since_rain[j] >= 3 else storm_no
         
 #%%
 df['stormNo'] = storm_index
+df['totalNo'] = total
 df['stormDepth'] = df.groupby('stormNo')['stationOne'].transform('sum')
 df['stormDuration'] = df.groupby('stormNo')['stationOne'].transform('count')
 df['stormIntensity'] = df.stormDepth/df.stormDuration
-
-df.fillna(0, inplace=True)
+df['timeStep'] = df.groupby('totalNo')['totalNo'].transform('count')
 
 #%%
-storm_depth = df.stormDepth
-rainfall_rate = df.stormIntensity
-storm_length = df.stormDuration
-delta_t = []
+timeStep = df.groupby('totalNo')['totalNo'].count().to_numpy()
+stormDepth = df.groupby('stormNo')['stationOne'].sum().to_numpy()
+stormDuration = df.groupby('stormNo')['stationOne'].count().to_numpy()
+stormIntensity = stormDepth/stormDuration
+
+
+#%%
+delta_t = timeStep
+total_t = np.cumsum(delta_t)
+
 truck_pass = []
-total_t = []
-
-model_end = len(df) #20 yrs = 175200 hrs; 10 yrs = 87600 hrs
-
 #%%
 np.random.seed(1) #Use seed to ensure consistent results with each run
-time = 0 #model time; initial
-T_b = 0  #average inter-storm duration; initial
-T_r = 0  #average storm duration; initial
 
-while time < model_end:
+for i, time in enumerate(timeStep):
     truck = 0
-    time_step = T_b+T_r
-    
-    if time_step/24 >= 1:
-        day = int(time_step/24)
-        frac_day = time_step/24 - int(time_step/24)
+
+    if time/24 >= 1:
+        day = int(time/24)
+        frac_day = time/24 - int(time/24)
         
         for num in range(day):
             truck += np.random.randint(0,10)
             
         truck += round(np.random.randint(0,10)*frac_day)
     else:
-        frac_day = time_step/24 - int(time_step/24)
+        frac_day = time/24 - int(time/24)
         truck = round(np.random.randint(0,10)*frac_day)
-    
-    #What is the delta_t???????
-    delta_t.append(time_step)            #length of each time step; variable
-    total_t.append(time)                 #model time
+
     truck_pass.append(truck)             #number of truck passes
-       
-    time += T_b+T_r
 #%%
-df = pd.DataFrame() #Create dataframe
+df_storm = pd.DataFrame() #Create dataframe
 
-df['time'] = total_t
-df['delta_t'] = delta_t
-df['day'] = np.divide(total_t,24).astype('int64')
-df['storm_depth'] = storm_depth
-df['rainfall_rate'] = rainfall_rate
-df['storm_length'] = storm_length
-df['truck_pass'] = truck_pass
+df_storm['time'] = total_t
+df_storm['delta_t'] = delta_t
+df_storm['day'] = np.divide(total_t,24).astype('int64')
+df_storm['storm_depth'] = stormDepth
+df_storm['rainfall_rate'] = stormIntensity
+df_storm['storm_length'] = stormDuration
+df_storm['truck_pass'] = truck_pass
 
-day0 = datetime(2018, 10, 1)
-df.set_index(pd.DatetimeIndex([day0+timedelta(hours=time) for time in df.time]), inplace=True)
+
 #%%
-df_day = df.resample('D').sum().fillna(0)
+day0 = datetime(1981, 10, 1)
+df_storm.set_index(pd.DatetimeIndex([day0+timedelta(hours=time) for time in df_storm.time]), inplace=True)
+#%%
+df_day = df_storm.resample('D').sum().fillna(0)
 df_day.truck_pass = df_day.truck_pass.round()
 df_day['day'] = np.arange(0, len(df_day), 1)
 #%%
@@ -122,13 +126,13 @@ df_day['day'] = np.arange(0, len(df_day), 1)
 # ax1.invert_yaxis()
 # ax1.grid(False)
 
-#fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
-#ax.set_xticks(np.arange(0,366*2*len(ticklabels),366*2))
-#ax.set_xticklabels(ticklabels, rotation=45)
-#plt.tight_layout()
-##plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
-#
-#plt.show()
+# fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
+# ax.set_xticks(np.arange(0,366*2*len(ticklabels),366*2))
+# ax.set_xticklabels(ticklabels, rotation=45)
+# plt.tight_layout()
+# #plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
+
+# plt.show()
 #%%
 #Define constants
 L = 4.57 #representative segment of road, m
@@ -136,9 +140,9 @@ rho_w = 1000 #kg/m^3
 rho_s = 2650 #kg/m^3
 g = 9.81 #m/s^2
 S = 0.0825 #m/m; 8% long slope, 2% lat slope
-tau_c = 0.01 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
+tau_c = 0.04 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
 d50 = 6.25e-5 #m
-d95 = 0.055 #m
+d95 = 0.015 #m
 n_f = 0.0475*(d50)**(1/6) #approx Manning's n total
 #%%
 #define constants
@@ -161,45 +165,45 @@ df_storage = pd.DataFrame()
 
 df_storage['time'] = total_t
 df_storage['day'] = np.divide(total_t,24).astype('int64')
-day0 = datetime(2018, 10, 1)
+day0 = datetime(1981, 10, 1)
 df_storage.set_index(pd.DatetimeIndex([day0+timedelta(hours=time) for time in df_storage.time]), inplace=True)
 #%%
 #Step 1!
 #Initialize numpy arrays for calculations
-dS_f = np.zeros(len(df))
-S_f = np.zeros(len(df))
-S_s = np.zeros(len(df))
-S_sc = np.zeros(len(df))
-S_sf = np.zeros(len(df))
-S_b = np.zeros(len(df))
-S_bc = np.zeros(len(df))
-S_bf = np.zeros(len(df))
-Hs_out = np.zeros(len(df))
-q_s = np.zeros(len(df))
-k_s = np.zeros(len(df))
-H = np.zeros(len(df))
-tau = np.zeros(len(df))
-shear_stress = np.zeros(len(df))
-f_s = np.zeros(len(df))
-n_c = np.zeros(len(df))
-n_t = np.zeros(len(df))
-S_f_init = np.zeros(len(df))
+dS_f = np.zeros(len(df_storm))
+S_f = np.zeros(len(df_storm))
+S_s = np.zeros(len(df_storm))
+S_sc = np.zeros(len(df_storm))
+S_sf = np.zeros(len(df_storm))
+S_b = np.zeros(len(df_storm))
+S_bc = np.zeros(len(df_storm))
+S_bf = np.zeros(len(df_storm))
+Hs_out = np.zeros(len(df_storm))
+q_s = np.zeros(len(df_storm))
+k_s = np.zeros(len(df_storm))
+H = np.zeros(len(df_storm))
+tau = np.zeros(len(df_storm))
+shear_stress = np.zeros(len(df_storm))
+f_s = np.zeros(len(df_storm))
+n_c = np.zeros(len(df_storm))
+n_t = np.zeros(len(df_storm))
+S_f_init = np.zeros(len(df_storm))
 
-n_tp = df.truck_pass.to_numpy()
-t = df.delta_t.to_numpy()
-t_storm = df.storm_length.to_numpy()
-rainfall = df.rainfall_rate.to_numpy()
+n_tp = df_storm.truck_pass.to_numpy()
+t = df_storm.delta_t.to_numpy()
+t_storm = df_storm.storm_length.to_numpy()
+rainfall = df_storm.rainfall_rate.to_numpy()
 
-q_f1 = np.zeros(len(df))
-q_f2 = np.zeros(len(df))
-q_as = np.zeros(len(df))
-q_ab = np.zeros(len(df))
-sed_added = np.zeros(len(df))
-sed_cap = np.zeros(len(df))
-value = np.zeros(len(df))
+q_f1 = np.zeros(len(df_storm))
+q_f2 = np.zeros(len(df_storm))
+q_as = np.zeros(len(df_storm))
+q_ab = np.zeros(len(df_storm))
+sed_added = np.zeros(len(df_storm))
+sed_cap = np.zeros(len(df_storm))
+value = np.zeros(len(df_storm))
 
 #Initial conditions for fines, surfacing, ballast
-S_f_init[0] = 0
+S_f_init[0] = 0.00825
 n_c[0] = 0.0475*(d95-S_f_init[0])**(1/6)
 n_t[0] = n_f+n_c[0]
 f_s[0] = (n_f/n_t[0])**(1.5)
@@ -213,7 +217,7 @@ S_bc[0] = h_b*(f_br)
 S_bf[0] = h_b*(f_bf)
 #%% 
 #Step 2!
-for i in range(1, len(df)):
+for i in range(1, len(df_storm)):
     q_f1[i] = u_p*(S_sf[i-1]/S_s[i-1])*n_tp[i]/(t[i]*3600)
     q_f2[i] = u_f*(S_bf[i-1]/S_b[i-1])*n_tp[i]/(t[i]*3600)
     q_as[i] = kas*(S_sc[i-1]/S_s[i-1])*n_tp[i]/(t[i]*3600)
@@ -276,10 +280,10 @@ for i in range(1, len(df)):
         Hs_out[i] = sed_cap[i]
         dS_f[i] = sed_added[i] - Hs_out[i]
 
-    S_f[i] = S_f_init[i] - Hs_out[i] #if (S_f_init[i] - Hs_out[i]) > 0 else 0
+    S_f[i] = S_f[i-1] + dS_f[i] #if (S_f_init[i] - Hs_out[i]) > 0 else 0
     
 #Add all numpy arrays to the Pandas dataframe
-df['q_s'] = q_s
+df_storage['q_s'] = q_s
 df_storage['n_t'] = n_t
 df_storage['ks'] = k_s
 df_storage['water_depth'] = H
@@ -303,7 +307,7 @@ df_storage['sed_cap'] = sed_cap
 df_storage['val'] = value
 
 #%%
-df_storage.plot(x= 'S_f', y = 'f_s')
+df_storage.plot(x= 'S_f_init', y = 'f_s')
 
 #%%
 plt.figure(figsize=(6,4))
@@ -318,7 +322,7 @@ plt.tight_layout()
 f_s.max()
 #%%
 #Resample to daily data again
-df_day_sed = df.resample('D').sum().fillna(0)
+df_day_sed = df_storage.resample('D').sum().fillna(0)
 df_day_sed['day'] = np.arange(0, len(df_day_sed), 1)
 
 #Plot sediment transport rates over time
@@ -437,35 +441,35 @@ plt.tight_layout()
 plt.show()
 #%%
 #Subset data by water year
-yr_1 = df_storage.Hs_out['2018-10-01':'2019-09-30'].sum()
-yr_2 = df_storage.Hs_out['2019-10-01':'2020-09-30'].sum()
-yr_3 = df_storage.Hs_out['2020-10-01':'2021-09-30'].sum()
-yr_4 = df_storage.Hs_out['2021-10-01':'2022-09-30'].sum()
-yr_5 = df_storage.Hs_out['2022-10-01':'2023-09-30'].sum()
-yr_6 = df_storage.Hs_out['2023-10-01':'2024-09-30'].sum()
-yr_7 = df_storage.Hs_out['2024-10-01':'2025-09-30'].sum()
-yr_8 = df_storage.Hs_out['2025-10-01':'2026-09-30'].sum()
-yr_9 = df_storage.Hs_out['2026-10-01':'2027-09-30'].sum()
-yr_10 = df_storage.Hs_out['2027-10-01':'2028-09-30'].sum()
+# yr_1 = df_storage.Hs_out['2018-10-01':'2019-09-30'].sum()
+# yr_2 = df_storage.Hs_out['2019-10-01':'2020-09-30'].sum()
+# yr_3 = df_storage.Hs_out['2020-10-01':'2021-09-30'].sum()
+# yr_4 = df_storage.Hs_out['2021-10-01':'2022-09-30'].sum()
+# yr_5 = df_storage.Hs_out['2022-10-01':'2023-09-30'].sum()
+# yr_6 = df_storage.Hs_out['2023-10-01':'2024-09-30'].sum()
+# yr_7 = df_storage.Hs_out['2024-10-01':'2025-09-30'].sum()
+# yr_8 = df_storage.Hs_out['2025-10-01':'2026-09-30'].sum()
+# yr_9 = df_storage.Hs_out['2026-10-01':'2027-09-30'].sum()
+# yr_10 = df_storage.Hs_out['2027-10-01':'2028-09-30'].sum()
 
 
 
-#Multiply Hs_out
-sed_area = np.multiply([yr_1, yr_2, yr_3, yr_4, yr_5, yr_6, yr_7, \
-                        yr_8, yr_9, yr_10], L)
-sed_load = np.multiply(sed_area, rho_s)
-years = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028]
+# #Multiply Hs_out
+# sed_area = np.multiply([yr_1, yr_2, yr_3, yr_4, yr_5, yr_6, yr_7, \
+#                         yr_8, yr_9, yr_10], L)
+# sed_load = np.multiply(sed_area, rho_s)
+# years = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028]
 #%%
-ticks = years
-fig8, ax8 = plt.subplots(figsize=(6,4))
-plt.bar(years, sed_load, color = '#1d4f54')
-plt.xlabel('Water year', fontweight='bold', fontsize=14)
-plt.ylabel(r'Mass per meter of road $(kg/m)$', fontweight='bold', fontsize=14)
-#plt.title('Yearly sediment load per meter of road', fontweight='bold', fontsize=14)
-plt.xticks(range(ticks[0],ticks[len(ticks)-1]+1), ticks, rotation=45)
-plt.tight_layout()
-#plt.savefig(r'C:\Users\Amanda\Desktop\AnnualYield_New.png', dpi=300)
-plt.show()
+# ticks = years
+# fig8, ax8 = plt.subplots(figsize=(6,4))
+# plt.bar(years, sed_load, color = '#1d4f54')
+# plt.xlabel('Water year', fontweight='bold', fontsize=14)
+# plt.ylabel(r'Mass per meter of road $(kg/m)$', fontweight='bold', fontsize=14)
+# #plt.title('Yearly sediment load per meter of road', fontweight='bold', fontsize=14)
+# plt.xticks(range(ticks[0],ticks[len(ticks)-1]+1), ticks, rotation=45)
+# plt.tight_layout()
+# #plt.savefig(r'C:\Users\Amanda\Desktop\AnnualYield_New.png', dpi=300)
+# plt.show()
 #%%
 sed_sum_m2 = df_storage.Hs_out.sum()
 sed_sum_kg_m = sed_sum_m2*rho_s*L
@@ -475,4 +479,4 @@ s = (df_storage.S_s[0]-df_storage.S_s[len(df_storage)-1])
 b = (df_storage.S_b[0]-df_storage.S_b[len(df_storage)-1])
 f = (df_storage.S_f[0]-df_storage.S_f[len(df_storage)-1])
 
-round((s+b+f)*rho_s*L)
+print(round((s+b+f)*rho_s*L))
