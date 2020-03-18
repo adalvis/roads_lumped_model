@@ -28,24 +28,41 @@ for (i, entry) in enumerate(df.values):
 storm_index = np.empty(len(df))
 storm_index[:] = None
 storm_no = 0
+total = np.zeros(len(df))
+
 
 for (j, val) in enumerate(hours_since_rain):
     if val == 0:
         storm_index[j] = storm_no
+        total[j] = storm_no
     elif val == 3:
         storm_no += 1
+        total[j] = storm_no - 1
     elif val == 1:
         storm_index[j] = storm_no if hours_since_rain[j+2] != 3 else None
+        total[j] = storm_no
     elif val == 2:
         storm_index[j] = storm_no if hours_since_rain[j+1] != 3 else None
+        total[j] = storm_no
+    else:
+        storm_index[j] = None
+        total[j] = storm_no-1 if hours_since_rain[j] >= 3 else storm_no
         
 #%%
 df['stormNo'] = storm_index
+df['totalNo'] = total
 df['stormDepth'] = df.groupby('stormNo')['stationOne'].transform('sum')
 df['stormDuration'] = df.groupby('stormNo')['stationOne'].transform('count')
 df['stormIntensity'] = df.stormDepth/df.stormDuration
+df['timeStep'] = df.groupby('totalNo')['totalNo'].transform('count')
 
-df.fillna(0, inplace=True)
+#%%
+
+timeStep = df.groupby('totalNo')['totalNo'].count().to_numpy()
+stormDepth = df.groupby('stormNo')['stationOne'].sum().to_numpy()
+stormDuration = df.groupby('stormNo')['stationOne'].count().to_numpy()
+stormIntensity = stormDepth/stormDuration
+
 
 #%%
 fig1, ax1 = plt.subplots(figsize=(9,4))
