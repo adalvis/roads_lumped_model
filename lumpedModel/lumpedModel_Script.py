@@ -103,7 +103,7 @@ g = 9.81 #m/s^2
 S = 0.0825 #m/m; 8% long slope, 2% lat slope
 tau_c = 0.04 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
 d50 = 6.25e-5 #m
-d95 = 0.055 #m
+d95 = 0.015 #m
 n_f = 0.0475*(d50)**(1/6) #approx Manning's n total
 #%%
 #define constants
@@ -116,10 +116,10 @@ f_bf = 0.20
 f_br = 0.80
 
 #The following four constants can be adjusted based on observations
-kas = 1.37e-6 #crushing constant... value is easily changeable
+kas = 1.37e-7 #crushing constant... value is easily changeable
 kab = 1.0e-6
-u_p = 4.69e-6 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
-u_f = 2.345e-6 #m
+u_p = 4.69e-7 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
+u_f = 2.345e-7 #m
 e = 0.20 #[-] fraction of coarse material
 #%%
 df_storage = pd.DataFrame()
