@@ -56,6 +56,7 @@ df['stormDuration'] = df.groupby('stormNo')['stationOne'].transform('count')
 df['stormIntensity'] = df.stormDepth/df.stormDuration
 df['timeStep'] = df.groupby('totalNo')['totalNo'].transform('count')
 
+
 #%%
 
 timeStep = df.groupby('totalNo')['totalNo'].count().to_numpy()
@@ -63,7 +64,7 @@ stormDepth = df.groupby('stormNo')['stationOne'].sum().to_numpy()
 stormDuration = df.groupby('stormNo')['stationOne'].count().to_numpy()
 stormIntensity = stormDepth/stormDuration
 
-
+df.fillna(0, inplace=True)
 #%%
 fig1, ax1 = plt.subplots(figsize=(9,4))
 xticks1 = pd.date_range(datetime.datetime(1981,1,1), datetime.datetime(2016,1,1), freq='5YS')
