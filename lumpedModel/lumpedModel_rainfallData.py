@@ -142,7 +142,7 @@ g = 9.81 #m/s^2
 S = 0.0825 #m/m; 8% long slope, 2% lat slope
 tau_c = 0.04 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
 d50 = 6.25e-5 #m
-d95 = 0.015 #m
+d95 = 0.055 #m
 n_f = 0.0475*(d50)**(1/6) #approx Manning's n total
 #%%
 #define constants
@@ -159,7 +159,7 @@ kas = 1.37e-7 #crushing constant... value is easily changeable
 kab = 1.0e-6
 u_p = 4.69e-7 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 u_f = 2.345e-7 #m
-e = 0.20 #[-] fraction of coarse material
+e = 0.2 #[-] fraction of coarse material
 #%%
 df_storage = pd.DataFrame()
 
@@ -203,12 +203,11 @@ sed_cap = np.zeros(len(df_storm))
 value = np.zeros(len(df_storm))
 
 #Initial conditions for fines, surfacing, ballast
-S_f_init[0] = 0.00825
+S_f_init[0] = 0
 n_c[0] = 0.0475*(d95-S_f_init[0])**(1/6)
 n_t[0] = n_f+n_c[0]
 f_s[0] = (n_f/n_t[0])**(1.5)
 S_f[0] = 0
-S_f_init[0] = 0
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)

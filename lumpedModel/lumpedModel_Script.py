@@ -87,13 +87,13 @@ df_day['day'] = np.arange(0, len(df_day), 1)
 # ax1.invert_yaxis()
 # ax1.grid(False)
 
-#fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
-#ax.set_xticks(np.arange(0,366*2*len(ticklabels),366*2))
-#ax.set_xticklabels(ticklabels, rotation=45)
-#plt.tight_layout()
-##plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
-#
-#plt.show()
+# fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
+# ax.set_xticks(np.arange(0,366*2*len(ticklabels),366*2))
+# ax.set_xticklabels(ticklabels, rotation=45)
+# plt.tight_layout()
+# #plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
+
+# plt.show()
 #%%
 #Define constants
 L = 4.57 #representative segment of road, m
@@ -103,7 +103,7 @@ g = 9.81 #m/s^2
 S = 0.0825 #m/m; 8% long slope, 2% lat slope
 tau_c = 0.04 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
 d50 = 6.25e-5 #m
-d95 = 0.015 #m
+d95 = 0.055 #m
 n_f = 0.0475*(d50)**(1/6) #approx Manning's n total
 #%%
 #define constants
