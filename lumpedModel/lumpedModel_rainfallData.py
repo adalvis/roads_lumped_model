@@ -57,14 +57,14 @@ df['stormNo'] = storm_index
 df['totalNo'] = total
 df['stormDepth'] = df.groupby('stormNo')['stationOne'].transform('sum')
 df['stormDuration'] = df.groupby('stormNo')['stationOne'].transform('count')
-df['stormIntensity'] = df.stormDepth/df.stormDuration
+df['stormIntensity'] = df.stormDepth/(df.stormDuration)
 df['timeStep'] = df.groupby('totalNo')['totalNo'].transform('count')
 
 #%%
 timeStep = df.groupby('totalNo')['totalNo'].count().to_numpy()
 stormDepth = df.groupby('stormNo')['stationOne'].sum().to_numpy()
 stormDuration = df.groupby('stormNo')['stationOne'].count().to_numpy()
-stormIntensity = stormDepth/stormDuration
+stormIntensity = stormDepth/(stormDuration)
 
 
 #%%
@@ -111,28 +111,28 @@ df_day = df_storm.resample('D').sum().fillna(0)
 df_day.truck_pass = df_day.truck_pass.round()
 df_day['day'] = np.arange(0, len(df_day), 1)
 #%%
-# ticklabels = [item.strftime('%Y') for item in df_day.index[::366*2]]
+ticklabels = [item.strftime('%Y') for item in df_day.index[::366*2]]
 
-# fig, ax = plt.subplots(figsize=(13,5))
-# df_day.plot(y='truck_pass', ax=ax, color = '#8a0c80', legend=False, label='Truck passes', 
-#             kind='bar', width=7)
-# ax.set_xlabel('Date', fontsize=14, fontweight='bold')
-# ax.set_ylabel('Truck passes', fontsize=14, fontweight='bold')
-# ax.grid(False)
+fig, ax = plt.subplots(figsize=(13,5))
+df_day.plot(y='truck_pass', ax=ax, color = '#8a0c80', legend=False, label='Truck passes', 
+            kind='bar', width=7)
+ax.set_xlabel('Date', fontsize=14, fontweight='bold')
+ax.set_ylabel('Truck passes', fontsize=14, fontweight='bold')
+ax.grid(False)
 
-# ax1 = ax.twinx()
-# df_day.plot(y='storm_depth', ax=ax1, color='#0c3c8a', legend=False, label='Storm depth', kind='bar', width=7)
-# ax1.set_ylabel(r'Storm depth $(mm)$', fontsize=14, fontweight='bold')
-# ax1.invert_yaxis()
-# ax1.grid(False)
+ax1 = ax.twinx()
+df_day.plot(y='storm_depth', ax=ax1, color='#0c3c8a', legend=False, label='Storm depth', kind='bar', width=7)
+ax1.set_ylabel(r'Storm depth $(mm)$', fontsize=14, fontweight='bold')
+ax1.invert_yaxis()
+ax1.grid(False)
 
-# fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
-# ax.set_xticks(np.arange(0,366*2*len(ticklabels),366*2))
-# ax.set_xticklabels(ticklabels, rotation=45)
-# plt.tight_layout()
-# #plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
+fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
+ax.set_xticks(np.arange(0,366*2*len(ticklabels),366*2))
+ax.set_xticklabels(ticklabels, rotation=45)
+plt.tight_layout()
+#plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
 
-# plt.show()
+plt.show()
 #%%
 #Define constants
 L = 4.57 #representative segment of road, m
@@ -142,8 +142,8 @@ g = 9.81 #m/s^2
 S = 0.0825 #m/m; 8% long slope, 2% lat slope
 tau_c = 0.04 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.usgs.gov/sir/2008/5093/table7.html
 d50 = 6.25e-5 #m
-d95 = 0.055 #m
-n_f = 0.0475*(d50)**(1/6) #approx Manning's n total
+d95 = 0.0375 #m
+n_f = 0.03 #0.0475*(d50)**(1/6) #approx Manning's n total
 #%%
 #define constants
 h_s = 0.23
@@ -159,7 +159,7 @@ kas = 1.37e-7 #crushing constant... value is easily changeable
 kab = 1.0e-6
 u_p = 4.69e-7 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 u_f = 2.345e-7 #m
-e = 0.2 #[-] fraction of coarse material
+e = 0.725 #[-] fraction of coarse material
 #%%
 df_storage = pd.DataFrame()
 
@@ -204,7 +204,7 @@ value = np.zeros(len(df_storm))
 
 #Initial conditions for fines, surfacing, ballast
 S_f_init[0] = 0
-n_c[0] = 0.0475*(d95-S_f_init[0])**(1/6)
+n_c[0] = 0.035 #0.0475*(d95-S_f_init[0])**(1/6)
 n_t[0] = n_f+n_c[0]
 f_s[0] = (n_f/n_t[0])**(1.5)
 S_f[0] = 0
@@ -244,16 +244,16 @@ for i in range(1, len(df_storm)):
     
     if d95 > S_f_init[i]:
         k_s[i] = d95 - S_f_init[i]
-        n_c[i] = 0.0475*(k_s[i])**(1/6)
+        n_c[i] = 0.035 #0.0475*(k_s[i])**(1/6)
     else:
         n_c[i] = 0
     
-    n_t[i] = n_f+n_c[i]
+    n_t[i] = 0.06
     
     f_s[i] = (n_f/n_t[i])**(1.5)
         
     #Calculate water depth assuming uniform overland flow
-    H[i] = ((n_t[i]*(rainfall[i]/3.6e6)*L)/(S**(1/2)))**(3/5)
+    H[i] = ((n_t[i]*(rainfall[i]*2.77778e-7)*L)/(S**(1/2)))**(3/5)
     
     tau[i] = rho_w*g*H[i]*S
     
