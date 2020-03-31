@@ -111,28 +111,28 @@ df_day = df_storm.resample('D').sum().fillna(0)
 df_day.truck_pass = df_day.truck_pass.round()
 df_day['day'] = np.arange(0, len(df_day), 1)
 #%%
-ticklabels = [item.strftime('%Y') for item in df_day.index[::366*2]]
+# ticklabels = [item.strftime('%Y') for item in df_day.index[::366*2]]
 
-fig, ax = plt.subplots(figsize=(13,5))
-df_day.plot(y='truck_pass', ax=ax, color = '#8a0c80', legend=False, label='Truck passes', 
-            kind='bar', width=7)
-ax.set_xlabel('Date', fontsize=14, fontweight='bold')
-ax.set_ylabel('Truck passes', fontsize=14, fontweight='bold')
-ax.grid(False)
+# fig, ax = plt.subplots(figsize=(13,5))
+# df_day.plot(y='truck_pass', ax=ax, color = '#8a0c80', legend=False, label='Truck passes', 
+#             kind='bar', width=7)
+# ax.set_xlabel('Date', fontsize=14, fontweight='bold')
+# ax.set_ylabel('Truck passes', fontsize=14, fontweight='bold')
+# ax.grid(False)
 
-ax1 = ax.twinx()
-df_day.plot(y='storm_depth', ax=ax1, color='#0c3c8a', legend=False, label='Storm depth', kind='bar', width=7)
-ax1.set_ylabel(r'Storm depth $(mm)$', fontsize=14, fontweight='bold')
-ax1.invert_yaxis()
-ax1.grid(False)
+# ax1 = ax.twinx()
+# df_day.plot(y='storm_depth', ax=ax1, color='#0c3c8a', legend=False, label='Storm depth', kind='bar', width=7)
+# ax1.set_ylabel(r'Storm depth $(mm)$', fontsize=14, fontweight='bold')
+# ax1.invert_yaxis()
+# ax1.grid(False)
 
-fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
-ax.set_xticks(np.arange(0,366*2*len(ticklabels),366*2))
-ax.set_xticklabels(ticklabels, rotation=45)
-plt.tight_layout()
-#plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
+# fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
+# ax.set_xticks(np.arange(0,366*2*len(ticklabels),366*2))
+# ax.set_xticklabels(ticklabels, rotation=45)
+# plt.tight_layout()
+# #plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
 
-plt.show()
+# plt.show()
 #%%
 #Define constants
 L = 4.57 #representative segment of road, m

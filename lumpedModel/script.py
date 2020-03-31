@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
 import numpy as np
+from scipy.stats import expon
 
 
 minTb = 3 #hours; threshold for determining an interstorm time period
@@ -84,6 +85,7 @@ plt.title('Per storm rainfall depth over 35 years', fontweight='bold')
 plt.text(0.6875, 0.925 , r'Location = (46.162$\degree$N, 122.61$\degree$W)',\
           bbox=dict(facecolor='white', edgecolor='lightgray'), transform=ax1.transAxes)
 plt.tight_layout()
+plt.show()
 
 
 #%%
@@ -106,3 +108,76 @@ plt.text(0.6875, 0.925 , r'Location = (46.162$\degree$N, 122.61$\degree$W)',\
           bbox=dict(facecolor='white', edgecolor='lightgray'), transform=ax2.transAxes)
 plt.tight_layout()
 # #plt.savefig(r'C:\Users\Amanda\Desktop\ESS519_Figure.svg')
+plt.show()
+
+#%% Longest storm = 564 hrs; high intensity = 6.84 mm/hr
+
+df.stationOne[df.stormDuration == df.stormDuration.max()].plot()
+plt.title('Longest storm hyetograph')
+plt.show()
+
+df.stationOne[df.stormDuration == df.stormDuration.max()].hist(bins = 30)
+plt.title('Longest storm histogram')
+plt.show()
+
+
+#%% Highest intensity = 17 mm/hr; storm duration = 84 hr
+df.stationOne[df.stormNo == 1705.0].plot()
+plt.title('Highest instantaneous intensity storm hyetograph')
+plt.show()
+
+
+df.stationOne[df.stormNo == 1705.0].hist(bins=30, density= True)
+plt.xlabel('Rainfall (mm/hr)')
+plt.ylabel('Frequency')
+plt.title('Highest instantaneous intensity storm histogram')
+plt.show()
+
+
+Rnondim = np.linspace(0, 17, 30) #nondimensional x axis
+CF = expon.cdf(Rnondim, scale = 0.75) #cumulative probability of flows
+fig6, ax6 = plt.subplots()
+df.stationOne[df.stormNo == 1705.0].hist(bins=30, density=True, 
+                                         cumulative = True, ax=ax6)
+plt.plot(Rnondim,CF, '-')
+plt.xlabel('Rainfall (mm/hr)')
+plt.ylabel('Cumulative frequency')
+plt.title('Highest instantaneous intensity storm histogram')
+plt.show()
+
+
+
+#%%
+data = np.array(df.stationOne[df.stormNo == 1705.0])
+
+
+hist, edges = np.histogram(data, bins = 30)
+pdf = hist/len(data)
+cdf = 1- np.cumsum(hist[::-1])[::-1]/len(data)
+# plt.plot(cdf)
+plt.plot(edges[:-1], pdf)
+# plt.hist(data, bins = 30, density = True)
+
+#%%
+
+Rnondim = np.linspace(0, 20, 30) #nondimensional x axis
+CF = expon.cdf(Rnondim, scale = 0.75) #cumulative probability of flows
+plt.figure()
+plt.plot(Rnondim,CF,'-')
+plt.xlabel('Rainfall_n (-)') 
+plt.ylabel('Cumulative Probability')
+plt.show()
+
+Df = np.zeros(len(Rnondim))
+Df[0] = CF[0]
+
+for x in range(1, len(Rnondim)):
+    Df[x] = -CF[x-1]+CF[x]
+
+FDur = np.multiply(np.array([Df]).T, timeStep) #flow duration
+
+plt.figure()
+plt.plot(Rnondim,FDur,'-')
+#plt.hist(data, bins = 40)
+plt.xlabel('Rainfall_n (-)') 
+plt.ylabel('Storm Duration (hours)')
