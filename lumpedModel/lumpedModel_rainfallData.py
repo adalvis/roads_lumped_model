@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 #%%
 minTb = 3 #hours; threshold for determining an interstorm time period
 
-data = pd.read_pickle(r"C:\Users\Amanda\Documents\volcanic_data.pkl")
+data = pd.read_pickle('/mnt/c/Users/Amanda/Documents/volcanic_data.pkl')
 pnnl_precip = data['PREC_ACC_NC_hourlywrf_pnnl']
 
 staOne = pnnl_precip.iloc[:,0] #Get data for one station only
