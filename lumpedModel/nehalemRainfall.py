@@ -11,6 +11,13 @@ data.index = pd.to_datetime(data.index)
 
 df = data.resample('15min').sum().fillna(0)
 
+fig1, ax1 = plt.subplots()
+df.depth.plot(ax=ax1, color='navy', linewidth=0.75) 
+plt.xlabel('Date')
+plt.ylabel('Rainfall depth (in)')
+plt.title('Raw Nehalem data')
+plt.show()
+
 t0 = df.index[0]
 deltaT = datetime.timedelta(minutes=15)
 
@@ -29,9 +36,9 @@ Tb_flag = False
 
 total = np.zeros(len(df))
 
-#Loop through time since rain. j gives index, val gives the value at j
+# Loop through time since rain. j gives index, val gives the value at j
 for (j, val) in enumerate(time_since_rain):
-	#If val == 0 (i.e., there is rain at this time step) and Tb_flag has been set
+	# If val == 0 (i.e., there is rain at this time step) and Tb_flag has been set
 	# to true (i.e., a 12 has been spotted), give storm_index the value of
 	# storm_no for a range of rainStart to rainEnd+1 (because ranges aren't inclusive
 	# in list slicing). Then, increase storm_no by one, restart rainStart at j and
@@ -42,16 +49,16 @@ for (j, val) in enumerate(time_since_rain):
 		rainStart = j
 		rainEnd = j
 		Tb_flag = False
-	#If val == 0 (i.e., there is rain at this time step), make rainEnd equal to
+	# If val == 0 (i.e., there is rain at this time step), make rainEnd equal to
 	# this index
 	elif val == 0:
 		rainEnd = j
-	#If val == 12, set the Tb_flag to True (i.e., there has been enough time without
+	# If val == 12, set the Tb_flag to True (i.e., there has been enough time without
 	# rain for it to begin another storm
 	elif val == 12:
 		Tb_flag = True
 	
-	#For the end of the list, if the index is of the last value in the list,
+	# For the end of the list, if the index is of the last value in the list,
 	# make sure that rainEnd is equal to this index, and assign storm_index the
 	# the value of storm_no for range of rainStart to rainEnd+1
 	if (j == len(time_since_rain)-1):
@@ -60,9 +67,16 @@ for (j, val) in enumerate(time_since_rain):
 
 df['stormNo'] = storm_index
 df['totalNo'] = df.stormNo.copy()
-
+df['groupedDepth'] = df.groupby('stormNo')['depth'].transform('sum')
 df.totalNo.fillna(method='ffill', inplace=True)
+df.fillna(0, inplace=True)
 
+fig2, ax2 = plt.subplots()
+df.groupedDepth.plot(ax=ax2, color='teal', linewidth=0.75) 
+plt.xlabel('Date')
+plt.ylabel('Rainfall depth (in)')
+plt.title('Total storm depth Nehalem data')
+plt.show()
 
 test = df.groupby(['totalNo','depth'])['tips'].count()
 
