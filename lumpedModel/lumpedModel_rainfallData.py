@@ -1,57 +1,78 @@
 """
 Author: Amanda Manaster
-Date: 03/16/2020
-Purpose: Lumped model of road prism forced using PNNL hourly rainfall data.
+Date: 04/17/2020
+Purpose: Lumped model of road prism forced using 15 minute tipping bucket data
+         from Nehalem, OR.
 """
-
-import numpy as np
-import matplotlib.pyplot as plt
+# Import libraries
 import pandas as pd
-from datetime import datetime, timedelta
-#%%
-minTb = 3 #hours; threshold for determining an interstorm time period
+import matplotlib.pyplot as plt
+import datetime
+import numpy as np
+from scipy.stats import expon
 
-data = pd.read_pickle('/mnt/c/Users/Amanda/Documents/volcanic_data.pkl')
-pnnl_precip = data['PREC_ACC_NC_hourlywrf_pnnl']
+data = pd.read_csv('/mnt/c/Users/Amanda/Documents/nehalemFifteenMin.csv', index_col='date')
+data.index = pd.to_datetime(data.index)
+df = data.resample('15min').sum().fillna(0)
 
-staOne = pnnl_precip.iloc[:,0] #Get data for one station only
-
-df = staOne.to_frame(name = 'stationOne')
-no_rain = df.iloc[4,:]
 t0 = df.index[0]
-deltaT = timedelta(hours=1)
+deltaT = datetime.timedelta(minutes=15)
 
-#%%
-hours_since_rain = np.zeros(len(df))
+time_since_rain = np.zeros(len(df))
 
-for (i, entry) in enumerate(df.values):
+for (i, entry) in enumerate(df.depth):
     if entry == 0 and i != 0:
-        hours_since_rain[i] = hours_since_rain[i-1] + 1
-        
-        
+        time_since_rain[i] = time_since_rain[i-1] + 1
+ 
 storm_index = np.empty(len(df))
 storm_index[:] = None
 storm_no = 0
-total = np.zeros(len(df))
+rainStart = 0 
+rainEnd = 0
+Tb_flag = False
+Tb_min = 12 # no. of timesteps; threshold for determining an interstorm time period
 
-
-for (j, val) in enumerate(hours_since_rain):
-    if val == 0:
-        storm_index[j] = storm_no
-        total[j] = storm_no
-    elif val == 3:
+# Loop through time since rain. j gives index, val gives the value at j
+for (j, val) in enumerate(time_since_rain):
+    # If val == 0 (i.e., there is rain at this time step) and Tb_flag has been set
+    # to true (i.e., a 12 has been spotted), give storm_index the value of
+    # storm_no for a range of rainStart to rainEnd+1 (because ranges aren't inclusive
+    # in list slicing). Then, increase storm_no by one, restart rainStart at j and
+    # rainEnd at j, and switch Tb_flag back to false
+    if (val == 0 and Tb_flag):
+        storm_index[rainStart:rainEnd+1] = storm_no
         storm_no += 1
-        total[j] = storm_no - 1
-    elif val == 1:
-        storm_index[j] = storm_no if hours_since_rain[j+2] != 3 else None
-        total[j] = storm_no
-    elif val == 2:
-        storm_index[j] = storm_no if hours_since_rain[j+1] != 3 else None
-        total[j] = storm_no
-    else:
-        storm_index[j] = None
-        total[j] = storm_no-1 if hours_since_rain[j] >= 3 else storm_no
-        
+        rainStart = j
+        rainEnd = j
+        Tb_flag = False
+    # If val == 0 (i.e., there is rain at this time step), make rainEnd equal to
+    # this index
+    elif val == 0:
+        rainEnd = j
+    # If val == Tb_min, set the Tb_flag to True (i.e., there has been enough time without
+    # rain for it to begin another storm
+    elif val == Tb_min:
+        Tb_flag = True
+    
+    # For the end of the list, if the index is of the last value in the list,
+    # make sure that rainEnd is equal to this index, and assign storm_index the
+    # the value of storm_no for range of rainStart to rainEnd+1
+    if (j == len(time_since_rain)-1):
+        rainEnd = j
+        storm_index[rainStart:rainEnd+1] = storm_no
+
+df['stormNo'] = storm_index
+df['totalNo'] = df.stormNo.copy()
+df['groupedDepth'] = df.groupby('stormNo')['depth'].transform('sum')
+df.totalNo.fillna(method='ffill', inplace=True)
+df.fillna(0, inplace=True)
+
+test = df.groupby(['totalNo','depth'])['tips'].count()
+
+timeStep_qtrHr = df.groupby('totalNo')['totalNo'].count().to_numpy()
+timeStep_Hr = timeStep_qtrHr/4
+
+
 #%%
 df['stormNo'] = storm_index
 df['totalNo'] = total
@@ -62,9 +83,7 @@ df['timeStep'] = df.groupby('totalNo')['totalNo'].transform('count')
 
 #%%
 timeStep = df.groupby('totalNo')['totalNo'].count().to_numpy()
-stormDepth = df.groupby('stormNo')['stationOne'].sum().to_numpy()
-stormDuration = df.groupby('stormNo')['stationOne'].count().to_numpy()
-stormIntensity = stormDepth/(stormDuration)
+groupedDepth = df.groupby('stormNo')['depth'].sum().to_numpy()
 
 
 #%%
@@ -91,7 +110,7 @@ for i, time in enumerate(timeStep):
         truck = round(np.random.randint(0,10)*frac_day)
 
     truck_pass.append(truck)             #number of truck passes
-#%%
+
 df_storm = pd.DataFrame() #Create dataframe
 
 df_storm['time'] = total_t
@@ -102,15 +121,13 @@ df_storm['rainfall_rate'] = stormIntensity
 df_storm['storm_length'] = stormDuration
 df_storm['truck_pass'] = truck_pass
 
-
-#%%
 day0 = datetime(1981, 10, 1)
 df_storm.set_index(pd.DatetimeIndex([day0+timedelta(hours=time) for time in df_storm.time]), inplace=True)
 #%%
 df_day = df_storm.resample('D').sum().fillna(0)
 df_day.truck_pass = df_day.truck_pass.round()
 df_day['day'] = np.arange(0, len(df_day), 1)
-#%%
+
 # ticklabels = [item.strftime('%Y') for item in df_day.index[::366*2]]
 
 # fig, ax = plt.subplots(figsize=(13,5))
@@ -131,9 +148,8 @@ df_day['day'] = np.arange(0, len(df_day), 1)
 # ax.set_xticklabels(ticklabels, rotation=45)
 # plt.tight_layout()
 # #plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
-
 # plt.show()
-#%%
+
 #Define constants
 L = 4.57 #representative segment of road, m
 rho_w = 1000 #kg/m^3
@@ -144,12 +160,11 @@ tau_c = 0.04 #N/m^2; assuming d50 is approx. 0.0580 mm; value from https://pubs.
 d50 = 6.25e-5 #m
 d95 = 0.0375 #m
 n_f = 0.03 #0.0475*(d50)**(1/6) #approx Manning's n total
-#%%
+
 #define constants
 h_s = 0.23
 f_sf = 0.275
 f_sc = 0.725
-
 h_b = 2
 f_bf = 0.20
 f_br = 0.80
@@ -160,14 +175,13 @@ kab = 1.0e-6
 u_p = 4.69e-7 #m (2.14e-5m^3/4.57 m^2)  6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 u_f = 2.345e-7 #m
 e = 0.725 #[-] fraction of coarse material
-#%%
-df_storage = pd.DataFrame()
 
+df_storage = pd.DataFrame()
 df_storage['time'] = total_t
 df_storage['day'] = np.divide(total_t,24).astype('int64')
 day0 = datetime(1981, 10, 1)
 df_storage.set_index(pd.DatetimeIndex([day0+timedelta(hours=time) for time in df_storage.time]), inplace=True)
-#%%
+
 #Step 1!
 #Initialize numpy arrays for calculations
 dS_f = np.zeros(len(df_storm))
@@ -214,7 +228,7 @@ S_sf[0] = h_s*(f_sf)
 S_b[0] = h_b*(f_bf + f_br)
 S_bc[0] = h_b*(f_br)
 S_bf[0] = h_b*(f_bf)
-#%% 
+
 #Step 2!
 for i in range(1, len(df_storm)):
     q_f1[i] = u_p*(S_sf[i-1]/S_s[i-1])*n_tp[i]/(t[i]*3600)
