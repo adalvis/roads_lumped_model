@@ -1,2 +1,2 @@
-rlm_input
-rlm_output
+rlm_input/
+rlm_output/
