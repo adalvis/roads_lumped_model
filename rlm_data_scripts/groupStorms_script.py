@@ -5,7 +5,7 @@ import datetime
 import numpy as np
 from scipy.stats import expon
 
-data = pd.read_csv('/mnt/c/Users/Amanda/Documents/nehalemFifteenMin.csv', index_col='date')
+data = pd.read_csv('./rlm_input/nehalemFifteenMin.csv', index_col='date')
 
 data.index = pd.to_datetime(data.index)
 
@@ -67,8 +67,9 @@ for (j, val) in enumerate(time_since_rain):
 
 df['stormNo'] = storm_index
 df['totalNo'] = df.stormNo.copy()
-df['groupedDepth'] = df.groupby('stormNo')['depth'].transform('sum')
 df.totalNo.fillna(method='ffill', inplace=True)
+df['groupedDepth'] = df.groupby('stormNo')['depth'].transform('sum')
+df['intensity'] = df.depth/0.25 #inches/hour; inches/fifteen minute increments
 df.fillna(0, inplace=True)
 
 fig2, ax2 = plt.subplots()
@@ -78,10 +79,8 @@ plt.ylabel('Rainfall depth (in)')
 plt.title('Total storm depth Nehalem data')
 plt.show()
 
-test = df.groupby(['totalNo','depth'])['tips'].count()
-
-timeStep_qtrHr = df.groupby('totalNo')['totalNo'].count().to_numpy()
-timeStep_Hr = timeStep_qtrHr/4
+# Save output
+df.to_csv('./rlm_output/groupedStorms.csv')
 
 #Below is code I used to hack my way through this the first time. The cleaner
 #version of this is above!
