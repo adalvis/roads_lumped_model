@@ -1,2 +1,0 @@
-rlm_input/
-rlm_output/
