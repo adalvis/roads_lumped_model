@@ -13,8 +13,6 @@ import numpy as np
 data_df = pd.read_csv('./rlm_output/groupedStorms.csv', index_col='date')
 data_df.index = pd.to_datetime(data_df.index)
 
-test = data_df.groupby(['totalNo','depth', 'intensity'])['tips'].count() # len=426
-
 # length of storm in # of quarter hour time steps
 timeStep_qtrHr = data_df.groupby('totalNo')['totalNo'].count().to_numpy()
 
@@ -73,8 +71,8 @@ h_s, f_sf, f_sc = [0.23, 0.275, 0.725]
 h_b, f_bf, f_br = [2, 0.20, 0.80]
 
 #The following four constants can be adjusted based on observations
-# kas = crushing constant for surfacing, m/truck pass
-# kab = crushing constant for ballast, m/truck pass
+# k_as = crushing constant for surfacing, m/truck pass
+# k_ab = crushing constant for ballast, m/truck pass
 # u_ps = pumping constant for surfacing, m/truck pass
 #   (2.14e-5m^3/4.57 m^2)  
 #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
@@ -82,62 +80,86 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 # e = fraction of coarse material, -
 k_as, k_ab, u_ps, u_pb, e = [1.37e-7, 1.00e-7, 4.69e-7, 2.345e-7, 0.725]
 
-for j, storm in enumerate(storms_df.stormNo):
-    ಠ_ಠ = test.loc[storm,:,:]/test.loc[storm,:,:].sum()
+#data_df.totalNo = data_df.totalNo.astype('int')
 
-# #Step 1!
-# #Initialize numpy arrays for calculations
-# dS_f = np.zeros(len(storms_df))
-# S_f = np.zeros(len(storms_df))
-# S_s = np.zeros(len(storms_df))
-# S_sc = np.zeros(len(storms_df))
-# S_sf = np.zeros(len(storms_df))
-# S_b = np.zeros(len(storms_df))
-# S_bc = np.zeros(len(storms_df))
-# S_bf = np.zeros(len(storms_df))
-# Hs_out = np.zeros(len(storms_df))
-# q_s = np.zeros(len(storms_df))
-# k_s = np.zeros(len(storms_df))
-# H = np.zeros(len(storms_df))
-# tau = np.zeros(len(storms_df))
-# shear_stress = np.zeros(len(storms_df))
-# f_s = np.zeros(len(storms_df))
-# n_c = np.zeros(len(storms_df))
-# n_t = np.zeros(len(storms_df))
-# S_f_init = np.zeros(len(storms_df))
+data_ser = data_df.groupby(['totalNo', 'intensity'])['tips'].count() # len=426
+int_tip_df = data_ser.reset_index(level=1)
 
-# n_tp = storms_df.truck_pass.to_numpy()
-# t = storms_df.deltaT.to_numpy()
+#Step 1!
+#Initialize numpy arrays for calculations
+dS_f = np.zeros(len(storms_df))
+S_f = np.zeros(len(storms_df))
+S_s = np.zeros(len(storms_df))
+S_sc = np.zeros(len(storms_df))
+S_sf = np.zeros(len(storms_df))
+S_b = np.zeros(len(storms_df))
+S_bc = np.zeros(len(storms_df))
+S_bf = np.zeros(len(storms_df))
+Hs_out = np.zeros(len(storms_df))
+q_s = np.zeros(len(storms_df))
+k_s = np.zeros(len(storms_df))
+H = np.zeros(len(storms_df))
+tau = np.zeros(len(storms_df))
+shear_stress = np.zeros(len(storms_df))
+f_s = np.zeros(len(storms_df))
+n_c = np.zeros(len(storms_df))
+n_t = np.zeros(len(storms_df))
+S_f_init = np.zeros(len(storms_df))
+
+n_tp = storms_df.truck_pass.to_numpy()
+t = storms_df.deltaT.to_numpy()
 # t_storm = storms_df.storm_length.to_numpy()
 # rainfall = storms_df.rainfall_rate.to_numpy()
 
-# q_f1 = np.zeros(len(storms_df))
-# q_f2 = np.zeros(len(storms_df))
-# q_as = np.zeros(len(storms_df))
-# q_ab = np.zeros(len(storms_df))
-# sed_added = np.zeros(len(storms_df))
-# sed_cap = np.zeros(len(storms_df))
-# value = np.zeros(len(storms_df))
+q_f1 = np.zeros(len(storms_df))
+q_f2 = np.zeros(len(storms_df))
+q_as = np.zeros(len(storms_df))
+q_ab = np.zeros(len(storms_df))
+sed_added = np.zeros(len(storms_df))
+sed_cap = np.zeros(len(storms_df))
+value = np.zeros(len(storms_df))
 
-# #Initial conditions for fines, surfacing, ballast
-# S_f_init[0] = 0
-# n_c[0] = 0.035 #0.0475*(d95-S_f_init[0])**(1/6)
-# n_t[0] = n_f+n_c[0]
-# f_s[0] = (n_f/n_t[0])**(1.5)
-# S_f[0] = 0
-# S_s[0] = h_s*(f_sf + f_sc)
-# S_sc[0] = h_s*(f_sc)
-# S_sf[0] = h_s*(f_sf)
-# S_b[0] = h_b*(f_bf + f_br)
-# S_bc[0] = h_b*(f_br)
-# S_bf[0] = h_b*(f_bf)
+#Initial conditions for fines, surfacing, ballast
+S_f_init[0] = 0
+n_c[0] = 0.035 #0.0475*(d95-S_f_init[0])**(1/6)
+n_t[0] = n_f+n_c[0]
+f_s[0] = (n_f/n_t[0])**(1.5)
+S_f[0] = 0
+S_s[0] = h_s*(f_sf + f_sc)
+S_sc[0] = h_s*(f_sc)
+S_sf[0] = h_s*(f_sf)
+S_b[0] = h_b*(f_bf + f_br)
+S_bc[0] = h_b*(f_br)
+S_bf[0] = h_b*(f_bf)
+
+for j, storm in enumerate(storms_df.stormNo):
+    if j == 0:
+        pass
+    else:
+        q_f1[j] = u_ps*(S_sf[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
+        q_f2[j] = u_pb*(S_bf[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
+        q_as[j] = k_as*(S_sc[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
+        q_ab[j] = k_ab*(S_bc[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
+        
+        S_bc[j] = S_bc[j-1] - q_ab[j]*(t[j]*3600)
+        S_sc[j] = S_sc[j-1] - q_as[j]*(t[j]*3600)
+        
+        S_bf[j] = S_bf[j-1] + q_ab[j]*(t[j]*3600) - q_f2[j]*(t[j]*3600)
+        S_sf[j] = S_sf[j-1] + q_as[j]*(t[j]*3600) - q_f1[j]*(t[j]*3600) +\
+                  q_f2[j]*(t[j]*3600)
+            
+        S_s[j] = S_sc[j] + S_sf[j]
+        S_b[j] = S_bc[j] + S_bf[j]
+    for k, val in enumerate(int_tip_df.index):
+        if storm == int_tip_df.index[k]:
+            x = 1
 
 # #Step 2!
 # for i in range(1, len(storms_df)):
-#     q_f1[i] = u_p*(S_sf[i-1]/S_s[i-1])*n_tp[i]/(t[i]*3600)
-#     q_f2[i] = u_f*(S_bf[i-1]/S_b[i-1])*n_tp[i]/(t[i]*3600)
-#     q_as[i] = kas*(S_sc[i-1]/S_s[i-1])*n_tp[i]/(t[i]*3600)
-#     q_ab[i] = kab*(S_bc[i-1]/S_b[i-1])*n_tp[i]/(t[i]*3600)
+#     q_f1[i] = u_ps*(S_sf[i-1]/S_s[i-1])*n_tp[i]/(t[i]*3600)
+#     q_f2[i] = u_pb*(S_bf[i-1]/S_b[i-1])*n_tp[i]/(t[i]*3600)
+#     q_as[i] = k_as*(S_sc[i-1]/S_s[i-1])*n_tp[i]/(t[i]*3600)
+#     q_ab[i] = k_ab*(S_bc[i-1]/S_b[i-1])*n_tp[i]/(t[i]*3600)
     
 #     S_bc[i] = S_bc[i-1] - q_ab[i]*(t[i]*3600)
 #     S_sc[i] = S_sc[i-1] - q_as[i]*(t[i]*3600)
