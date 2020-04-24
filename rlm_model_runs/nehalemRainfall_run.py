@@ -47,7 +47,8 @@ storms_df['deltaT'] = deltaT
 storms_df['day'] = np.divide(totalT,24).astype('int64')
 storms_df['truck_pass'] = truck_pass
 storms_df['stormNo'] = data_df.groupby('stormNo')['stormNo'].mean()
-storms_df['intensity'] = data_df.groupby('intensity')['intensity'].mean()
+storms_df['intensity'] = data_df.groupby('stormNo')['intensity'].mean() 
+# ^^normal average intensity; later we get weighted averaged intensity
 
 day0 = data_df.index[0]
 storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time) 
@@ -84,6 +85,9 @@ k_as, k_ab, u_ps, u_pb, e = [1.37e-7, 1.00e-7, 4.69e-7, 2.345e-7, 0.725]
 
 data_ser = data_df.groupby(['totalNo', 'intensity'])['tips'].count() # len=426
 int_tip_df = data_ser.reset_index(level=1)
+int_tip_df.reset_index(inplace=True)
+int_tip_df['tot'] = int_tip_df.groupby('totalNo')['tips'].transform('sum')
+int_tip_df['frac'] = int_tip_df.tips/int_tip_df.tot
 
 #Step 1!
 #Initialize numpy arrays for calculations
@@ -96,11 +100,13 @@ S_b = np.zeros(len(storms_df))
 S_bc = np.zeros(len(storms_df))
 S_bf = np.zeros(len(storms_df))
 Hs_out = np.zeros(len(storms_df))
-q_s = np.zeros(len(storms_df))
+q_s = np.zeros(len(int_tip_df))
+q_s_avg = np.zeros(len(int_tip_df))
 k_s = np.zeros(len(storms_df))
-H = np.zeros(len(storms_df))
-tau = np.zeros(len(storms_df))
-shear_stress = np.zeros(len(storms_df))
+water_depth = np.zeros(len(int_tip_df))
+rainfall = np.zeros(len(int_tip_df))
+tau = np.zeros(len(int_tip_df))
+tau_e = np.zeros(len(int_tip_df))
 f_s = np.zeros(len(storms_df))
 n_c = np.zeros(len(storms_df))
 n_t = np.zeros(len(storms_df))
@@ -108,8 +114,10 @@ S_f_init = np.zeros(len(storms_df))
 
 n_tp = storms_df.truck_pass.to_numpy()
 t = storms_df.deltaT.to_numpy()
-# t_storm = storms_df.storm_length.to_numpy()
-# rainfall = storms_df.rainfall_rate.to_numpy()
+rainfall = int_tip_df.intensity.to_numpy()
+frac = int_tip_df.frac.to_numpy()
+#t_storm = int_tip_df.storm_length.to_numpy() ###FIX THIS
+# Might have issue with number of tips v storm length v intensity???????
 
 q_f1 = np.zeros(len(storms_df))
 q_f2 = np.zeros(len(storms_df))
@@ -121,7 +129,7 @@ value = np.zeros(len(storms_df))
 
 #Initial conditions for fines, surfacing, ballast
 S_f_init[0] = 0
-n_c[0] = 0.035 #0.0475*(d95-S_f_init[0])**(1/6)
+n_c[0] = 0.0475*(d95-S_f_init[0])**(1/6)
 n_t[0] = n_f+n_c[0]
 f_s[0] = (n_f/n_t[0])**(1.5)
 S_f[0] = 0
@@ -140,91 +148,70 @@ for j, storm in enumerate(storms_df.stormNo):
         q_f2[j] = u_pb*(S_bf[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
         q_as[j] = k_as*(S_sc[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
         q_ab[j] = k_ab*(S_bc[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
-        
         S_bc[j] = S_bc[j-1] - q_ab[j]*(t[j]*3600)
         S_sc[j] = S_sc[j-1] - q_as[j]*(t[j]*3600)
-        
         S_bf[j] = S_bf[j-1] + q_ab[j]*(t[j]*3600) - q_f2[j]*(t[j]*3600)
         S_sf[j] = S_sf[j-1] + q_as[j]*(t[j]*3600) - q_f1[j]*(t[j]*3600) +\
                   q_f2[j]*(t[j]*3600)
-            
         S_s[j] = S_sc[j] + S_sf[j]
         S_b[j] = S_bc[j] + S_bf[j]
-    for k, val in enumerate(int_tip_df.index):
-        if storm == int_tip_df.index[k]:
-            x = 1
+
+    if d95 >= S_f[j-1]:
+        #Let's try using an Sf_init variable because when sediment is added to
+        # TAF, that doesn't change the final S_f value, but it does affect how
+        # the sediment is transported!
+        sed_added[j] = (q_f1[j]*(t[j]*3600.))/(1-e)
+        S_f_init[j] = S_f[j-1] + sed_added[j]
+    else:
+        sed_added[j] = q_f1[j]*(t[j]*3600.)
+        S_f_init[j] = S_f[j-1] + sed_added[j]
+    
+    if d95 > S_f_init[j]:
+        k_s[j] = d95 - S_f_init[j]
+        n_c[j] = 0.075*(k_s[j])**(1/6)
+    else:
+        n_c[j] = 0
+    
+    n_t[j] = n_f + n_c[j]
+    f_s[j] = (n_f/n_t[j])**(1.5)
+
+    for k in range(len(int_tip_df)):
+        #Calculate water depth assuming uniform overland flow
+        water_depth[k] = ((n_t[j]*(rainfall[k]*7.055555555e-6)*L)/
+            (S**(1/2)))**(3/5)
+        
+        tau[k] = rho_w*g*water_depth[k]*S
+        tau_e[k] = tau[k]*f_s[j]
+        
+        #Calculate sediment transport rate
+        if (tau_e[k]-tau_c) >= 0:
+            q_s[k] = ((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
+                     (tau_e[k]-tau_c)**(2.457)/L
+        else:
+            q_s[k] = 0
+
+        q_s_avg[k] = q_s[k]*frac[k] #how to group this without pandas??
+    
+    # #Create a condition column based on sediment transport capacity vs sediment supply     
+    # sed_cap[i] = q_s[i]*(t_storm[i]*3600.)
+    # value[i] = (sed_added[i]-sed_cap[i])
+        
+    # if value[i] < 0:
+    #     Hs_out[i] = np.minimum(sed_added[i]+S_f[i-1], sed_cap[i])
+    # else:
+    #     Hs_out[i] = sed_cap[i]
+    
+    # dS_f[i] = sed_added[i] - Hs_out[i]
+    # S_f[i] = S_f[i-1] + dS_f[i] #if (S_f_init[i] - Hs_out[i]) > 0 else 0
 
 # #Step 2!
 # for i in range(1, len(storms_df)):
-#     q_f1[i] = u_ps*(S_sf[i-1]/S_s[i-1])*n_tp[i]/(t[i]*3600)
-#     q_f2[i] = u_pb*(S_bf[i-1]/S_b[i-1])*n_tp[i]/(t[i]*3600)
-#     q_as[i] = k_as*(S_sc[i-1]/S_s[i-1])*n_tp[i]/(t[i]*3600)
-#     q_ab[i] = k_ab*(S_bc[i-1]/S_b[i-1])*n_tp[i]/(t[i]*3600)
-    
-#     S_bc[i] = S_bc[i-1] - q_ab[i]*(t[i]*3600)
-#     S_sc[i] = S_sc[i-1] - q_as[i]*(t[i]*3600)
-    
-#     S_bf[i] = S_bf[i-1] + q_ab[i]*(t[i]*3600) - q_f2[i]*(t[i]*3600)
-#     S_sf[i] = S_sf[i-1] + q_as[i]*(t[i]*3600) - q_f1[i]*(t[i]*3600) +\
-#               q_f2[i]*(t[i]*3600)
-        
-#     S_s[i] = S_sc[i] + S_sf[i]
-#     S_b[i] = S_bc[i] + S_bf[i]
-    
-#     if d95 >= S_f[i-1]:
-#         #Let's try using an Sf_init variable because when sediment is added to
-#         # TAF, that doesn't change the final S_f value, but it does affect how
-#         # the sediment is transported!
-#         sed_added[i] = (q_f1[i]*(t[i]*3600.))/(1-e)
-#         S_f_init[i] = S_f[i-1] + sed_added[i]
-#     else:
-#         sed_added[i] = q_f1[i]*(t[i]*3600.)
-#         S_f_init[i] = S_f[i-1] + sed_added[i]
-    
-#     if d95 > S_f_init[i]:
-#         k_s[i] = d95 - S_f_init[i]
-#         n_c[i] = 0.035 #0.0475*(k_s[i])**(1/6)
-#     else:
-#         n_c[i] = 0
-    
-#     n_t[i] = 0.06
-    
-#     f_s[i] = (n_f/n_t[i])**(1.5)
-        
-#     #Calculate water depth assuming uniform overland flow
-#     H[i] = ((n_t[i]*(rainfall[i]*2.77778e-7)*L)/(S**(1/2)))**(3/5)
-    
-#     tau[i] = rho_w*g*H[i]*S
-    
-#     #Calculate shear stress
-#     shear_stress[i] = tau[i]*f_s[i]
-    
-#     #Calculate sediment transport rate
-#     if (shear_stress[i]-tau_c) >= 0:
-#         q_s[i] = ((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
-#                  (shear_stress[i]-tau_c)**(2.457)/L
-#     else:
-#         q_s[i] = 0
 
-#     #Create a condition column based on sediment transport capacity vs sediment supply     
-#     sed_cap[i] = q_s[i]*(t_storm[i]*3600.)
-#     value[i] = (sed_added[i]-sed_cap[i])
-        
-#     if value[i] < 0:
-#         Hs_out[i] = np.minimum(sed_added[i]+S_f[i-1], sed_cap[i])
-#         dS_f[i] = sed_added[i] - Hs_out[i]
-
-#     else:
-#         Hs_out[i] = sed_cap[i]
-#         dS_f[i] = sed_added[i] - Hs_out[i]
-
-#     S_f[i] = S_f[i-1] + dS_f[i] #if (S_f_init[i] - Hs_out[i]) > 0 else 0
-    
 # #Add all numpy arrays to the Pandas dataframe
 # storms_df['q_s'] = q_s
 # storms_df['n_t'] = n_t
 # storms_df['ks'] = k_s
-# storms_df['water_depth'] = H
+# storms_df['water_depth'] = water_depth
 # storms_df['shear_stress'] = shear_stress
 # storms_df['S_f_init'] = S_f_init
 # storms_df['f_s'] = f_s
