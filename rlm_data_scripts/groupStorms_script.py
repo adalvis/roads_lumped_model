@@ -22,6 +22,7 @@ t0 = df.index[0]
 deltaT = datetime.timedelta(minutes=15)
 
 time_since_rain = np.zeros(len(df))
+time_since_rain[0] = 1
 
 for (i, entry) in enumerate(df.depth):
     if entry == 0 and i != 0:
@@ -70,7 +71,7 @@ df['totalNo'] = df.stormNo.copy()
 df.totalNo.fillna(method='ffill', inplace=True)
 df['groupedDepth'] = df.groupby('stormNo')['depth'].transform('sum')
 df['intensity'] = df.depth/0.25 #inches/hour; inches/fifteen minute increments
-df.fillna(0, inplace=True)
+df.fillna(-0.01, inplace=True)
 
 fig2, ax2 = plt.subplots()
 df.groupedDepth.plot(ax=ax2, color='teal', linewidth=0.75) 

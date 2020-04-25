@@ -79,15 +79,15 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
-k_as, k_ab, u_ps, u_pb, e = [1.37e-7, 1.00e-7, 4.69e-7, 2.345e-7, 0.725]
+k_as, k_ab, u_ps, u_pb, e = [1.37e-6, 1.00e-6, 4.69e-6, 2.345e-6, 0.725]
 
-#data_df.totalNo = data_df.totalNo.astype('int')
-
-data_ser = data_df.groupby(['totalNo', 'intensity'])['tips'].count() # len=426
+data_ser = data_df.groupby(['stormNo', 'intensity'])['tips'].count() # len=426
 int_tip_df = data_ser.reset_index(level=1)
 int_tip_df.reset_index(inplace=True)
-int_tip_df['tot'] = int_tip_df.groupby('totalNo')['tips'].transform('sum')
+int_tip_df['tot'] = int_tip_df.groupby('stormNo')['tips'].transform('sum')
 int_tip_df['frac'] = int_tip_df.tips/int_tip_df.tot
+int_tip_df['storm_dur'] = int_tip_df['tot']/4
+int_tip_df.drop([0], inplace=True)
 
 #Step 1!
 #Initialize numpy arrays for calculations
@@ -111,13 +111,14 @@ f_s = np.zeros(len(storms_df))
 n_c = np.zeros(len(storms_df))
 n_t = np.zeros(len(storms_df))
 S_f_init = np.zeros(len(storms_df))
+test = np.zeros(len(storms_df))
 
 n_tp = storms_df.truck_pass.to_numpy()
 t = storms_df.deltaT.to_numpy()
 rainfall = int_tip_df.intensity.to_numpy()
 frac = int_tip_df.frac.to_numpy()
-#t_storm = int_tip_df.storm_length.to_numpy() ###FIX THIS
-# Might have issue with number of tips v storm length v intensity???????
+t_storm = int_tip_df.storm_dur.to_numpy()
+stormNo = int_tip_df.stormNo.to_numpy()
 
 q_f1 = np.zeros(len(storms_df))
 q_f2 = np.zeros(len(storms_df))
@@ -175,7 +176,7 @@ for j, storm in enumerate(storms_df.stormNo):
     n_t[j] = n_f + n_c[j]
     f_s[j] = (n_f/n_t[j])**(1.5)
 
-    for k in range(len(int_tip_df)):
+    for k, val in enumerate(stormNo):
         #Calculate water depth assuming uniform overland flow
         water_depth[k] = ((n_t[j]*(rainfall[k]*7.055555555e-6)*L)/
             (S**(1/2)))**(3/5)
@@ -190,58 +191,52 @@ for j, storm in enumerate(storms_df.stormNo):
         else:
             q_s[k] = 0
 
-        q_s_avg[k] = q_s[k]*frac[k] #how to group this without pandas??
+        q_s_avg[k] = q_s[k]*frac[k]
     
-    # #Create a condition column based on sediment transport capacity vs sediment supply     
-    # sed_cap[i] = q_s[i]*(t_storm[i]*3600.)
-    # value[i] = (sed_added[i]-sed_cap[i])
+        if storm == val:
+            sed_cap[j] += q_s_avg[k]
+
+    sed_cap[j] = sed_cap[j]*t_storm[k]*3600
+
+
+    # #Create a condition column based on sediment transport capacity vs sediment supply
+    value[j] = (sed_added[j]-sed_cap[j])
         
-    # if value[i] < 0:
-    #     Hs_out[i] = np.minimum(sed_added[i]+S_f[i-1], sed_cap[i])
-    # else:
-    #     Hs_out[i] = sed_cap[i]
+    if value[j] < 0:
+        Hs_out[j] = np.minimum(sed_added[j]+S_f[j-1], sed_cap[j])
+    else:
+        Hs_out[j] = sed_cap[j]
     
-    # dS_f[i] = sed_added[i] - Hs_out[i]
-    # S_f[i] = S_f[i-1] + dS_f[i] #if (S_f_init[i] - Hs_out[i]) > 0 else 0
+    dS_f[j] = sed_added[j] - Hs_out[j]
+    S_f[j] = S_f[j-1] + dS_f[j] #if (S_f_init[j] - Hs_out[j]) > 0 else 0
 
-# #Step 2!
-# for i in range(1, len(storms_df)):
+#Step 2!
+#Add all numpy arrays to the Pandas dataframe
+storms_df['n_t'] = n_t
+storms_df['ks'] = k_s
+storms_df['S_f_init'] = S_f_init
+storms_df['f_s'] = f_s
+storms_df['qf1'] = q_f1
+storms_df['qf2'] = q_f2
+storms_df['dS_f'] = dS_f
+storms_df['S_f'] = S_f
+storms_df['S_s'] = S_s
+storms_df['S_sc'] = S_sc
+storms_df['S_sf'] = S_sf
+storms_df['S_b'] = S_b
+storms_df['S_bc'] = S_bc
+storms_df['S_bf'] = S_bf
+storms_df['Hs_out'] = Hs_out
+storms_df['sed_added'] = sed_added
+storms_df['sed_cap'] = sed_cap
+storms_df['val'] = value
 
-# #Add all numpy arrays to the Pandas dataframe
-# storms_df['q_s'] = q_s
-# storms_df['n_t'] = n_t
-# storms_df['ks'] = k_s
-# storms_df['water_depth'] = water_depth
-# storms_df['shear_stress'] = shear_stress
-# storms_df['S_f_init'] = S_f_init
-# storms_df['f_s'] = f_s
-# storms_df['q_s'] = q_s
-# storms_df['qf1'] = q_f1
-# storms_df['qf2'] = q_f2
-# storms_df['dS_f'] = dS_f
-# storms_df['S_f'] = S_f
-# storms_df['S_s'] = S_s
-# storms_df['S_sc'] = S_sc
-# storms_df['S_sf'] = S_sf
-# storms_df['S_b'] = S_b
-# storms_df['S_bc'] = S_bc
-# storms_df['S_bf'] = S_bf
-# storms_df['Hs_out'] = Hs_out
-# storms_df['sed_added'] = sed_added
-# storms_df['sed_cap'] = sed_cap
-# storms_df['val'] = value
-
-# plt.figure(figsize=(6,4))
-# storms_df.plot(x= 'S_f_init', y = 'f_s')
-
-# plt.figure(figsize=(6,4))
-# storms_df.f_s.plot()
-# plt.xlabel('Date')
-# plt.ylabel(r'$f_s$')
-# plt.tight_layout()
-# plt.show()
-
-# f_s.max()
+plt.figure(figsize=(6,4))
+storms_df.f_s.plot()
+plt.xlabel('Date')
+plt.ylabel(r'$f_s$')
+plt.tight_layout()
+plt.show()
 
 #Resample to daily data again
 # df_day_sed = storms_df.resample('D').sum().fillna(0)
@@ -249,7 +244,7 @@ for j, storm in enumerate(storms_df.stormNo):
 
 #Plot sediment transport rates over time
 # fig2, ax2 = plt.subplots(figsize=(7,5))
-# df_day_sed.plot(y='q_s', ax=ax2, color = 'peru', legend=False)
+# storms_df.plot(y='q_s', ax=ax2, color = 'peru', legend=False)
 # plt.xlabel('Date')
 # plt.ylabel(r'Sediment transport rate $(m/s)$')
 # plt.title('Sediment transport rates', fontweight='bold', fontsize=14)
@@ -272,14 +267,14 @@ for j, storm in enumerate(storms_df.stormNo):
 # plt.tight_layout()
 # plt.show()
 
-# fig3, ax3 = plt.subplots(figsize=(9,4.5))
-# df4.plot(y='S_f_mm', ax=ax3, color = 'mediumseagreen', legend=False)
-# plt.xlabel('Date', fontsize=14, fontweight='bold')
-# plt.ylabel(r'Fine sediment storage, $S_f$ $(mm)$',fontsize=14, fontweight='bold')
-# plt.title('Fine sediment storage', fontweight='bold', fontsize=14)
-# plt.ylim(0,1.4)
-# plt.tight_layout()
-# plt.show()
+fig1, ax1 = plt.subplots(figsize=(9,4.5))
+storms_df.plot(y='S_f', ax=ax1, color = 'mediumseagreen', legend=False)
+plt.xlabel('Date', fontsize=14, fontweight='bold')
+plt.ylabel(r'Fine sediment storage, $S_f$ $(m)$',fontsize=14, fontweight='bold')
+plt.title('Fine sediment storage', fontweight='bold', fontsize=14)
+#plt.ylim(0,1.4)
+plt.tight_layout()
+plt.show()
 
 # df4['sed_cap_mm'] = df4.sed_cap/1e-3
 # fig8, ax8 = plt.subplots(figsize=(7,3))
@@ -292,14 +287,14 @@ for j, storm in enumerate(storms_df.stormNo):
 # plt.tight_layout()
 # plt.show()
 
-# fig10, ax10 = plt.subplots(figsize=(10,7))
-# df4.plot(y='qf1', ax=ax10, color = 'mediumturquoise', legend=False, label=r'$q_{f1}$')
-# df4.plot(y='qf2', ax=ax10, color = 'mediumvioletred', legend=False, label=r'$q_{f2}$')
-# ax10.set_ylabel(r'Sediment flux $(mm/s)$')
-# ax10.set_xlabel('Date')
-# fig10.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax10.transAxes)
-# plt.title('Sediment layer fluxes', fontweight='bold', fontsize=14)
-# plt.show()
+fig10, ax10 = plt.subplots(figsize=(10,7))
+storms_df.plot(y='qf1', ax=ax10, color = 'mediumturquoise', legend=False, label=r'$q_{f1}$')
+storms_df.plot(y='qf2', ax=ax10, color = 'mediumvioletred', legend=False, label=r'$q_{f2}$')
+ax10.set_ylabel(r'Sediment flux $(mm/s)$')
+ax10.set_xlabel('Date')
+fig10.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax10.transAxes)
+plt.title('Sediment layer fluxes', fontweight='bold', fontsize=14)
+plt.show()
 
 # df4['diff'] = df4.qf1-df4.qf2
 # fig11, ax11 = plt.subplots(figsize=(10,7))
