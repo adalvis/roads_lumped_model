@@ -236,6 +236,9 @@ int_tip_df['qs_avg'] = q_s_avg
 
 int_tip_df.to_csv('./rlm_output/int_tip_df.csv')
 
+
+plt.close('all')
+
 #Plot f_s over time
 fig1, ax1 = plt.subplots(figsize=(6,4))
 storms_df.f_s.plot(ax=ax1)
