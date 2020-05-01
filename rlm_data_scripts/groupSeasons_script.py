@@ -64,7 +64,7 @@ ax[1,1].set_title('Fall')
 
 for ax in ax.flat:
     ax.set(xlabel='Rainfall intensity (inches/hr)', ylabel='Probability')
-    ax.set(xlim=(0, 10), ylim=(0,1.0))
+    ax.set(xlim=(0), ylim=(0,1.0))
 
 plt.tight_layout()
 plt.show()
