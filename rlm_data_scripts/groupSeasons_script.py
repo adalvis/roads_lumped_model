@@ -8,8 +8,10 @@ from scipy.stats import expon
 df = pd.read_csv('./rlm_output/groupedStorms.csv', index_col='date')
 df.index = pd.to_datetime(df.index)
 
-noZeros = df.loc[(df['stormNo']>=0) & (df['intensity']>0)]
-Zeros = df.loc[(df['stormNo']>=0) & (df['intensity']<=0)]
+df['intensity_mm'] = df['intensity']*25.4 #Fix this. What is this intensity?
+
+noZeros = df.loc[(df['stormNo']>=0) & (df['intensity_mm']>0)]
+Zeros = df.loc[(df['stormNo']>=0) & (df['intensity_mm']<=0)]
 
 noZeros = noZeros.copy()
 Zeros = Zeros.copy()
@@ -30,41 +32,41 @@ noZeros.loc[(noZeros['month'] == 9) |
 
 noZeros['seasonCount'] = noZeros.groupby('season')['season'].transform('count')
 
-noZeros['mean_val'] = noZeros.groupby('season')['intensity'].transform('mean')
+noZeros['mean_val'] = noZeros.groupby('season')['intensity_mm'].transform('mean')
 
 plt.close('all')
 fig, ax = plt.subplots(2,2)
-winterData = noZeros.intensity[noZeros.season=='Winter']
-winterHist, winterEdges = np.histogram(winterData, bins=100)
+winterData = noZeros.intensity_mm[noZeros.season=='Winter']
+winterHist, winterEdges = np.histogram(winterData, bins=500)
 normWinterHist = winterHist/len(winterData)
 ax[0,0].bar(winterEdges[:-1], normWinterHist, align='edge', 
     edgecolor='b', width=0.075)
 ax[0,0].set_title('Winter')
 
-springData = noZeros.intensity[noZeros.season=='Spring']
-springHist, springEdges = np.histogram(springData, bins=100)
+springData = noZeros.intensity_mm[noZeros.season=='Spring']
+springHist, springEdges = np.histogram(springData, bins=500)
 normSpringHist = springHist/len(springData)
 ax[0,1].bar(springEdges[:-1], normSpringHist, align='edge', 
     color='pink', edgecolor='m', width=0.075)
 ax[0,1].set_title('Spring')
 
-summerData = noZeros.intensity[noZeros.season=='Summer']
-summerHist, summerEdges = np.histogram(summerData, bins=100)
+summerData = noZeros.intensity_mm[noZeros.season=='Summer']
+summerHist, summerEdges = np.histogram(summerData, bins=500)
 normSummerHist = summerHist/len(summerData)
 ax[1,0].bar(summerEdges[:-1], normSummerHist, align='edge', 
     color='lightgreen', edgecolor='g', width=0.075)
 ax[1,0].set_title('Summer')
 
-fallData = noZeros.intensity[noZeros.season=='Fall']
-fallHist, fallEdges = np.histogram(fallData, bins=100)
+fallData = noZeros.intensity_mm[noZeros.season=='Fall']
+fallHist, fallEdges = np.histogram(fallData, bins=500)
 normFallHist = fallHist/len(fallData)
 ax[1,1].bar(fallEdges[:-1], normFallHist, align='edge', 
     color='lightblue', edgecolor='c', width=0.075)
 ax[1,1].set_title('Fall')
 
 for ax in ax.flat:
-    ax.set(xlabel='Rainfall intensity (inches/hr)', ylabel='Probability')
-    ax.set(xlim=(0), ylim=(0,1.0))
+    ax.set(xlabel='Rainfall intensity (mm/hr)', ylabel='Probability')
+    ax.set(xlim=(0,20), ylim=(0,1.0))
 
 plt.tight_layout()
 plt.show()

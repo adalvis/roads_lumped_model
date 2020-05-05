@@ -61,8 +61,8 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 #         value from https://pubs.usgs.gov/sir/2008/5093/table7.html
 # n_f = 0.03 #0.0475*(d50)**(1/6); Manning's n of fines in TAF
 L, rho_w, rho_s, g, S, tau_c, d50, d95, n_f = [4.57, 1000, 2650, 
-                                               9.81, 0.0825, 0.1,
-                                               6.25e-5, 0.0275, 0.03]
+                                               9.81, 0.0825, 0,
+                                               6.25e-5, 0.0275, 0.0475*(6.25e-5)**(1/6)]
 #Define layer constants
 # h_s = depth of surfacing
 # f_sf, f_sc = fractions of fine/coarse material in ballast
@@ -133,11 +133,11 @@ sed_cap = np.zeros(len(storms_df))
 value = np.zeros(len(storms_df))
 
 #Initial conditions for fines, surfacing, ballast
-S_f_init[0] = 0
+S_f_init[0] = 0.0275
 n_c[0] = 0.0475*(d95-S_f_init[0])**(1/6)
 n_t[0] = n_f+n_c[0]
 f_s[0] = (n_f/n_t[0])**(1.5)
-S_f[0] = 0
+S_f[0] = 0.0276
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
@@ -147,7 +147,7 @@ S_bf[0] = h_b*(f_bf)
 
 for j, storm in enumerate(storms_df.stormNo):
     if j == 0:
-        pass
+        continue
     else:
         q_f1[j] = u_ps*(S_sf[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
         q_f2[j] = u_pb*(S_bf[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
@@ -183,15 +183,15 @@ for j, storm in enumerate(storms_df.stormNo):
     for k, val in enumerate(stormNo):
         #Calculate water depth assuming uniform overland flow
         water_depth[k] = ((n_t[j]*(rainfall[k]*7.055555555e-6)*L)/
-            (S**(1/2)))**(3/5)
+            (S**(1/2)))**(3/5) #Try adjusting L to be a different % (i.e., 0.5*L or 0.25*L); think in terms of more concentrated flow rather than sheet flow
         
         tau[k] = rho_w*g*water_depth[k]*S
         tau_e[k] = tau[k]*f_s[j]
         
         #Calculate sediment transport rate
         if (tau_e[k]-tau_c) >= 0:
-            q_s[k] = ((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
-                     (tau_e[k]-tau_c)**(2.457)/L
+            q_s[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
+                     (tau_e[k]-tau_c)**(2.457))/L
         else:
             q_s[k] = 0
 
