@@ -61,8 +61,8 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 #         value from https://pubs.usgs.gov/sir/2008/5093/table7.html
 # n_f = 0.03 #0.0475*(d50)**(1/6); Manning's n of fines in TAF
 L, rho_w, rho_s, g, S, tau_c, d50, d95, n_f = [4.57, 1000, 2650, 
-                                               9.81, 0.0825, 0,
-                                               6.25e-5, 0.0275, 0.0475*(6.25e-5)**(1/6)]
+                                               9.81, 0.0825, 0.194,
+                                               0.00025, 0.0275, 0.0475*(0.00025)**(1/6)]
 #Define layer constants
 # h_s = depth of surfacing
 # f_sf, f_sc = fractions of fine/coarse material in ballast
