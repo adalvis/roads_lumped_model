@@ -61,8 +61,8 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 #         value from https://pubs.usgs.gov/sir/2008/5093/table7.html
 # n_f = 0.03 #0.0475*(d50)**(1/6); Manning's n of fines in TAF
 L, rho_w, rho_s, g, S, tau_c, d50, d95, n_f = [4.57, 1000, 2650, 
-                                               9.81, 0.0825, 0,
-                                               6.25e-5, 0.0275, 0.0475*(6.25e-5)**(1/6)]
+                                               9.81, 0.0825, 0.110,
+                                               6.25e-5, 0.0275, 0.01]
 #Define layer constants
 # h_s = depth of surfacing
 # f_sf, f_sc = fractions of fine/coarse material in ballast
@@ -133,11 +133,12 @@ sed_cap = np.zeros(len(storms_df))
 value = np.zeros(len(storms_df))
 
 #Initial conditions for fines, surfacing, ballast
-S_f_init[0] = 0.0275
-n_c[0] = 0.0475*(d95-S_f_init[0])**(1/6)
+S_f_init[0] = 0
+# n_c[0] = 0.0475*(d95-S_f_init[0])**(1/6)
+n_c[0] = 0.0265*np.exp(-225*S_f_init[0])
 n_t[0] = n_f+n_c[0]
 f_s[0] = (n_f/n_t[0])**(1.5)
-S_f[0] = 0.0276
+S_f[0] = 0
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
@@ -173,7 +174,8 @@ for j, storm in enumerate(storms_df.stormNo):
     
     if d95 > S_f_init[j]:
         k_s[j] = d95 - S_f_init[j]
-        n_c[j] = 0.0475*(k_s[j])**(1/6)
+        # n_c[j] = 0.0475*(k_s[j])**(1/6)
+        n_c[j] = 0.0265*np.exp(-225*S_f_init[j])
     else:
         n_c[j] = 0
     
@@ -182,8 +184,8 @@ for j, storm in enumerate(storms_df.stormNo):
 
     for k, val in enumerate(stormNo):
         #Calculate water depth assuming uniform overland flow
-        water_depth[k] = ((n_t[j]*(rainfall[k]*7.055555555e-6)*L)/
-            (S**(1/2)))**(3/5) #Try adjusting L to be a different % (i.e., 0.5*L or 0.25*L); think in terms of more concentrated flow rather than sheet flow
+        water_depth[k] = (((n_t[j]*(rainfall[k]*7.055555555e-6)*(L))/
+            (S**(1/2)))**(3/5)) #Try adjusting L to be a different % (i.e., 0.5*L or 0.25*L); think in terms of more concentrated flow rather than sheet flow
         
         tau[k] = rho_w*g*water_depth[k]*S
         tau_e[k] = tau[k]*f_s[j]
@@ -240,21 +242,21 @@ int_tip_df.to_csv('./rlm_output/int_tip_df.csv')
 plt.close('all')
 
 #Plot f_s over time
-fig1, ax1 = plt.subplots(figsize=(6,4))
-storms_df.f_s.plot(ax=ax1)
-plt.xlabel('Date')
-plt.ylabel(r'$f_s$')
-plt.tight_layout()
-plt.show()
+# fig1, ax1 = plt.subplots(figsize=(6,4))
+# storms_df.f_s.plot(ax=ax1)
+# plt.xlabel('Date')
+# plt.ylabel(r'$f_s$')
+# plt.tight_layout()
+# plt.show()
 
 #Plot sediment transport rates over time
-fig2, ax2 = plt.subplots(figsize=(7,5))
-int_tip_df.plot(y='qs', ax=ax2, color = 'peru', legend=False)
-plt.xlabel('Date')
-plt.ylabel(r'Sediment transport rate $(m/s)$')
-plt.title('Sediment transport rates', fontweight='bold', fontsize=14)
-plt.tight_layout()
-plt.show()
+# fig2, ax2 = plt.subplots(figsize=(7,5))
+# int_tip_df.plot(y='qs', ax=ax2, color = 'peru', legend=False)
+# plt.xlabel('Date')
+# plt.ylabel(r'Sediment transport rate $(m/s)$')
+# plt.title('Sediment transport rates', fontweight='bold', fontsize=14)
+# plt.tight_layout()
+# plt.show()
 
 #Plot sediment transport capacity and actual transport over time
 fig3, ax3 = plt.subplots(figsize=(6,4))
@@ -291,17 +293,17 @@ plt.tight_layout()
 plt.show()
 
 #Plot transportative fluxes between layers
-fig6, ax6 = plt.subplots(figsize=(10,7))
-storms_df.plot(y='qf1', ax=ax6, color = 'mediumturquoise', 
-    legend=False, label=r'$q_{f1}$')
-storms_df.plot(y='qf2', ax=ax6, color = 'mediumvioletred', 
-    legend=False, label=r'$q_{f2}$')
-ax6.set_ylabel(r'Sediment flux $(mm/s)$')
-ax6.set_xlabel('Date')
-fig6.legend(loc="upper right", bbox_to_anchor=(1,1), 
-    bbox_transform=ax6.transAxes)
-plt.title('Sediment layer fluxes', fontweight='bold', fontsize=14)
-#plt.show()
+# fig6, ax6 = plt.subplots(figsize=(10,7))
+# storms_df.plot(y='qf1', ax=ax6, color = 'mediumturquoise', 
+#     legend=False, label=r'$q_{f1}$')
+# storms_df.plot(y='qf2', ax=ax6, color = 'mediumvioletred', 
+#     legend=False, label=r'$q_{f2}$')
+# ax6.set_ylabel(r'Sediment flux $(mm/s)$')
+# ax6.set_xlabel('Date')
+# fig6.legend(loc="upper right", bbox_to_anchor=(1,1), 
+#     bbox_transform=ax6.transAxes)
+# plt.title('Sediment layer fluxes', fontweight='bold', fontsize=14)
+# #plt.show()
 
 #Plot surfacing storage over time
 fig7, ax7 = plt.subplots(figsize=(6,4))
@@ -337,19 +339,19 @@ plt.title('Ballast storage', fontweight='bold', fontsize=14)
 plt.tight_layout()
 plt.show()
 
-fig9, ax9 = plt.subplots(3, figsize=(9,7), sharex=True)
-storms_df.plot(y='S_f', ax=ax9[0], color = 'mediumseagreen', 
-    legend=False, label='TAF elevation')
-storms_df.plot(y='S_s', ax=ax9[1], color = '#532287', legend=False, 
-    label='Surfacing elevation')
-storms_df.plot(y='S_b', ax=ax9[2], color = '#12586b', legend=False, 
-    label='Ballast elevation')
-plt.xlabel('Date', fontweight='bold', fontsize=14)
-ax9[0].set_ylabel(r'$S_f$ $(mm)$', fontweight='bold', fontsize=14)
-ax9[1].set_ylabel(r'$S_s$ $(m)$', fontweight='bold', fontsize=14)
-ax9[2].set_ylabel(r'$S_b$ $(m)$', fontweight='bold', fontsize=14)
-plt.tight_layout()
-plt.show()
+# fig9, ax9 = plt.subplots(3, figsize=(9,7), sharex=True)
+# storms_df.plot(y='S_f', ax=ax9[0], color = 'mediumseagreen', 
+#     legend=False, label='TAF elevation')
+# storms_df.plot(y='S_s', ax=ax9[1], color = '#532287', legend=False, 
+#     label='Surfacing elevation')
+# storms_df.plot(y='S_b', ax=ax9[2], color = '#12586b', legend=False, 
+#     label='Ballast elevation')
+# plt.xlabel('Date', fontweight='bold', fontsize=14)
+# ax9[0].set_ylabel(r'$S_f$ $(mm)$', fontweight='bold', fontsize=14)
+# ax9[1].set_ylabel(r'$S_s$ $(m)$', fontweight='bold', fontsize=14)
+# ax9[2].set_ylabel(r'$S_b$ $(m)$', fontweight='bold', fontsize=14)
+# plt.tight_layout()
+# plt.show()
 
 # #Subset data by water year
 # # yr_1 = storms_df.Hs_out['2018-10-01':'2019-09-30'].sum()
@@ -379,13 +381,13 @@ plt.show()
 # # plt.tight_layout()
 # # plt.show()
 
-# sed_sum_m2 = storms_df.Hs_out.sum()
-# sed_sum_kg_m = sed_sum_m2*rho_s*L
-# round(sed_sum_kg_m)
+sed_sum_m = storms_df.Hs_out.sum()
+sed_sum_kg_m = sed_sum_m*rho_s/1000
+print(round(sed_sum_kg_m))
 # s = (storms_df.S_s[0]-storms_df.S_s[len(storms_df)-1])
 # b = (storms_df.S_b[0]-storms_df.S_b[len(storms_df)-1])
 # f = (storms_df.S_f[0]-storms_df.S_f[len(storms_df)-1])
-# print(round((s+b+f)*rho_s*L))
+# print(round((s+b+f)*rho_s))
 
 
 #Takes forever to run, hence down here.
