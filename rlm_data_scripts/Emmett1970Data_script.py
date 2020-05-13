@@ -8,6 +8,7 @@ import numpy as np
 
 # Load data and split into separate tests
 data_df = pd.read_csv('./rlm_input/Emmett1970_data.csv', index_col='Test')
+data_2_df = pd.read_csv('./rlm_input/NF2_data.csv')
 test8_13 = data_df[data_df.index=='8-13']
 test8_14 = data_df[data_df.index=='8-14']
 test8_15 = data_df[data_df.index=='8-15']
@@ -16,8 +17,11 @@ test8_17 = data_df[data_df.index=='8-17']
 
 # Add line of best fit (without doing fancy numpy math 
 # since I already have the equation...)
-q = np.arange(1e-6,1,1e-6)
-n = 0.0026*q**(-0.274)
+q1 = np.arange(1e-6,1,1e-6)
+n1 = 0.0026*q1**(-0.274)
+
+q2 = np.arange(1e-6,0.001,1e-6)
+n2 = 0.08*q2**(-0.153)
 
 # Close previous plots
 plt.close('all')
@@ -33,7 +37,7 @@ ax.grid(True, which='both', color='gainsboro')
 ax.set_axisbelow(True)
 
 # Plot the data
-ax.plot(q, n, ':', c='indigo',label='Line of best fit')
+ax.plot(q1, n1, ':', c='indigo',label='Line of best fit')
 ax.scatter(test8_13.discharge_cms, test8_13.n_SI, label='8-13', marker='s', 
 	edgecolor='darkgreen', c='limegreen')
 ax.scatter(test8_14.discharge_cms, test8_14.n_SI, label='8-14', marker='D', 
@@ -56,4 +60,32 @@ ax.set_title('Series 8 Laboratory Data', fontsize=14)
 # Show plot and save
 plt.tight_layout()
 plt.show()
-plt.savefig(r'./rlm_output/AFTER.png')
+# plt.savefig(r'./rlm_output/S8_data.png')
+
+# ----------------------------------------------------------------------------
+# Set up the figure and axis parameters
+fig1, ax1 = plt.subplots(figsize=(6.5,4.5))
+ax1.tick_params(bottom=True, top=True, left=True, right=True, which='both')
+ax1.set_xscale('log')
+ax1.set_yscale('log')
+ax1.set_xlim((1e-6,0.001))
+ax1.set_ylim((0.01,10.00))
+ax1.grid(True, which='both', color='gainsboro')
+ax1.set_axisbelow(True)
+
+# Plot the data
+ax1.plot(q2, n2, ':', c='maroon',label='Line of best fit')
+ax1.plot(data_2_df.q, data_2_df.n, '-o', color= 'royalblue',
+	markeredgecolor='midnightblue', 
+	markerfacecolor='royalblue')
+
+# Set labels, legend, text, title
+ax1.set_xlabel(r'Discharge per unit width, $q$ [$\frac{m^2}{s}$]', fontsize=12)
+ax1.set_ylabel('Manning\'s n', fontsize=12)
+ax1.text(x=2.0e-6, y=0.80, s=r'$n = 0.08q^{-0.153}$')
+ax1.set_title('New Fork River Site 2 Data', fontsize=14)
+
+# Show plot and save
+plt.tight_layout()
+plt.show()
+# plt.savefig(r'./rlm_output/NF2_data.png')
