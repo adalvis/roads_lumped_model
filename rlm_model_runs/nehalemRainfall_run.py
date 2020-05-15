@@ -59,10 +59,9 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 # S = m/m; 8% long slope, 2% lat slope
 # tau_c = N/m^2; assuming d50 is approx. 0.0580 mm; 
 #         value from https://pubs.usgs.gov/sir/2008/5093/table7.html
-# n_f = 0.03 #0.0475*(d50)**(1/6); Manning's n of fines in TAF
 L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
-                                          9.81, 0.03, 0.110,
-                                          6.25e-5, 0.0275]
+                                          9.81, 0.03, 0.063,
+                                          1.56e-5, 0.0275]
 #Define layer constants
 # h_s = depth of surfacing
 # f_sf, f_sc = fractions of fine/coarse material in ballast
@@ -80,7 +79,7 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
 k_as, k_ab, u_ps, u_pb, e = [1.37e-6, 1.00e-6, 
-                             4.69e-5, 2.345e-5, 
+                             4.69e-6, 2.345e-6, 
                              0.725]
 
 data_ser = data_df.groupby(['stormNo', 'intensity'])['tips'].count() # len=426
@@ -106,23 +105,24 @@ S_f_init = np.zeros(len(storms_df))
 test = np.zeros(len(storms_df))
 
 q = np.zeros(len(int_tip_df))
-f_s = np.zeros(len(int_tip_df))
-n_f = np.zeros(len(int_tip_df))
-n_c = np.zeros(len(int_tip_df))
-n_t = np.zeros(len(int_tip_df))
-q_s = np.zeros(len(int_tip_df))
-q_s_avg = np.zeros(len(int_tip_df))
-water_depth = np.zeros(len(int_tip_df))
-rainfall = np.zeros(len(int_tip_df))
-tau = np.zeros(len(int_tip_df))
-tau_e = np.zeros(len(int_tip_df))
+q_avg = np.zeros(len(int_tip_df))
+
+q_storm = np.zeros(len(storms_df))
+f_s = np.zeros(len(storms_df))
+n_f = np.zeros(len(storms_df))
+n_c = np.zeros(len(storms_df))
+n_t = np.zeros(len(storms_df))
+q_s = np.zeros(len(storms_df))
+water_depth = np.zeros(len(storms_df))
+tau = np.zeros(len(storms_df))
+tau_e = np.zeros(len(storms_df))
 
 n_tp = storms_df.truck_pass.to_numpy()
 t = storms_df.deltaT.to_numpy()
+t_storm = int_tip_df.groupby('stormNo')['storm_dur'].mean().to_numpy()
 
 rainfall = int_tip_df.intensity.to_numpy()
 frac = int_tip_df.frac.to_numpy()
-t_storm = int_tip_df.storm_dur.to_numpy()
 stormNo = int_tip_df.stormNo.to_numpy()
 
 q_f1 = np.zeros(len(storms_df))
@@ -134,8 +134,8 @@ sed_cap = np.zeros(len(storms_df))
 value = np.zeros(len(storms_df))
 
 #Initial conditions for fines, surfacing, ballast
-S_f_init[0] = 0.0275
-S_f[0] = 0.0275
+S_f_init[0] = 0.0
+S_f[0] = 0.0
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
@@ -170,45 +170,40 @@ for j, storm in enumerate(storms_df.stormNo):
         S_f_init[j] = S_f[j-1] + sed_added[j]
 
     for k, val in enumerate(stormNo):
-        q[k] = rainfall[k]*7.055555555e-6*L #Does this need to be added up?
-        # Yes. Yes it does. UGH. Problem for future Amanda.
-        
-        if q[k] > 0:
-            n_f[k] = 0.0026*q[k]**(-0.274)
-            n_c[k] = 0.08*q[k]**(-0.153)
-        else:
-            n_f[k] = n_f[k-1]
-            n_c[k] = n_c[k-1]
-
-        if S_f_init[j] <= d95:
-            n_t[k] = n_c[k] + (S_f_init[j]/d95)*(n_f[k]-n_c[k])
-        else: 
-            n_t[k] = n_f[k]
-
-        f_s[k] = (n_f[k]/n_t[k])**(1.5)
-
-        #Calculate water depth assuming uniform overland flow
-        if q[k] > 0:
-            water_depth[k] = (((n_t[k]*q[k])/(S**(1/2)))**(3/5))
-        else:
-            water_depth[k] = 0
-        
-        tau[k] = rho_w*g*water_depth[k]*S
-        tau_e[k] = tau[k]*f_s[k]
-        
-        #Calculate sediment transport rate
-        if (tau_e[k]-tau_c) >= 0:
-            q_s[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
-                     (tau_e[k]-tau_c)**(2.457))/L
-        else:
-            q_s[k] = 0
-
-        q_s_avg[k] = q_s[k]*frac[k]
+        q[k] = rainfall[k]*7.0556e-6*L 
+        q_avg[k] = q[k]*frac[k]
     
         if storm == val:
-            sed_cap[j] += q_s_avg[k]
+            q_storm[j] += q_avg[k]
+    
+    if q_storm[j] > 0:
+        n_f[j] = 0.0026*q_storm[j]**(-0.274)
+        n_c[j] = 0.08*q_storm[j]**(-0.153)
+    else:
+        n_f[j] = n_f[j-1]
+        n_c[j] = n_c[j-1]
 
-    sed_cap[j] = sed_cap[j]*t_storm[k]*3600
+    if S_f_init[j] <= d95:
+        n_t[j] = n_c[j] + (S_f_init[j]/d95)*(n_f[j]-n_c[j])
+    else: 
+        n_t[j] = n_f[j]
+
+    f_s[j] = (n_f[j]/n_t[j])**(1.5)
+
+    #Calculate water depth assuming uniform overland flow
+    water_depth[j] = (((n_t[j]*q_storm[j])/(S**(1/2)))**(3/5))
+
+    tau[j] = rho_w*g*water_depth[j]*S
+    tau_e[j] = tau[j]*f_s[j]
+    
+    #Calculate sediment transport rate
+    if (tau_e[j]-tau_c) >= 0:
+        q_s[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
+                 (tau_e[j]-tau_c)**(2.457))/L
+    else:
+        q_s[j] = 0
+
+    sed_cap[j] = q_s[j]*t_storm[j]*3600
 
     #Create a condition column based on sediment transport capacity vs sediment supply
     value[j] = (sed_added[j]-sed_cap[j])
@@ -236,17 +231,14 @@ storms_df['Hs_out'] = Hs_out*1000
 storms_df['sed_added'] = sed_added
 storms_df['sed_cap'] = sed_cap*1000
 storms_df['val'] = value
+storms_df['water_depth'] = water_depth
+storms_df['tau'] = tau
+storms_df['tau_e'] = tau_e
+storms_df['n_t'] = n_t
+storms_df['f_s'] = f_s
+storms_df['qs'] = q_s
 
-int_tip_df['water_depth'] = water_depth
 int_tip_df['q'] = q
-int_tip_df['tau'] = tau
-int_tip_df['tau_e'] = tau_e
-int_tip_df['n_t'] = n_t
-int_tip_df['f_s'] = f_s
-int_tip_df['qs'] = q_s
-int_tip_df['qs_avg'] = q_s_avg
-
-int_tip_df.to_csv('./rlm_output/int_tip_df.csv')
 
 
 plt.close('all')
@@ -271,7 +263,7 @@ plt.close('all')
 #Plot sediment transport capacity and actual transport over time
 fig3, ax3 = plt.subplots(figsize=(6,4))
 storms_df.sed_cap.plot(color = '#9e80c2', label='Transport capacity')
-storms_df.Hs_out.plot(color='#442766', label='Actual transport')
+storms_df.Hs_out.plot(linestyle='--', color='#442766', label='Actual transport')
 plt.xlabel('Date', fontsize=14, fontweight='bold')
 plt.ylabel(r'Sediment depth $(mm)$', fontsize=14, fontweight='bold')
 fig3.legend(loc="upper right", bbox_to_anchor=(1,1), 
@@ -394,10 +386,10 @@ plt.show()
 sed_sum_m = storms_df.Hs_out.sum()
 sed_sum_kg_m = sed_sum_m*rho_s/1000
 print(round(sed_sum_kg_m))
-# s = (storms_df.S_s[0]-storms_df.S_s[len(storms_df)-1])
-# b = (storms_df.S_b[0]-storms_df.S_b[len(storms_df)-1])
-# f = (storms_df.S_f[0]-storms_df.S_f[len(storms_df)-1])
-# print(round((s+b+f)*rho_s))
+s = (storms_df.S_s[0]-storms_df.S_s[len(storms_df)-1])
+b = (storms_df.S_b[0]-storms_df.S_b[len(storms_df)-1])
+f = (storms_df.S_f[0]-storms_df.S_f[len(storms_df)-1])/1000
+print(round((s+b+f)*rho_s))
 
 
 #Takes forever to run, hence down here.
