@@ -58,7 +58,7 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 # L = representative segment of road, m
 # S = m/m; 8% long slope, 2% lat slope
 # tau_c = N/m^2; assuming d50 is approx. 0.0580 mm; 
-#         value from https://pubs.usgs.gov/sir/2008/5093/table7.html
+#         value from https://pubs.usgs.gov/sir/2008/5093/table7.html =====> 0.0091 mm is avg
 L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
                                           9.81, 0.03, 0.063,
                                           1.56e-5, 0.0275]
@@ -134,8 +134,8 @@ sed_cap = np.zeros(len(storms_df))
 value = np.zeros(len(storms_df))
 
 #Initial conditions for fines, surfacing, ballast
-S_f_init[0] = 0.0
-S_f[0] = 0.0
+S_f_init[0] = 0.0275
+S_f[0] = 0.0275
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
