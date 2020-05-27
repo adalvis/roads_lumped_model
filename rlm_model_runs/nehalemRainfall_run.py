@@ -185,10 +185,10 @@ for j, storm in enumerate(storms_df.stormNo):
 
     if S_f_init[j] <= d95:
         n_t[j] = n_c[j] + (S_f_init[j]/d95)*(n_f[j]-n_c[j])
+        f_s[j] = (n_f[j]/n_t[j])**(1.5)*(S_f_init[j]/d95)
     else: 
         n_t[j] = n_f[j]
-
-    f_s[j] = (n_f[j]/n_t[j])**(1.5)
+        f_s[j] = (n_f[j]/n_t[j])**(1.5)
 
     #Calculate water depth assuming uniform overland flow
     water_depth[j] = (((n_t[j]*q_storm[j])/(S**(1/2)))**(3/5))

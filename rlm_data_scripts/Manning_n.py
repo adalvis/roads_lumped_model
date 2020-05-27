@@ -24,12 +24,13 @@ f_s = np.zeros((len(q),len(q)))
 H = np.zeros((len(q),len(q)))
 
 for i, val in enumerate(S_f):
-	if val <= d95:
-		n_t[:,i] = n_c + val/d95*(n_f-n_c)
-	else:
-		n_t[:,i] = n_f
-	f_s[:,i] = (n_f/n_t[:,i])**1.5
-	H[:,i] = (n_t[:,i]*q/S**(1/2))**(3/5)
+    if val <= d95:
+        n_t[:,i] = n_c + val/d95*(n_f-n_c)
+        f_s[:,i] = val/d95*(n_f/n_t[:,i])**1.5
+    else:
+        n_t[:,i] = n_f
+        f_s[:,i] = (n_f/n_t[:,i])**1.5
+    H[:,i] = (n_t[:,i]*q/S**(1/2))**(3/5)
 
 tau = rho*g*H*S
 tau_s = tau*f_s
