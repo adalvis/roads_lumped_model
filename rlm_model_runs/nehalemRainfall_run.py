@@ -113,6 +113,7 @@ n_f = np.zeros(len(storms_df))
 n_c = np.zeros(len(storms_df))
 n_t = np.zeros(len(storms_df))
 q_s = np.zeros(len(storms_df))
+q_ref = np.zeros(len(storms_df))
 water_depth = np.zeros(len(storms_df))
 tau = np.zeros(len(storms_df))
 tau_e = np.zeros(len(storms_df))
@@ -132,6 +133,7 @@ q_ab = np.zeros(len(storms_df))
 sed_added = np.zeros(len(storms_df))
 sed_cap = np.zeros(len(storms_df))
 value = np.zeros(len(storms_df))
+ref_trans = np.zeros(len(storms_df))
 
 #Initial conditions for fines, surfacing, ballast
 S_f_init[0] = 0.0275
@@ -202,8 +204,16 @@ for j, storm in enumerate(storms_df.stormNo):
                  (tau_e[j]-tau_c)**(2.457))/L
     else:
         q_s[j] = 0
+    
+    #Calculate reference transport 
+    if (tau[j]-tau_c) >=0:
+        q_ref[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
+                       (tau[j]-tau_c)**(2.457))/L
+    else:
+        q_ref[j] = 0
 
     sed_cap[j] = q_s[j]*t_storm[j]*3600
+    ref_trans[j] = q_ref[j]*t_storm[j]*3600
 
     #Create a condition column based on sediment transport capacity vs sediment supply
     value[j] = (sed_added[j]-sed_cap[j])
@@ -230,6 +240,7 @@ storms_df['S_bf'] = S_bf
 storms_df['Hs_out'] = Hs_out*1000
 storms_df['sed_added'] = sed_added
 storms_df['sed_cap'] = sed_cap*1000
+storms_df['ref_trans'] = ref_trans*1000
 storms_df['val'] = value
 storms_df['water_depth'] = water_depth
 storms_df['tau'] = tau
@@ -262,7 +273,7 @@ plt.close('all')
 
 #Plot sediment transport capacity and actual transport over time
 fig3, ax3 = plt.subplots(figsize=(6,4))
-storms_df.sed_cap.plot(color = '#9e80c2', label='Transport capacity')
+storms_df.ref_trans.plot(color = '#9e80c2', label='Reference transport capacity')
 storms_df.Hs_out.plot(linestyle='--', color='#442766', label='Actual transport')
 plt.xlabel('Date', fontsize=14, fontweight='bold')
 plt.ylabel(r'Sediment depth $(mm)$', fontsize=14, fontweight='bold')
