@@ -193,7 +193,7 @@ for j, storm in enumerate(storms_df.stormNo):
         f_s[j] = (n_f[j]/n_t[j])**(1.5)
 
     #Calculate water depth assuming uniform overland flow
-    water_depth[j] = (((n_t[j]*q_storm[j])/(S**(1/2)))**(3/5))
+    water_depth[j] = ((n_t[j]*q_storm[j])/(S**(1/2)))**(3/5)
 
     tau[j] = rho_w*g*water_depth[j]*S
     tau_e[j] = tau[j]*f_s[j]
@@ -248,6 +248,7 @@ storms_df['tau_e'] = tau_e
 storms_df['n_t'] = n_t
 storms_df['f_s'] = f_s
 storms_df['qs'] = q_s
+storms_df['q_storm'] = q_storm
 
 int_tip_df['q'] = q
 
@@ -394,15 +395,21 @@ plt.show()
 # # plt.tight_layout()
 # # plt.show()
 
-sed_sum_m = storms_df.Hs_out.sum()
-sed_sum_kg_m = sed_sum_m*rho_s/1000
-print(round(sed_sum_kg_m))
-s = (storms_df.S_s[0]-storms_df.S_s[len(storms_df)-1])
-b = (storms_df.S_b[0]-storms_df.S_b[len(storms_df)-1])
-f = (storms_df.S_f[0]-storms_df.S_f[len(storms_df)-1])/1000
-print(round((s+b+f)*rho_s))
+sed_sum_m = storms_df.sed_added.sum()-(storms_df.Hs_out.sum()/1000)
+sed_sum_kg_m = sed_sum_m*rho_s
+print("Checking mass balance...")
+print("Net sediment transport:", round(sed_sum_kg_m), "kg/m")
 
+f = ((storms_df.S_f[len(storms_df)-1]-storms_df.S_f[0])/1000)*rho_s
+print("Net fine storage:", round(f), "kg/m")
 
+if round(f) == round(sed_sum_kg_m):
+    print('\nThe mass balance is correct.')
+else:
+    print('\nThe mass balance is off.')
+
+total_out_kg = (storms_df.Hs_out.sum()/1000)*rho_s
+print("\nTotal amount of sediment transported:", round(total_out_kg), "kg/m")
 #Takes forever to run, hence down here.
 # # ticklabels = [item.strftime('%Y') for item in df_day.index[::366*2]]
 
