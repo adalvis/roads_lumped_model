@@ -5,26 +5,21 @@ import datetime
 import numpy as np
 from scipy.stats import expon
 
-data = pd.read_csv('./rlm_input/nehalemFifteenMin.csv', index_col='date')
-
+data = pd.read_csv('../rlm_output/NFtoutle_rain.csv', index_col='date')
 data.index = pd.to_datetime(data.index)
-
-df = data.resample('15min').sum().fillna(0)
+df = data.copy()
 
 fig1, ax1 = plt.subplots()
-df.depth.plot(ax=ax1, color='navy', linewidth=0.75) 
+df.intensity_mmhr.plot(ax=ax1, color='navy', linewidth=0.75) 
 plt.xlabel('Date')
-plt.ylabel('Rainfall depth (in)')
-plt.title('Raw Nehalem data')
+plt.ylabel('Intensity (mm/hr)')
+plt.title('Raw Toutle data')
 plt.show()
-
-t0 = df.index[0]
-deltaT = datetime.timedelta(minutes=15)
 
 time_since_rain = np.zeros(len(df))
 time_since_rain[0] = 1
 
-for (i, entry) in enumerate(df.depth):
+for (i, entry) in enumerate(df.intensity_mmhr):
     if entry == 0 and i != 0:
         time_since_rain[i] = time_since_rain[i-1] + 1
  
@@ -40,7 +35,7 @@ total = np.zeros(len(df))
 # Loop through time since rain. j gives index, val gives the value at j
 for (j, val) in enumerate(time_since_rain):
 	# If val == 0 (i.e., there is rain at this time step) and Tb_flag has been set
-	# to true (i.e., a 12 has been spotted), give storm_index the value of
+	# to true (i.e., a 3 has been spotted), give storm_index the value of
 	# storm_no for a range of rainStart to rainEnd+1 (because ranges aren't inclusive
 	# in list slicing). Then, increase storm_no by one, restart rainStart at j and
 	# rainEnd at j, and switch Tb_flag back to false
@@ -54,9 +49,9 @@ for (j, val) in enumerate(time_since_rain):
 	# this index
 	elif val == 0:
 		rainEnd = j
-	# If val == 12, set the Tb_flag to True (i.e., there has been enough time without
+	# If val == 3, set the Tb_flag to True (i.e., there has been enough time without
 	# rain for it to begin another storm
-	elif val == 12:
+	elif val == 3:
 		Tb_flag = True
 	
 	# For the end of the list, if the index is of the last value in the list,
@@ -69,19 +64,18 @@ for (j, val) in enumerate(time_since_rain):
 df['stormNo'] = storm_index
 df['totalNo'] = df.stormNo.copy()
 df.totalNo.fillna(method='ffill', inplace=True)
-df['groupedDepth'] = df.groupby('stormNo')['depth'].transform('sum')
-df['intensity'] = df.depth/0.25 #inches/hour; inches/fifteen minute increments
+df['groupedDepth'] = df.groupby('stormNo')['intensity_mmhr'].transform('sum')
 df.fillna(-0.01, inplace=True)
 
 fig2, ax2 = plt.subplots()
 df.groupedDepth.plot(ax=ax2, color='teal', linewidth=0.75) 
 plt.xlabel('Date')
-plt.ylabel('Rainfall depth (in)')
-plt.title('Total storm depth Nehalem data')
+plt.ylabel('Rainfall depth (mm)')
+plt.title('Total storm depth Toutle data')
 plt.show()
 
 # Save output
-df.to_csv('./rlm_output/groupedStorms.csv')
+df.to_csv('../rlm_output/groupedStorms_toutle.csv')
 
 #Below is code I used to hack my way through this the first time. The cleaner
 #version of this is above!
