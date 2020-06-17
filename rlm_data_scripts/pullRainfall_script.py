@@ -47,9 +47,6 @@ rain[rain_ser.isnull()] = np.nan
     #Interpolate integers, then convert back to datetime
 rain_df['date'] = pd.to_datetime(rain.interpolate())
 
-#Add new column for intensity in m/s
-rain_df['intensity_ms'] = rain_df['intensity_mmhr']*2.77778e-7
-
 #Set the index of the dataframe to be the date and drop the date column
 rain_df = rain_df.set_index('date', drop=True)
 
@@ -58,5 +55,3 @@ rain_df.fillna(0.0, inplace=True)
 #Save file as .csv
 rain_df.to_csv(r'C:/Users/Amanda/Documents/GitHub/'+
                'roads_lumped_model/rlm_output/NFtoutle_rain.csv')
-
-print('Done!')
