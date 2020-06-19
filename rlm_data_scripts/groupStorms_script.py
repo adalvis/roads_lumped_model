@@ -18,7 +18,9 @@ plt.title('Raw Toutle data')
 plt.show()
 
 time_since_rain = np.zeros(len(df))
-time_since_rain[0] = 1
+
+if df.intensity_mmhr[0]==0:
+    time_since_rain[0] = 1
 
 for (i, entry) in enumerate(df.intensity_mmhr):
     if entry == 0 and i != 0:
@@ -62,11 +64,13 @@ for (j, val) in enumerate(time_since_rain):
 		rainEnd = j
 		storm_index[rainStart:rainEnd+1] = storm_no
 
+df['timeSinceRain'] = time_since_rain
 df['stormNo'] = storm_index
 df['totalNo'] = df.stormNo.copy()
 df.totalNo.fillna(method='ffill', inplace=True)
 df['groupedDepth'] = df.groupby('stormNo')['intensity_mmhr'].transform('sum')
-df.fillna(-0.01, inplace=True)
+df.stormNo.fillna(-0.01, inplace=True)
+df.groupedDepth.fillna(0.0, inplace = True)
 
 fig2, ax2 = plt.subplots()
 df.groupedDepth.plot(ax=ax2, color='teal', linewidth=0.75) 

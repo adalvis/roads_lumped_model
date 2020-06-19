@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 mesonetToken = '081d3a79e9304e25820be19e856bb049'
 
 #Initialize lists to store data
-date_start = str(201810010000)
-date_end = str(201909300000)
+date_start = str(201811070000)
+date_end = str(201909170000)
 stn_id = 'SRBW1' #North Fork Toutle; Lat: 46.37194, Lon: -122.57778
 #stn_id = 'EKRW1' #Elk Rock; Lat: 46.312222, Lon: -122.385556
 

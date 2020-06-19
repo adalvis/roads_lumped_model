@@ -5,26 +5,28 @@ Purpose: Lumped model of road prism forced using hourly weather station data
          at North Fork Toutle; Lat: 46.37194, Lon: -122.57778
          Data pulled from Mesonet (https://developers.synopticdata.com/mesonet/)
 """
-# Import libraries
+#Import libraries
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
 import numpy as np
 
+#Read in .csv of pre-grouped storms
 data_df = pd.read_csv('./rlm_output/groupedStorms_toutle.csv', index_col='date')
 data_df.index = pd.to_datetime(data_df.index)
 
-# length of storm in # of hourly time steps
+#Length of storm in # of hourly time steps
 timeStep_Hr = data_df.groupby('totalNo')['totalNo'].count().to_numpy()
-
+#Depth of storm in mm
 groupedDepth = data_df.groupedDepth
 
-deltaT = timeStep_Hr
-totalT = np.cumsum(deltaT)
-truck_pass = []
+deltaT = timeStep_Hr #time step
+totalT = np.cumsum(deltaT) #total time
+truck_pass = [] #initialize empty list for truck passes
 
 np.random.seed(1) #Use seed to ensure consistent results with each run
 
+###CHECK THIS!!!!!!!!!
 for i, time in enumerate(timeStep_Hr):
     truck = 0
     if time/24 >= 1:
@@ -54,9 +56,9 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 
 #Define physical constants
 # L = representative segment of road, m
-# S = m/m; 8% long slope, 2% lat slope
-# tau_c = N/m^2; assuming d50 is approx. 0.0580 mm; 
-#         value from https://pubs.usgs.gov/sir/2008/5093/table7.html =====> 0.0091 mm is avg
+# S = m/m
+# tau_c = N/m^2; value from https://pubs.usgs.gov/sir/2008/5093/table7.html 
+#     =====> 0.0091 mm is avg
 L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
                                           9.81, 0.03, 0.063,
                                           1.56e-5, 0.0275]
@@ -80,21 +82,21 @@ k_as, k_ab, u_ps, u_pb, e = [1.37e-6, 1.00e-6,
                              4.69e-6, 2.345e-6, 
                              0.725]
 
-# data_ser = data_df.groupby(['stormNo', 'intensity'])['tips'].count() # len=426
-# int_tip_df = data_ser.reset_index(level=1)
-# int_tip_df.reset_index(inplace=True)
-# int_tip_df['tot'] = int_tip_df.groupby('stormNo')['tips'].transform('sum')
-# int_tip_df['frac'] = int_tip_df.tips/int_tip_df.tot
-# int_tip_df['storm_dur'] = int_tip_df['tot']/4
-# int_tip_df.drop([0], inplace=True)
-
+#Group data_df.intensity_mmhr into intensity "buckets" and count the values in each "bucket"
 data_ser = data_df.groupby(['stormNo','intensity_mmhr'])['intensity_mmhr'].count()
+#Rename the grouped data "num" to signify # of values in "bucket"
 data_ser.rename('num', inplace=True)
+
+#Create a new df from data_ser using reset_index
 int_tip_df = data_ser.reset_index(level=1)
+#Reset index again s.t. we have only #s for index
 int_tip_df.reset_index(inplace=True)
+
 int_tip_df['tot'] = int_tip_df.groupby('stormNo')['num'].transform('sum')
 int_tip_df['frac'] = int_tip_df.num/int_tip_df.tot
 int_tip_df['storm_dur'] = int_tip_df['tot']
+
+#Drop na values
 int_tip_df.drop([0], inplace=True)
 
 
@@ -156,7 +158,7 @@ S_bf[0] = h_b*(f_bf)
 for j, storm in enumerate(storms_df.stormNo):
     if j == 0:
         continue
-    else:
+    else: ####CHECK THIS!!!!!!!!!
         q_f1[j] = u_ps*(S_sf[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
         q_f2[j] = u_pb*(S_bf[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
         q_as[j] = k_as*(S_sc[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
@@ -183,7 +185,7 @@ for j, storm in enumerate(storms_df.stormNo):
         q[k] = rainfall[k]*2.77778e-7*L 
         q_avg[k] = q[k]*frac[k]
     
-        if storm == val:
+        if val == storm:
             q_storm[j] += q_avg[k]
     
     if q_storm[j] > 0:
@@ -209,22 +211,22 @@ for j, storm in enumerate(storms_df.stormNo):
     #Calculate sediment transport rate
     if (tau_e[j]-tau_c) >= 0:
         q_s[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
-                 (tau_e[j]-tau_c)**(2.457))/L
+                 (tau_e[j]-tau_c)**(2.457))
     else:
         q_s[j] = 0
     
     #Calculate reference transport 
     if (tau[j]-tau_c) >=0:
         q_ref[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
-                       (tau[j]-tau_c)**(2.457))/L
+                       (tau[j]-tau_c)**(2.457))
     else:
         q_ref[j] = 0
 
-    sed_cap[j] = q_s[j]*t_storm[j]*3600
-    ref_trans[j] = q_ref[j]*t_storm[j]*3600
+    sed_cap[j] = q_s[j]*t_storm[j]*3600/L
+    ref_trans[j] = q_ref[j]*t_storm[j]*3600/L
 
     #Create a condition column based on sediment transport capacity vs sediment supply
-    value[j] = (sed_added[j]-sed_cap[j])
+    value[j] = (sed_added[j]-sed_cap[j]) #*******Are we considering ref transport or actual transport here??????
         
     if value[j] < 0:
         Hs_out[j] = np.minimum(sed_added[j]+S_f[j-1], sed_cap[j])
@@ -259,6 +261,7 @@ storms_df['qs'] = q_s
 storms_df['q_storm'] = q_storm
 
 int_tip_df['q'] = q
+int_tip_df['q_avg'] = q_avg
 
 
 plt.close('all')
@@ -289,7 +292,7 @@ plt.ylabel(r'Sediment depth $(mm)$', fontsize=14, fontweight='bold')
 fig3.legend(loc="upper right", bbox_to_anchor=(1,1), 
     bbox_transform=ax3.transAxes)
 plt.tight_layout()
-#plt.show()
+plt.show()
 
 #Plot fine sediment storage over time
 fig4, ax4 = plt.subplots(figsize=(9,4.5))
@@ -404,11 +407,11 @@ plt.show()
 # # plt.show()
 
 sed_sum_m = storms_df.sed_added.sum()-(storms_df.Hs_out.sum()/1000)
-sed_sum_kg_m = sed_sum_m*rho_s
+sed_sum_kg_m = sed_sum_m*rho_s*L
 print("Checking mass balance...")
 print("Net sediment transport:", round(sed_sum_kg_m), "kg/m")
 
-f = ((storms_df.S_f[len(storms_df)-1]-storms_df.S_f[0])/1000)*rho_s
+f = ((storms_df.S_f[len(storms_df)-1]-storms_df.S_f[0])/1000)*rho_s*L
 print("Net fine storage:", round(f), "kg/m")
 
 if round(f) == round(sed_sum_kg_m):
@@ -416,7 +419,7 @@ if round(f) == round(sed_sum_kg_m):
 else:
     print('\nThe mass balance is off.')
 
-total_out_kg = (storms_df.Hs_out.sum()/1000)*rho_s
+total_out_kg = (storms_df.Hs_out.sum()/1000)*rho_s*L
 print("\nTotal amount of sediment transported:", round(total_out_kg), "kg/m")
 #Takes forever to run, hence down here.
 # # ticklabels = [item.strftime('%Y') for item in df_day.index[::366*2]]
