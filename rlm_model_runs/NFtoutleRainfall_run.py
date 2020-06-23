@@ -146,8 +146,8 @@ value = np.zeros(len(storms_df))
 ref_trans = np.zeros(len(storms_df))
 
 #Initial conditions for fines, surfacing, ballast
-S_f_init[0] = 0.0
-S_f[0] = 0.0
+S_f_init[0] = 0.0275
+S_f[0] = 0.0275
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
