@@ -146,8 +146,8 @@ value = np.zeros(len(storms_df))
 ref_trans = np.zeros(len(storms_df))
 
 #Initial conditions for fines, surfacing, ballast
-S_f_init[0] = 0.0275
-S_f[0] = 0.0275
+S_f_init[0] = 0.0
+S_f[0] = 0.0
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
@@ -408,19 +408,16 @@ plt.show()
 
 sed_sum_m = storms_df.sed_added.sum()-(storms_df.Hs_out.sum()/1000)
 sed_sum_kg_m = sed_sum_m*rho_s*L
-print("Checking mass balance...")
-print("Net sediment transport:", round(sed_sum_kg_m), "kg/m")
-
 f = ((storms_df.S_f[len(storms_df)-1]-storms_df.S_f[0])/1000)*rho_s*L
-print("Net fine storage:", round(f), "kg/m")
 
 if round(f) == round(sed_sum_kg_m):
-    print('\nThe mass balance is correct.')
+    print('\nThe mass balance is fine.')
 else:
     print('\nThe mass balance is off.')
 
 total_out_kg = (storms_df.Hs_out.sum()/1000)*rho_s*L
 print("\nTotal amount of sediment transported:", round(total_out_kg), "kg/m")
+
 #Takes forever to run, hence down here.
 # # ticklabels = [item.strftime('%Y') for item in df_day.index[::366*2]]
 
