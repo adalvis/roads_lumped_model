@@ -33,11 +33,11 @@ for i, time in enumerate(timeStep_Hr):
         day = int(time/24)
         frac_day = time/24 - int(time/24)
         for num in range(day):
-            truck += np.random.randint(0,10)
-        truck += round(np.random.randint(0,10)*frac_day)
+            truck += np.random.poisson(10,1).item()
+        truck += round(np.random.poisson(10,1).item()*frac_day)
     else:
         frac_day = time/24 - int(time/24)
-        truck = round(np.random.randint(0,10)*frac_day)
+        truck = round(np.random.poisson(10,1).item()*frac_day)
     truck_pass.append(truck) #number of truck passes
 
 #Create new dataframe that's grouped into storm/interstorm time periods
@@ -60,8 +60,8 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 # tau_c = N/m^2; value from https://pubs.usgs.gov/sir/2008/5093/table7.html 
 #     =====> 0.0091 mm is avg
 L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
-                                          9.81, 0.03, 0.063,
-                                          1.56e-5, 0.0275]
+                                          9.81, 0.03, 0.05,
+                                          9.1e-6, 0.0275]
 #Define layer constants
 # h_s = depth of surfacing
 # f_sf, f_sc = fractions of fine/coarse material in ballast
