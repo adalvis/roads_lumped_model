@@ -12,7 +12,7 @@ import datetime
 import numpy as np
 
 #Read in .csv of pre-grouped storms
-data_df = pd.read_csv('./rlm_output/groupedStorms_toutle.csv', index_col='date')
+data_df = pd.read_csv('./rlm_output/groupedStorms_ElkRock.csv', index_col='date')
 data_df.index = pd.to_datetime(data_df.index)
 
 #Length of storm in # of hourly time steps
@@ -78,8 +78,8 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
-k_as, k_ab, u_ps, u_pb, e = [1.37e-6, 1.00e-6, 
-                             4.69e-6, 2.345e-6, 
+k_as, k_ab, u_ps, u_pb, e = [5e-6, 5e-6, 
+                             50e-6, 10e-6, 
                              0.725]
 
 #Group data_df.intensity_mmhr into intensity "buckets" and count the values in each "bucket"
@@ -146,8 +146,8 @@ value = np.zeros(len(storms_df))
 ref_trans = np.zeros(len(storms_df))
 
 #Initial conditions for fines, surfacing, ballast
-S_f_init[0] = 0.0275
-S_f[0] = 0.0275
+S_f_init[0] = 0.0
+S_f[0] = 0.0
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)

@@ -5,7 +5,7 @@ import datetime
 import numpy as np
 from scipy.stats import expon
 
-data = pd.read_csv('./rlm_output/NFtoutle_rain.csv', index_col='date')
+data = pd.read_csv('./rlm_output/ElkRock_rain.csv', index_col='date')
 data.index = pd.to_datetime(data.index)
 df = data.copy()
 
@@ -13,8 +13,9 @@ fig1, ax1 = plt.subplots()
 df.intensity_mmhr.plot(ax=ax1, color='navy', linewidth=0.75) 
 plt.xlabel('Date')
 plt.ylabel('Intensity (mm/hr)')
-plt.title('Raw Toutle data')
-# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/rawData_Toutle.png')
+plt.title('Raw Elk Rock data')
+plt.tight_layout()
+#plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/rawData_ElkRock.png')
 plt.show()
 
 time_since_rain = np.zeros(len(df))
@@ -76,12 +77,13 @@ fig2, ax2 = plt.subplots()
 df.groupedDepth.plot(ax=ax2, color='teal', linewidth=0.75) 
 plt.xlabel('Date')
 plt.ylabel('Rainfall depth (mm)')
-plt.title('Total storm depth Toutle data')
-# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/groupedData_Toutle.png')
+plt.title('Total storm depth Elk Rock data')
+plt.tight_layout()
+#plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/groupedData_ElkRock.png')
 plt.show()
 
 # Save output
-df.to_csv('./rlm_output/groupedStorms_toutle.csv')
+df.to_csv('./rlm_output/groupedStorms_ElkRock.csv')
 
 #Below is code I used to hack my way through this the first time. The cleaner
 #version of this is above!

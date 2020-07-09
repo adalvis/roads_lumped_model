@@ -14,9 +14,9 @@ stn_id = 'EKRW1' #Elk Rock; Lat: 46.312222, Lon: -122.385556
 
 
 #Call API
-r = requests.get('https://api.synopticdata.com/v2/stations/precip'+
+r = requests.get('https://api.synopticdata.com/v2/stations/timeseries'+
                 '?token='+mesonetToken+'&stid='+stn_id+'&start='+date_start+'&end='+
-                date_end+'&obtimezone=UTC&pmode=intervals&interval=hour')
+                date_end+'&obtimezone=UTC&precip=1')
 
 #Load API response as JSON
 try:
@@ -25,13 +25,8 @@ except:
     print('Error thrown\n')
 
 #Access precip value dictionary in JSON file
-dict = d['STATION'][0]['OBSERVATIONS']['precipitation']
-
-#Get precip values
-precip = [dict[i]['total'] for i in range(len(dict))]
-
-#Get time data
-time = [dict[i]['first_report'] for i in range(len(dict))]
+precip = d['STATION'][0]['OBSERVATIONS']['precip_intervals_set_1d']
+time = d['STATION'][0]['OBSERVATIONS']['date_time']
 
 #Create Pandas dataframe
 rain_df = pd.DataFrame({'date':time, 'intensity_mmhr':precip})
@@ -54,4 +49,4 @@ rain_df.fillna(0.0, inplace=True)
 
 #Save file as .csv
 rain_df.to_csv(r'C:/Users/Amanda/Documents/GitHub/'+
-               'roads_lumped_model/rlm_output/NFtoutle_rain.csv')
+               'roads_lumped_model/rlm_output/ElkRock_rain.csv')
