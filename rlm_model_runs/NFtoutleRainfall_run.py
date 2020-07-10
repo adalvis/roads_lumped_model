@@ -78,8 +78,8 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
-k_as, k_ab, u_ps, u_pb, e = [5e-6, 5e-6, 
-                             50e-6, 10e-6, 
+k_as, k_ab, u_ps, u_pb, e = [1e-6, 1e-6, 
+                             4.69e-6, 2.35e-6, 
                              0.725]
 
 #Group data_df.intensity_mmhr into intensity "buckets" and count the values in each "bucket"
@@ -146,8 +146,8 @@ value = np.zeros(len(storms_df))
 ref_trans = np.zeros(len(storms_df))
 
 #Initial conditions for fines, surfacing, ballast
-S_f_init[0] = 0.0
-S_f[0] = 0.0
+S_f_init[0] = 0.0275
+S_f[0] = 0.0275
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
@@ -228,11 +228,11 @@ for j, storm in enumerate(storms_df.stormNo):
     #Create a condition column based on sediment transport capacity vs sediment supply
     value[j] = (sed_added[j]-sed_cap[j]) #*******Are we considering ref transport or actual transport here??????
         
-    if value[j] < 0:
-        Hs_out[j] = np.minimum(sed_added[j]+S_f[j-1], sed_cap[j])
-    else:
-        Hs_out[j] = sed_cap[j]
-    
+#     if value[j] < 0:
+#         Hs_out[j] = np.minimum(sed_added[j]+S_f[j-1], sed_cap[j])
+#     else:
+#         Hs_out[j] = sed_cap[j]
+    Hs_out[j] = np.minimum(sed_added[j]+S_f[j-1], sed_cap[j])
     dS_f[j] = sed_added[j] - Hs_out[j]
     S_f[j] = S_f[j-1] + dS_f[j] #if (S_f_init[j] - Hs_out[j]) > 0 else 0
 
@@ -287,21 +287,22 @@ plt.close('all')
 fig3, ax3 = plt.subplots(figsize=(6,4))
 storms_df.ref_trans.plot(color = '#9e80c2', label='Reference transport capacity')
 storms_df.Hs_out.plot(linestyle='--', color='#442766', label='Actual transport')
-plt.xlabel('Date', fontsize=14, fontweight='bold')
-plt.ylabel(r'Sediment depth $(mm)$', fontsize=14, fontweight='bold')
+plt.xlabel('Date')
+plt.ylabel(r'Sediment depth $(mm)$')
 fig3.legend(loc="upper right", bbox_to_anchor=(1,1), 
     bbox_transform=ax3.transAxes)
 plt.tight_layout()
+#plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Ref_Act.png')
 plt.show()
 
 #Plot fine sediment storage over time
-fig4, ax4 = plt.subplots(figsize=(9,4.5))
+fig4, ax4 = plt.subplots(figsize=(6,4))
 storms_df.plot(y='S_f', ax=ax4, color = 'mediumseagreen', legend=False)
-plt.xlabel('Date', fontsize=14, fontweight='bold')
-plt.ylabel(r'Fine sediment storage, $S_f$ $(mm)$',fontsize=14, 
-    fontweight='bold')
-plt.title('Fine sediment storage', fontweight='bold', fontsize=14)
+plt.xlabel('Date')
+plt.ylabel(r'Fine sediment storage, $S_f$ $(mm)$')
+plt.title('Fine sediment storage')
 plt.tight_layout()
+#plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Fines.png')
 plt.show()
 
 #Plot fine sediment storage and actual transport over time
@@ -375,6 +376,7 @@ plt.show()
 # ax9[0].set_ylabel(r'$S_f$ $(mm)$', fontweight='bold', fontsize=14)
 # ax9[1].set_ylabel(r'$S_s$ $(m)$', fontweight='bold', fontsize=14)
 # ax9[2].set_ylabel(r'$S_b$ $(m)$', fontweight='bold', fontsize=14)
+# ax9[2].set_ylim(1.998,2.0)
 # plt.tight_layout()
 # plt.show()
 
