@@ -12,7 +12,7 @@ import datetime
 import numpy as np
 
 #Read in .csv of pre-grouped storms
-data_df = pd.read_csv('./rlm_output/groupedStorms_ElkRock.csv', index_col='date')
+data_df = pd.read_csv('./rlm_output/groupedStorms_ElkRock_10yr.csv', index_col='date')
 data_df.index = pd.to_datetime(data_df.index)
 
 #Length of storm in # of hourly time steps
@@ -24,9 +24,8 @@ deltaT = timeStep_Hr #time step
 totalT = np.cumsum(deltaT) #total time
 truck_pass = [] #initialize empty list for truck passes
 
-np.random.seed(1) #Use seed to ensure consistent results with each run
+np.random.seed(2) #Use seed to ensure consistent results with each run
 
-###CHECK THIS!!!!!!!!!
 for i, time in enumerate(timeStep_Hr):
     truck = 0
     if time/24 >= 1:
@@ -48,7 +47,6 @@ storms_df['day'] = np.divide(totalT,24).astype('int64')
 storms_df['truck_pass'] = truck_pass
 storms_df['stormNo'] = data_df.groupby('stormNo')['stormNo'].mean()
 storms_df['intensity'] = data_df.groupby('stormNo')['intensity_mmhr'].mean() 
-# ^^normal average intensity; later we get weighted averaged intensity
 
 day0 = data_df.index[0]
 storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time) 
@@ -60,8 +58,8 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 # tau_c = N/m^2; value from https://pubs.usgs.gov/sir/2008/5093/table7.html 
 #     =====> 0.0091 mm is avg
 L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
-                                          9.81, 0.03, 0.05,
-                                          9.1e-6, 0.0275]
+                                          9.81, 0.03, 0.0630,
+                                          1.56e-6, 0.0275]
 #Define layer constants
 # h_s = depth of surfacing
 # f_sf, f_sc = fractions of fine/coarse material in ballast
@@ -78,8 +76,8 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
-k_as, k_ab, u_ps, u_pb, e = [1e-6, 1e-6, 
-                             4.69e-6, 2.35e-6, 
+k_as, k_ab, u_ps, u_pb, e = [1e-7, 1e-8, 
+                             1e-7, 1e-8, 
                              0.725]
 
 #Group data_df.intensity_mmhr into intensity "buckets" and count the values in each "bucket"
@@ -93,7 +91,6 @@ int_tip_df = data_ser.reset_index(level=1)
 int_tip_df.reset_index(inplace=True)
 
 int_tip_df['tot'] = int_tip_df.groupby('stormNo')['num'].transform('sum')
-int_tip_df['frac'] = int_tip_df.num/int_tip_df.tot
 int_tip_df['storm_dur'] = int_tip_df['tot']
 
 #Drop na values
@@ -115,9 +112,10 @@ S_f_init = np.zeros(len(storms_df))
 test = np.zeros(len(storms_df))
 
 q = np.zeros(len(int_tip_df))
-q_avg = np.zeros(len(int_tip_df))
+q_frac = np.zeros(len(int_tip_df))
 
-q_storm = np.zeros(len(storms_df))
+storms_df['q_storm'] = storms_df.intensity*2.77778e-7*L 
+q_storm = storms_df.q_storm.to_numpy()
 f_s = np.zeros(len(storms_df))
 n_f = np.zeros(len(storms_df))
 n_c = np.zeros(len(storms_df))
@@ -132,8 +130,6 @@ n_tp = storms_df.truck_pass.to_numpy()
 t = storms_df.deltaT.to_numpy()
 t_storm = int_tip_df.groupby('stormNo')['storm_dur'].mean().to_numpy()
 
-rainfall = int_tip_df.intensity_mmhr.to_numpy()
-frac = int_tip_df.frac.to_numpy()
 stormNo = int_tip_df.stormNo.to_numpy()
 
 q_f1 = np.zeros(len(storms_df))
@@ -158,7 +154,7 @@ S_bf[0] = h_b*(f_bf)
 for j, storm in enumerate(storms_df.stormNo):
     if j == 0:
         continue
-    else: ####CHECK THIS!!!!!!!!!
+    else:
         q_f1[j] = u_ps*(S_sf[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
         q_f2[j] = u_pb*(S_bf[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
         q_as[j] = k_as*(S_sc[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
@@ -181,13 +177,6 @@ for j, storm in enumerate(storms_df.stormNo):
         sed_added[j] = q_f1[j]*(t[j]*3600.)
         S_f_init[j] = S_f[j-1] + sed_added[j]
 
-    for k, val in enumerate(stormNo):
-        q[k] = rainfall[k]*2.77778e-7*L 
-        q_avg[k] = q[k]*frac[k]
-    
-        if val == storm:
-            q_storm[j] += q_avg[k]
-    
     if q_storm[j] > 0:
         n_f[j] = 0.0026*q_storm[j]**(-0.274)
         n_c[j] = 0.08*q_storm[j]**(-0.153)
@@ -258,10 +247,9 @@ storms_df['tau_e'] = tau_e
 storms_df['n_t'] = n_t
 storms_df['f_s'] = f_s
 storms_df['qs'] = q_s
-storms_df['q_storm'] = q_storm
 
 int_tip_df['q'] = q
-int_tip_df['q_avg'] = q_avg
+int_tip_df['q_frac'] = q_frac
 
 
 plt.close('all')
