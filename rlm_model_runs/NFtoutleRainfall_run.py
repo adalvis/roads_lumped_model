@@ -76,9 +76,9 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
-k_as, k_ab, u_ps, u_pb, e = [1e-7, 1e-8, 
-                             1e-7, 1e-8, 
-                             0.725]
+k_as, k_ab, u_ps, u_pb, e = [1e-7, 1e-7, 
+                             0.5e-7, 1e-7, 
+                             0.725] #e needs to be variable... right?
 
 #Group data_df.intensity_mmhr into intensity "buckets" and count the values in each "bucket"
 data_ser = data_df.groupby(['stormNo','intensity_mmhr'])['intensity_mmhr'].count()
@@ -91,6 +91,7 @@ int_tip_df = data_ser.reset_index(level=1)
 int_tip_df.reset_index(inplace=True)
 
 int_tip_df['tot'] = int_tip_df.groupby('stormNo')['num'].transform('sum')
+int_tip_df['frac'] = int_tip_df.num/int_tip_df.tot
 int_tip_df['storm_dur'] = int_tip_df['tot']
 
 #Drop na values
@@ -112,10 +113,11 @@ S_f_init = np.zeros(len(storms_df))
 test = np.zeros(len(storms_df))
 
 q = np.zeros(len(int_tip_df))
-q_frac = np.zeros(len(int_tip_df))
+q_avg = np.zeros(len(int_tip_df))
 
-storms_df['q_storm'] = storms_df.intensity*2.77778e-7*L 
-q_storm = storms_df.q_storm.to_numpy()
+# storms_df['q_storm'] = storms_df.intensity*2.77778e-7*L 
+# q_storm = storms_df.q_storm.to_numpy()
+q_storm = np.zeros(len(storms_df))
 f_s = np.zeros(len(storms_df))
 n_f = np.zeros(len(storms_df))
 n_c = np.zeros(len(storms_df))
@@ -130,6 +132,8 @@ n_tp = storms_df.truck_pass.to_numpy()
 t = storms_df.deltaT.to_numpy()
 t_storm = int_tip_df.groupby('stormNo')['storm_dur'].mean().to_numpy()
 
+rainfall = int_tip_df.intensity_mmhr.to_numpy()
+frac = int_tip_df.frac.to_numpy()
 stormNo = int_tip_df.stormNo.to_numpy()
 
 q_f1 = np.zeros(len(storms_df))
@@ -176,7 +180,14 @@ for j, storm in enumerate(storms_df.stormNo):
     else:
         sed_added[j] = q_f1[j]*(t[j]*3600.)
         S_f_init[j] = S_f[j-1] + sed_added[j]
+    
+    for k, val in enumerate(stormNo):
+        q[k] = rainfall[k]*2.77778e-7*L 
+        q_avg[k] = q[k]*frac[k]
 
+        if val == storm:
+            q_storm[j] += q_avg[k]
+            
     if q_storm[j] > 0:
         n_f[j] = 0.0026*q_storm[j]**(-0.274)
         n_c[j] = 0.08*q_storm[j]**(-0.153)
@@ -247,9 +258,10 @@ storms_df['tau_e'] = tau_e
 storms_df['n_t'] = n_t
 storms_df['f_s'] = f_s
 storms_df['qs'] = q_s
+storms_df['q_storm'] = q_storm
 
 int_tip_df['q'] = q
-int_tip_df['q_frac'] = q_frac
+int_tip_df['q_avg'] = q_avg
 
 
 plt.close('all')
@@ -368,33 +380,25 @@ plt.show()
 # plt.tight_layout()
 # plt.show()
 
-# #Subset data by water year
-# # yr_1 = storms_df.Hs_out['2018-10-01':'2019-09-30'].sum()
-# # yr_2 = storms_df.Hs_out['2019-10-01':'2020-09-30'].sum()
-# # yr_3 = storms_df.Hs_out['2020-10-01':'2021-09-30'].sum()
-# # yr_4 = storms_df.Hs_out['2021-10-01':'2022-09-30'].sum()
-# # yr_5 = storms_df.Hs_out['2022-10-01':'2023-09-30'].sum()
-# # yr_6 = storms_df.Hs_out['2023-10-01':'2024-09-30'].sum()
-# # yr_7 = storms_df.Hs_out['2024-10-01':'2025-09-30'].sum()
-# # yr_8 = storms_df.Hs_out['2025-10-01':'2026-09-30'].sum()
-# # yr_9 = storms_df.Hs_out['2026-10-01':'2027-09-30'].sum()
-# # yr_10 = storms_df.Hs_out['2027-10-01':'2028-09-30'].sum()
+#Subset data by water year
+years=storms_df.groupby(storms_df.index.year).count().index.to_numpy()
+yr = np.zeros(11)
+for i, year in enumerate(years):
+    yr[i] = (storms_df.Hs_out[str(year)+'-10-01':str(year+1)+'-09-30'].sum())/1000
 
-# #Multiply Hs_out
-# # sed_area = np.multiply([yr_1, yr_2, yr_3, yr_4, yr_5, yr_6, yr_7, \
-# #                         yr_8, yr_9, yr_10], L)
-# # sed_load = np.multiply(sed_area, rho_s)
-# # years = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028]
+#Multiply Hs_out
+sed_area = np.multiply(yr, L)
+sed_load = np.multiply(sed_area, rho_s)
 
-# # ticks = years
-# # fig8, ax8 = plt.subplots(figsize=(6,4))
-# # plt.bar(years, sed_load, color = '#1d4f54')
-# # plt.xlabel('Water year', fontweight='bold', fontsize=14)
-# # plt.ylabel(r'Mass per meter of road $(kg/m)$', fontweight='bold', fontsize=14)
-# # plt.title('Yearly sediment load per meter of road', fontweight='bold', fontsize=14)
-# # plt.xticks(range(ticks[0],ticks[len(ticks)-1]+1), ticks, rotation=45)
-# # plt.tight_layout()
-# # plt.show()
+ticks = years
+fig8, ax8 = plt.subplots(figsize=(6,4))
+plt.bar(years, sed_load, color = '#1d4f54')
+plt.xlabel('Water year', fontweight='bold', fontsize=14)
+plt.ylabel(r'Mass per meter of road $(kg/m)$', fontweight='bold', fontsize=14)
+plt.title('Yearly sediment load per meter of road', fontweight='bold', fontsize=14)
+plt.xticks(range(ticks[0],ticks[len(ticks)-1]+1), ticks, rotation=45)
+plt.tight_layout()
+plt.show()
 
 sed_sum_m = storms_df.sed_added.sum()-(storms_df.Hs_out.sum()/1000)
 sed_sum_kg_m = sed_sum_m*rho_s*L

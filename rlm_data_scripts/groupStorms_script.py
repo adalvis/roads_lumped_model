@@ -5,10 +5,12 @@ import datetime
 import numpy as np
 from scipy.stats import expon
 
-#data = pd.read_csv('./rlm_output/ElkRock_rain_10yr.csv', index_col='date') #for 10 yr
-data = pd.read_csv('./rlm_output/ElkRock_rain.csv', index_col='date') #for 1 yr
+data = pd.read_csv('./rlm_output/ElkRock_rain_10yr.csv', index_col='date') #for 10 yr
+#data = pd.read_csv('./rlm_output/ElkRock_rain.csv', index_col='date') #for 1 yr
 data.index = pd.to_datetime(data.index)
+data = data.asfreq('H')
 data[data['intensity_mmhr']<0]=0
+data.fillna(0, inplace=True)
 df = data.copy()
 
 fig1, ax1 = plt.subplots()
@@ -85,8 +87,8 @@ plt.tight_layout()
 plt.show()
 
 # Save output
-#df.to_csv('./rlm_output/groupedStorms_ElkRock_10yr.csv') #for 10 yr
-df.to_csv('./rlm_output/groupedStorms_ElkRock.csv') #for 1 yr
+df.to_csv('./rlm_output/groupedStorms_ElkRock_10yr.csv') #for 10 yr
+#df.to_csv('./rlm_output/groupedStorms_ElkRock.csv') #for 1 yr
 
 #Below is code I used to hack my way through this the first time. The cleaner
 #version of this is above!
