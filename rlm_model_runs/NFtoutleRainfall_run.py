@@ -47,6 +47,7 @@ storms_df['day'] = np.divide(totalT,24).astype('int64')
 storms_df['truck_pass'] = truck_pass
 storms_df['stormNo'] = data_df.groupby('stormNo')['stormNo'].mean()
 storms_df['intensity'] = data_df.groupby('stormNo')['intensity_mmhr'].mean() 
+storms_df['q_mean'] = storms_df.intensity*2.77778e-7*4.57
 
 day0 = data_df.index[0]
 storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time) 
