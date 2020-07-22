@@ -115,7 +115,9 @@ test = np.zeros(len(storms_df))
 
 q = np.zeros(len(int_tip_df))
 q_avg = np.zeros(len(int_tip_df))
+r_avg = np.zeros(len(int_tip_df))
 
+r_storm = np.zeros(len(storms_df))
 # storms_df['q_storm'] = storms_df.intensity*2.77778e-7*L 
 # q_storm = storms_df.q_storm.to_numpy()
 q_storm = np.zeros(len(storms_df))
@@ -185,9 +187,11 @@ for j, storm in enumerate(storms_df.stormNo):
     for k, val in enumerate(stormNo):
         q[k] = rainfall[k]*2.77778e-7*L 
         q_avg[k] = q[k]*frac[k]
+        r_avg[k] = rainfall[k]*frac[k]
 
         if val == storm:
             q_storm[j] += q_avg[k]
+            r_storm[j] += r_avg[k]
             
     if q_storm[j] > 0:
         n_f[j] = 0.0026*q_storm[j]**(-0.274)
@@ -260,6 +264,7 @@ storms_df['n_t'] = n_t
 storms_df['f_s'] = f_s
 storms_df['qs'] = q_s
 storms_df['q_storm'] = q_storm
+storms_df['r_storm'] = r_storm
 
 int_tip_df['q'] = q
 int_tip_df['q_avg'] = q_avg
@@ -268,21 +273,20 @@ int_tip_df['q_avg'] = q_avg
 plt.close('all')
 
 #Plot f_s over time
-# fig1, ax1 = plt.subplots(figsize=(6,4))
-# storms_df.f_s.plot(ax=ax1)
-# plt.xlabel('Date')
-# plt.ylabel(r'$f_s$')
-# plt.tight_layout()
-# plt.show()
+fig1, ax1 = plt.subplots(figsize=(6,4))
+plt.plot(storms_df.intensity-storms_df.r_storm)
+plt.xlabel('Date')
+plt.ylabel(r'Difference in intensity')
+plt.tight_layout()
+plt.show()
 
 #Plot sediment transport rates over time
-# fig2, ax2 = plt.subplots(figsize=(7,5))
-# int_tip_df.plot(y='qs', ax=ax2, color = 'peru', legend=False)
-# plt.xlabel('Date')
-# plt.ylabel(r'Sediment transport rate $(m/s)$')
-# plt.title('Sediment transport rates', fontweight='bold', fontsize=14)
-# plt.tight_layout()
-# plt.show()
+fig2, ax2 = plt.subplots(figsize=(6,4))
+plt.plot(storms_df.q_mean-storms_df.q_storm)
+plt.xlabel('Date')
+plt.ylabel(r'Difference in discharge')
+plt.tight_layout()
+plt.show()
 
 #Plot sediment transport capacity and actual transport over time
 fig3, ax3 = plt.subplots(figsize=(6,4))
