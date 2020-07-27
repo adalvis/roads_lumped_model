@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import datetime
 import numpy as np
 
-def model_run(data_df, k_as, k_ab, u_ps, u_pb, e):
+def model_run(data_df, k_cs, k_cb, u_ps, u_pb, e):
     #Length of storm in # of hourly time steps
     timeStep_Hr = data_df.groupby('totalNo')['totalNo'].count().to_numpy()
     #Depth of storm in mm
@@ -38,7 +38,7 @@ def model_run(data_df, k_as, k_ab, u_ps, u_pb, e):
     storms_df['stormNo'] = data_df.groupby('stormNo')['stormNo'].mean()
     storms_df['intensity'] = data_df.groupby('stormNo')['intensity_mmhr'].mean() 
     storms_df['q_mean'] = storms_df.intensity*2.77778e-7*4.57
-
+    
     day0 = data_df.index[0]
     storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time) 
         for time in storms_df.time]), inplace=True)
@@ -60,14 +60,14 @@ def model_run(data_df, k_as, k_ab, u_ps, u_pb, e):
     h_b, f_bf, f_br = [2, 0.20, 0.80]
 
     #The following four constants can be adjusted based on observations
-    # k_as = crushing constant for surfacing, m/truck pass
-    # k_ab = crushing constant for ballast, m/truck pass
+    # k_cs = crushing constant for surfacing, m/truck pass
+    # k_cb = crushing constant for ballast, m/truck pass
     # u_ps = pumping constant for surfacing, m/truck pass
     #   (2.14e-5m^3/4.57 m^2)  
     #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
     # u_pb = pumping constant for ballast, m/truck pass
     # e = fraction of coarse material, -
-#     k_as, k_ab, u_ps, u_pb, e = [1e-7, 1e-7, 
+#     k_cs, k_cb, u_ps, u_pb, e = [1e-7, 1e-7, 
 #                                  0.5e-7, 1e-7, 
 #                                  0.725] #e needs to be variable... right?
 
@@ -110,6 +110,7 @@ def model_run(data_df, k_as, k_ab, u_ps, u_pb, e):
     r_storm = np.zeros(len(storms_df))
     # storms_df['q_storm'] = storms_df.intensity*2.77778e-7*L 
     # q_storm = storms_df.q_storm.to_numpy()
+    q_mean = storms_df.q_mean.to_numpy()
     q_storm = np.zeros(len(storms_df))
     f_s = np.zeros(len(storms_df))
     n_f = np.zeros(len(storms_df))
@@ -154,8 +155,8 @@ def model_run(data_df, k_as, k_ab, u_ps, u_pb, e):
         else:
             q_f1[j] = u_ps*(S_sf[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
             q_f2[j] = u_pb*(S_bf[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
-            q_as[j] = k_as*(S_sc[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
-            q_ab[j] = k_ab*(S_bc[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
+            q_as[j] = k_cs*(S_sc[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
+            q_ab[j] = k_cb*(S_bc[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
             S_bc[j] = S_bc[j-1] - q_ab[j]*(t[j]*3600)
             S_sc[j] = S_sc[j-1] - q_as[j]*(t[j]*3600)
             S_bf[j] = S_bf[j-1] + q_ab[j]*(t[j]*3600) - q_f2[j]*(t[j]*3600)
@@ -174,18 +175,18 @@ def model_run(data_df, k_as, k_ab, u_ps, u_pb, e):
             sed_added[j] = q_f1[j]*(t[j]*3600.)
             S_f_init[j] = S_f[j-1] + sed_added[j]
 
-        for k, val in enumerate(stormNo):
-            q[k] = rainfall[k]*2.77778e-7*L 
-            q_avg[k] = q[k]*frac[k]
-            r_avg[k] = rainfall[k]*frac[k]
+#         for k, val in enumerate(stormNo):
+#             q[k] = rainfall[k]*2.77778e-7*L 
+#             q_avg[k] = q[k]*frac[k]
+#             r_avg[k] = rainfall[k]*frac[k]
 
-            if val == storm:
-                q_storm[j] += q_avg[k]
-                r_storm[j] += r_avg[k]
+#             if val == storm:
+#                 q_storm[j] += q_avg[k]
+#                 r_storm[j] += r_avg[k]
 
-        if q_storm[j] > 0:
-            n_f[j] = 0.0026*q_storm[j]**(-0.274)
-            n_c[j] = 0.08*q_storm[j]**(-0.153)
+        if q_mean[j] > 0:
+            n_f[j] = 0.0026*q_mean[j]**(-0.274)
+            n_c[j] = 0.08*q_mean[j]**(-0.153)
         else:
             n_f[j] = n_f[j-1]
             n_c[j] = n_c[j-1]
@@ -198,7 +199,7 @@ def model_run(data_df, k_as, k_ab, u_ps, u_pb, e):
             f_s[j] = (n_f[j]/n_t[j])**(1.5)
 
         #Calculate water depth assuming uniform overland flow
-        water_depth[j] = ((n_t[j]*q_storm[j])/(S**(1/2)))**(3/5)
+        water_depth[j] = ((n_t[j]*q_mean[j])/(S**(1/2)))**(3/5)
 
         tau[j] = rho_w*g*water_depth[j]*S
         tau_e[j] = tau[j]*f_s[j]
@@ -263,11 +264,12 @@ def model_run(data_df, k_as, k_ab, u_ps, u_pb, e):
     sed_sum_kg_m = sed_sum_m*rho_s*L
     f = ((storms_df.S_f[len(storms_df)-1]-storms_df.S_f[0])/1000)*rho_s*L
 
-    if round(f) == round(sed_sum_kg_m):
-        print('\nThe mass balance is fine.')
-    else:
-        print('\nThe mass balance is off.')
+#     if round(f) == round(sed_sum_kg_m):
+#         print('\nThe mass balance is fine.')
+#     else:
+#         print('\nThe mass balance is off.')
 
     total_out_kg = (storms_df.Hs_out.sum()/1000)*rho_s*L
     print("\nTotal amount of sediment transported:", round(total_out_kg), "kg/m")
-    return(sed_sum_kg_m)
+    
+    return(total_out_kg, storms_df)

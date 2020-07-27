@@ -78,7 +78,7 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
 k_as, k_ab, u_ps, u_pb, e = [1e-7, 1e-7, 
-                             0.5e-7, 1e-7, 
+                             1e-7, 1e-7, 
                              0.725] #e needs to be variable... right?
 
 #Group data_df.intensity_mmhr into intensity "buckets" and count the values in each "bucket"
