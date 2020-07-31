@@ -21,12 +21,12 @@ k_cb = [1e-7, 1e-7, 1e-7, 1e-7, 1e-7,
         1e-7, 1e-7, 1e-7, 1e-7, 1e-7, 
         1e-7, 1e-7, 1e-7, 1e-7, 1e-7, 
         1e-7, 1e-7, 1e-7, 1e-7, 1e-7]
-q_ps = [0.25e-7, 0.5e-7, 1e-7, 2e-7, 4e-7, 
+u_ps = [0.25e-7, 0.5e-7, 1e-7, 2e-7, 4e-7, 
         0.25e-7, 0.5e-7, 1e-7, 2e-7, 4e-7, 
         0.25e-7, 0.5e-7, 1e-7, 2e-7, 4e-7, 
         0.25e-7, 0.5e-7, 1e-7, 2e-7, 4e-7, 
         0.25e-7, 0.5e-7, 1e-7, 2e-7, 4e-7]
-q_pb = [1e-7, 1e-7, 1e-7, 1e-7, 1e-7, 
+u_pb = [1e-7, 1e-7, 1e-7, 1e-7, 1e-7, 
         1e-7, 1e-7, 1e-7, 1e-7, 1e-7, 
         1e-7, 1e-7, 1e-7, 1e-7, 1e-7,
         1e-7, 1e-7, 1e-7, 1e-7, 1e-7, 
@@ -37,18 +37,18 @@ sed = np.zeros(len(k_cs))
 storms_df = []
 
 for i in range(len(k_cs)):
-    sed[i], storms_df = mod.model_run(data_df, k_cs[i], k_cb[i], q_ps[i], q_pb[i], e)
+    sed[i], storms_df = mod.model_run(data_df, k_cs[i], k_cb[i], u_ps[i], u_pb[i], e)
 
 sed = sed/10
-q_rat = [i / j for i, j in zip(q_ps, q_pb)]
+u_rat = [i / j for i, j in zip(u_ps, u_pb)]
 k_rat = [i / j for i, j in zip(k_cs, k_cb)]
 
-plt.plot(q_rat[0:5],sed[0:5], 'o', label='1/4')
-plt.plot(q_rat[5:10],sed[5:10], '*', label = '1/2')
-plt.plot(q_rat[10:15],sed[10:15], '>', label = '1')
-plt.plot(q_rat[15:20],sed[15:20], '^', label = '2')
-plt.plot(q_rat[20:25],sed[20:25], 's', label = '4')
-plt.xlabel('q ratio')
+plt.plot(u_rat[0:5],sed[0:5], 'o', label='1/4')
+plt.plot(u_rat[5:10],sed[5:10], '*', label = '1/2')
+plt.plot(u_rat[10:15],sed[10:15], '>', label = '1')
+plt.plot(u_rat[15:20],sed[15:20], '^', label = '2')
+plt.plot(u_rat[20:25],sed[20:25], 's', label = '4')
+plt.xlabel('u ratio')
 plt.ylabel('10-year average sediment yield (kg/m)')
 plt.legend(title='k ratio')
 plt.show()

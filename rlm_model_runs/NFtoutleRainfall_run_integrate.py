@@ -53,7 +53,7 @@ day0 = data_df.index[0]
 storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time) 
     for time in storms_df.time]), inplace=True)
 
-#Define physical constants
+#===========================DEFINE PHYSICAL CONSTANTS===========================
 # L = representative segment of road, m
 # S = m/m
 # tau_c = N/m^2; value from https://pubs.usgs.gov/sir/2008/5093/table7.html 
@@ -61,7 +61,7 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
                                           9.81, 0.03, 0.0630,
                                           1.56e-6, 0.0275]
-#Define layer constants
+#===========================DEFINE LAYER CONSTANTS===========================
 # h_s = depth of surfacing
 # f_sf, f_sc = fractions of fine/coarse material in ballast
 # h_b = depth of surfacing
@@ -69,7 +69,7 @@ L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650,
 h_s, f_sf, f_sc = [0.23, 0.275, 0.725]
 h_b, f_bf, f_br = [2, 0.20, 0.80]
 
-#The following four constants can be adjusted based on observations
+#===========================DEFINE PUMPING/CRUSHING RATES===========================
 # k_as = crushing constant for surfacing, m/truck pass
 # k_ab = crushing constant for ballast, m/truck pass
 # u_ps = pumping constant for surfacing, m/truck pass
@@ -81,8 +81,10 @@ k_as, k_ab, u_ps, u_pb, e = [1e-7, 1e-7,
                              1e-7, 1e-7, 
                              0.725] #e needs to be variable... right?
 
+#===========================GROUP RAINFALL DATA===========================
 #Group data_df.intensity_mmhr into intensity "buckets" and count the values in each "bucket"
 data_ser = data_df.groupby(['stormNo','intensity_mmhr'])['intensity_mmhr'].count()
+
 #Rename the grouped data "num" to signify # of values in "bucket"
 data_ser.rename('num', inplace=True)
 
@@ -99,9 +101,10 @@ int_tip_df['storm_dur'] = int_tip_df['tot']
 int_tip_df.drop([0], inplace=True)
 
 
-#Step 1!
-#Initialize numpy arrays for calculations
+#===========================INITIALIZE ARRAYS===========================
+#=================len(storms_df)====================
 dS_f = np.zeros(len(storms_df))
+S_f_init = np.zeros(len(storms_df))
 S_f = np.zeros(len(storms_df))
 S_s = np.zeros(len(storms_df))
 S_sc = np.zeros(len(storms_df))
@@ -110,46 +113,44 @@ S_b = np.zeros(len(storms_df))
 S_bc = np.zeros(len(storms_df))
 S_bf = np.zeros(len(storms_df))
 Hs_out = np.zeros(len(storms_df))
-S_f_init = np.zeros(len(storms_df))
-test = np.zeros(len(storms_df))
-
-q = np.zeros(len(int_tip_df))
-q_avg = np.zeros(len(int_tip_df))
-r_avg = np.zeros(len(int_tip_df))
 
 r_storm = np.zeros(len(storms_df))
-# storms_df['q_storm'] = storms_df.intensity*2.77778e-7*L 
-# q_storm = storms_df.q_storm.to_numpy()
-q_mean = storms_df.q_mean.to_numpy()
 q_storm = np.zeros(len(storms_df))
-f_s = np.zeros(len(storms_df))
-n_f = np.zeros(len(storms_df))
-n_c = np.zeros(len(storms_df))
-n_t = np.zeros(len(storms_df))
-q_s = np.zeros(len(storms_df))
-q_ref = np.zeros(len(storms_df))
-water_depth = np.zeros(len(storms_df))
-tau = np.zeros(len(storms_df))
-tau_e = np.zeros(len(storms_df))
-
-n_tp = storms_df.truck_pass.to_numpy()
-t = storms_df.deltaT.to_numpy()
-t_storm = int_tip_df.groupby('stormNo')['storm_dur'].mean().to_numpy()
-
-rainfall = int_tip_df.intensity_mmhr.to_numpy()
-frac = int_tip_df.frac.to_numpy()
-stormNo = int_tip_df.stormNo.to_numpy()
-
 q_f1 = np.zeros(len(storms_df))
 q_f2 = np.zeros(len(storms_df))
 q_as = np.zeros(len(storms_df))
 q_ab = np.zeros(len(storms_df))
 sed_added = np.zeros(len(storms_df))
 sed_cap = np.zeros(len(storms_df))
-value = np.zeros(len(storms_df))
 ref_trans = np.zeros(len(storms_df))
+# storms_df['q_storm'] = storms_df.intensity*2.77778e-7*L 
+# q_storm = storms_df.q_storm.to_numpy()
+q_s_avg = np.zeros(len(storms_df))
+q_ref_avg = np.zeros(len(storms_df))
 
-#Initial conditions for fines, surfacing, ballast
+n_tp = storms_df.truck_pass.to_numpy()
+t = storms_df.deltaT.to_numpy()
+
+#=================len(int_tip_df)====================
+q = np.zeros(len(int_tip_df))
+q_avg = np.zeros(len(int_tip_df))
+r_avg = np.zeros(len(int_tip_df))
+f_s = np.zeros(len(int_tip_df))
+n_f = np.zeros(len(int_tip_df))
+n_c = np.zeros(len(int_tip_df))
+n_t = np.zeros(len(int_tip_df))
+q_s = np.zeros(len(int_tip_df))
+q_ref = np.zeros(len(int_tip_df))
+water_depth = np.zeros(len(int_tip_df))
+tau = np.zeros(len(int_tip_df))
+tau_e = np.zeros(len(int_tip_df))
+
+rainfall = int_tip_df.intensity_mmhr.to_numpy()
+frac = int_tip_df.frac.to_numpy()
+stormNo = int_tip_df.stormNo.to_numpy()
+t_storm = int_tip_df.groupby('stormNo')['storm_dur'].mean().to_numpy()
+
+#===========================INITIALIZE DEPTHS===========================
 S_f_init[0] = 0.0275
 S_f[0] = 0.0275
 S_s[0] = h_s*(f_sf + f_sc)
@@ -184,65 +185,65 @@ for j, storm in enumerate(storms_df.stormNo):
     else:
         sed_added[j] = q_f1[j]*(t[j]*3600.)
         S_f_init[j] = S_f[j-1] + sed_added[j]
-        
-#=================================BEGIN=================================    
-#     for k, val in enumerate(stormNo):
-#         q[k] = rainfall[k]*2.77778e-7*L 
-#         q_avg[k] = q[k]*frac[k]
-#         r_avg[k] = rainfall[k]*frac[k]
 
-#         if val == storm:
-#             q_storm[j] += q_avg[k]
-#             r_storm[j] += r_avg[k]
-#==================================END==================================
+#===========================BEGIN INTEGRATE OVER qs===========================
+    for k, val in enumerate(stormNo):
+        if k == 0:
+            continue
+        else:
+            q[k] = rainfall[k]*2.77778e-7*L 
+            q_avg[k] = q[k]*frac[k]
+            r_avg[k] = rainfall[k]*frac[k]
 
-    if q_mean[j] > 0:
-        n_f[j] = 0.0026*q_mean[j]**(-0.274)
-        n_c[j] = 0.08*q_mean[j]**(-0.153)
-    else:
-        n_f[j] = n_f[j-1]
-        n_c[j] = n_c[j-1]
+            if q_avg[k] > 0:
+                n_f[k] = 0.0026*q_avg[k]**(-0.274)
+                n_c[k] = 0.08*q_avg[k]**(-0.153)
+            else:
+                n_f[k] = n_f[k-1]
+                n_c[k] = n_c[k-1]
 
-    if S_f_init[j] <= d95:
-        n_t[j] = n_c[j] + (S_f_init[j]/d95)*(n_f[j]-n_c[j])
-        f_s[j] = (n_f[j]/n_t[j])**(1.5)*(S_f_init[j]/d95)
-    else: 
-        n_t[j] = n_f[j]
-        f_s[j] = (n_f[j]/n_t[j])**(1.5)
+            if S_f_init[j] <= d95:
+                n_t[k] = n_c[k] + (S_f_init[j]/d95)*(n_f[k]-n_c[k])
+                f_s[k] = (n_f[k]/n_t[k])**(1.5)*(S_f_init[j]/d95)
+            else: 
+                n_t[k] = n_f[k]
+                f_s[k] = (n_f[k]/n_t[k])**(1.5)
 
-    #Calculate water depth assuming uniform overland flow
-    water_depth[j] = ((n_t[j]*q_mean[j])/(S**(1/2)))**(3/5)
+            #Calculate water depth assuming uniform overland flow
+            water_depth[k] = ((n_t[k]*q_avg[k])/(S**(1/2)))**(3/5)
 
-    tau[j] = rho_w*g*water_depth[j]*S
-    tau_e[j] = tau[j]*f_s[j]
-    
-    #Calculate sediment transport rate
-    if (tau_e[j]-tau_c) >= 0:
-        q_s[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
-                 (tau_e[j]-tau_c)**(2.457))
-    else:
-        q_s[j] = 0
-    
-    #Calculate reference transport 
-    if (tau[j]-tau_c) >=0:
-        q_ref[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
-                       (tau[j]-tau_c)**(2.457))
-    else:
-        q_ref[j] = 0
+            tau[k] = rho_w*g*water_depth[k]*S
+            tau_e[k] = tau[k]*f_s[k]
 
-    sed_cap[j] = q_s[j]*t_storm[j]*3600/L
-    ref_trans[j] = q_ref[j]*t_storm[j]*3600/L
+            #Calculate sediment transport rate
+            if (tau_e[k]-tau_c) >= 0:
+                q_s[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
+                         (tau_e[k]-tau_c)**(2.457))
+            else:
+                q_s[k] = 0
 
-    #Create a condition column based on sediment transport capacity vs sediment supply
-    value[j] = (sed_added[j]-sed_cap[j]) #*******Are we considering ref transport or actual transport here??????
-        
-#     if value[j] < 0:
-#         Hs_out[j] = np.minimum(sed_added[j]+S_f[j-1], sed_cap[j])
-#     else:
-#         Hs_out[j] = sed_cap[j]
+            #Calculate reference transport 
+            if (tau[k]-tau_c) >=0:
+                q_ref[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*\
+                               (tau[k]-tau_c)**(2.457))
+            else:
+                q_ref[k] = 0
+
+
+            if val == storm:
+                q_storm[j] += q_avg[k]
+                r_storm[j] += r_avg[k]
+                q_s_avg[j] += q_s[k]
+                q_ref_avg[j] += q_ref[k]
+
+#===========================END INTEGRATE OVER qs===========================
+            
+    sed_cap[j] = q_s_avg[j]*t_storm[j]*3600/L
+    ref_trans[j] = q_ref_avg[j]*t_storm[j]*3600/L
+
     Hs_out[j] = np.minimum(sed_added[j]+S_f[j-1], sed_cap[j])
     dS_f[j] = sed_added[j] - Hs_out[j]
-    S_f[j] = S_f[j-1] + dS_f[j] #if (S_f_init[j] - Hs_out[j]) > 0 else 0
+    S_f[j] = S_f[j-1] + dS_f[j]
 
 #Step 2!
 #Add all numpy arrays to the Pandas dataframe
@@ -259,15 +260,14 @@ storms_df['Hs_out'] = Hs_out*1000
 storms_df['sed_added'] = sed_added
 storms_df['sed_cap'] = sed_cap*1000
 storms_df['ref_trans'] = ref_trans*1000
-storms_df['val'] = value
-storms_df['water_depth'] = water_depth
-storms_df['tau'] = tau
-storms_df['tau_e'] = tau_e
-storms_df['n_t'] = n_t
-storms_df['f_s'] = f_s
-storms_df['qs'] = q_s
 storms_df['q_storm'] = q_storm
 storms_df['r_storm'] = r_storm
+# storms_df['water_depth'] = water_depth
+# storms_df['tau'] = tau
+# storms_df['tau_e'] = tau_e
+# storms_df['n_t'] = n_t
+# storms_df['f_s'] = f_s
+# storms_df['qs'] = q_s
 
 int_tip_df['q'] = q
 int_tip_df['q_avg'] = q_avg
