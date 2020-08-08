@@ -5,9 +5,13 @@ import datetime
 import numpy as np
 from scipy.stats import expon
 
-data = pd.read_csv('./rlm_output/ElkRock_rain_10yr.csv', index_col='date') #for 10 yr
+
+data = pd.read_csv('./rlm_output/ElkRock_rain_10yr.csv', index_col='date') #for 6 yr
+# data = pd.read_csv('./rlm_output/ElkRock_rain_14yr.csv', index_col='date') #for 14 yr
+# data = pd.read_csv('./rlm_output/ElkRock_rain_10yr.csv', index_col='date') #for 10 yr
 #data = pd.read_csv('./rlm_output/ElkRock_rain.csv', index_col='date') #for 1 yr
 data.index = pd.to_datetime(data.index)
+data = data[data.index >= data.index[12614]] #for 7 yr
 data = data.asfreq('H')
 data[data['intensity_mmhr']<0]=0
 data.fillna(0, inplace=True)
@@ -87,7 +91,9 @@ plt.tight_layout()
 plt.show()
 
 # Save output
-df.to_csv('./rlm_output/groupedStorms_ElkRock_10yr.csv') #for 10 yr
+df.to_csv('./rlm_output/groupedStorms_ElkRock_7yr.csv') #for 7 yr
+#df.to_csv('./rlm_output/groupedStorms_ElkRock_14yr.csv') #for 14 yr
+#df.to_csv('./rlm_output/groupedStorms_ElkRock_10yr.csv') #for 10 yr
 #df.to_csv('./rlm_output/groupedStorms_ElkRock.csv') #for 1 yr
 
 #Below is code I used to hack my way through this the first time. The cleaner
