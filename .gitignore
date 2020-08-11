@@ -1,4 +1,4 @@
 rlm_input/
 rlm_output/
 .ipynb_checkpoints
-rlm_model_runs/__pycache__
+rlm_model_runs/__pycache__/
