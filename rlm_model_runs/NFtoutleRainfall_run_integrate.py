@@ -59,8 +59,8 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 # tau_c = N/m^2; value from https://pubs.usgs.gov/sir/2008/5093/table7.html 
 #     =====> 0.0091 mm is avg
 L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
-                                          9.81, 0.03, 0.044,
-                                          0.91e-5, 0.0275]
+                                          9.81, 0.03, 0.055,
+                                          1.8e-5, 0.0275]
 #===========================DEFINE LAYER CONSTANTS===========================
 # h_s = depth of surfacing
 # f_sf, f_sc = fractions of fine/coarse material in ballast
@@ -77,8 +77,8 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
-k_as, k_ab, u_ps, u_pb, e = [1e-7, 1e-7, 
-                             1e-7, 1e-7, 
+k_as, k_ab, u_ps, u_pb, e = [1e-6, 1e-6, 
+                             1e-6, 1e-6, 
                              0.725] #e needs to be variable... right?
 
 #===========================GROUP RAINFALL DATA===========================
@@ -275,21 +275,21 @@ int_tip_df['q_avg'] = q_avg
 
 plt.close('all')
 
-#Plot f_s over time
-fig1, ax1 = plt.subplots(figsize=(6,4))
-plt.plot(storms_df.intensity-storms_df.r_storm)
-plt.xlabel('Date')
-plt.ylabel(r'Difference in intensity')
-plt.tight_layout()
-plt.show()
+# #Plot f_s over time
+# fig1, ax1 = plt.subplots(figsize=(6,4))
+# plt.plot(storms_df.intensity-storms_df.r_storm)
+# plt.xlabel('Date')
+# plt.ylabel(r'Difference in intensity')
+# plt.tight_layout()
+# plt.show()
 
-#Plot sediment transport rates over time
-fig2, ax2 = plt.subplots(figsize=(6,4))
-plt.plot(storms_df.q_mean-storms_df.q_storm)
-plt.xlabel('Date')
-plt.ylabel(r'Difference in discharge')
-plt.tight_layout()
-plt.show()
+# #Plot sediment transport rates over time
+# fig2, ax2 = plt.subplots(figsize=(6,4))
+# plt.plot(storms_df.q_mean-storms_df.q_storm)
+# plt.xlabel('Date')
+# plt.ylabel(r'Difference in discharge')
+# plt.tight_layout()
+# plt.show()
 
 #Plot sediment transport capacity and actual transport over time
 fig3, ax3 = plt.subplots(figsize=(6,4))
@@ -300,7 +300,7 @@ plt.ylabel(r'Sediment depth $(mm)$')
 fig3.legend(loc="upper right", bbox_to_anchor=(1,1), 
     bbox_transform=ax3.transAxes)
 plt.tight_layout()
-#plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Ref_Act.png')
+plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Ref_Act_int_qs.png')
 plt.show()
 
 #Plot fine sediment storage over time
@@ -310,7 +310,7 @@ plt.xlabel('Date')
 plt.ylabel(r'Fine sediment storage, $S_f$ $(mm)$')
 plt.title('Fine sediment storage')
 plt.tight_layout()
-#plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Fines.png')
+plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Fines_int_qs.png')
 plt.show()
 
 #Plot fine sediment storage and actual transport over time
@@ -354,6 +354,7 @@ fig7.legend(loc="upper right", bbox_to_anchor=(1,1),
     bbox_transform=ax7.transAxes)
 plt.xlabel('Date', fontweight='bold', fontsize=14)
 plt.tight_layout()
+plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Surf_int_qs.png')
 plt.show()
 
 #Plot ballast storage over time
@@ -371,6 +372,7 @@ fig8.legend(loc="upper right", bbox_to_anchor=(1,1),
     bbox_transform=ax8.transAxes)
 plt.title('Ballast storage', fontweight='bold', fontsize=14)
 plt.tight_layout()
+plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Bal_int_qs.png')
 plt.show()
 
 # fig9, ax9 = plt.subplots(3, figsize=(9,7), sharex=True)
@@ -407,6 +409,7 @@ plt.ylabel(r'Mass per meter of road $(kg/m)$', fontweight='bold', fontsize=14)
 plt.title('Yearly sediment load per meter of road', fontweight='bold', fontsize=14)
 plt.xticks(range(ticks[0],ticks[len(ticks)-1]+1), ticks, rotation=45)
 plt.tight_layout()
+plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/SedLoad_int_qs.png')
 plt.show()
 
 sed_sum_m = storms_df.sed_added.sum()-(storms_df.Hs_out.sum()/1000)

@@ -49,8 +49,8 @@ def model_run(data_df, k_cs, k_cb, u_ps, u_pb, e):
     # tau_c = N/m^2; value from https://pubs.usgs.gov/sir/2008/5093/table7.html 
     #     =====> 0.0091 mm is avg
     L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
-                                              9.81, 0.03, 0.0630,
-                                              1.56e-6, 0.0275]
+                                              9.81, 0.03, 0.055,
+                                              1.8e-5, 0.0275]
     #Define layer constants
     # h_s = depth of surfacing
     # f_sf, f_sc = fractions of fine/coarse material in ballast

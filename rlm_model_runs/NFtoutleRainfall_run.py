@@ -12,7 +12,7 @@ import datetime
 import numpy as np
 
 #Read in .csv of pre-grouped storms
-data_df = pd.read_csv('./rlm_output/groupedStorms_ElkRock_10yr.csv', index_col='date')
+data_df = pd.read_csv('./rlm_output/groupedStorms_ElkRock_7yr.csv', index_col='date')
 data_df.index = pd.to_datetime(data_df.index)
 
 #Length of storm in # of hourly time steps
@@ -59,8 +59,8 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 # tau_c = N/m^2; value from https://pubs.usgs.gov/sir/2008/5093/table7.html 
 #     =====> 0.0091 mm is avg
 L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
-                                          9.81, 0.03, 0.0630,
-                                          1.56e-6, 0.0275]
+                                          9.81, 0.03, 0.055,
+                                          1.8e-5, 0.0275]
 #Define layer constants
 # h_s = depth of surfacing
 # f_sf, f_sc = fractions of fine/coarse material in ballast
@@ -276,20 +276,20 @@ int_tip_df['q_avg'] = q_avg
 plt.close('all')
 
 #Plot f_s over time
-fig1, ax1 = plt.subplots(figsize=(6,4))
-plt.plot(storms_df.intensity-storms_df.r_storm)
-plt.xlabel('Date')
-plt.ylabel(r'Difference in intensity')
-plt.tight_layout()
-plt.show()
+# fig1, ax1 = plt.subplots(figsize=(6,4))
+# plt.plot(storms_df.intensity-storms_df.r_storm)
+# plt.xlabel('Date')
+# plt.ylabel(r'Difference in intensity')
+# plt.tight_layout()
+# plt.show()
 
-#Plot sediment transport rates over time
-fig2, ax2 = plt.subplots(figsize=(6,4))
-plt.plot(storms_df.q_mean-storms_df.q_storm)
-plt.xlabel('Date')
-plt.ylabel(r'Difference in discharge')
-plt.tight_layout()
-plt.show()
+# #Plot sediment transport rates over time
+# fig2, ax2 = plt.subplots(figsize=(6,4))
+# plt.plot(storms_df.q_mean-storms_df.q_storm)
+# plt.xlabel('Date')
+# plt.ylabel(r'Difference in discharge')
+# plt.tight_layout()
+# plt.show()
 
 #Plot sediment transport capacity and actual transport over time
 fig3, ax3 = plt.subplots(figsize=(6,4))
@@ -300,7 +300,7 @@ plt.ylabel(r'Sediment depth $(mm)$')
 fig3.legend(loc="upper right", bbox_to_anchor=(1,1), 
     bbox_transform=ax3.transAxes)
 plt.tight_layout()
-#plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Ref_Act.png')
+plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Ref_Act.png')
 plt.show()
 
 #Plot fine sediment storage over time
@@ -310,7 +310,7 @@ plt.xlabel('Date')
 plt.ylabel(r'Fine sediment storage, $S_f$ $(mm)$')
 plt.title('Fine sediment storage')
 plt.tight_layout()
-#plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Fines.png')
+plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Fines.png')
 plt.show()
 
 #Plot fine sediment storage and actual transport over time
@@ -354,6 +354,7 @@ fig7.legend(loc="upper right", bbox_to_anchor=(1,1),
     bbox_transform=ax7.transAxes)
 plt.xlabel('Date', fontweight='bold', fontsize=14)
 plt.tight_layout()
+plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Surf.png')
 plt.show()
 
 #Plot ballast storage over time
@@ -371,6 +372,7 @@ fig8.legend(loc="upper right", bbox_to_anchor=(1,1),
     bbox_transform=ax8.transAxes)
 plt.title('Ballast storage', fontweight='bold', fontsize=14)
 plt.tight_layout()
+plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Bal.png')
 plt.show()
 
 # fig9, ax9 = plt.subplots(3, figsize=(9,7), sharex=True)
@@ -390,22 +392,24 @@ plt.show()
 
 #Subset data by water year
 years=storms_df.groupby(storms_df.index.year).count().index.to_numpy()
-yr = np.zeros(11)
+yr = np.zeros(7)
 for i, year in enumerate(years):
-    yr[i] = (storms_df.Hs_out[str(year)+'-10-01':str(year+1)+'-09-30'].sum())/1000
+    if i < len(years)-1:
+        yr[i] = (storms_df.Hs_out[str(year)+'-07-01':str(year+1)+'-06-30'].sum())/1000
 
 #Multiply Hs_out
 sed_area = np.multiply(yr, L)
 sed_load = np.multiply(sed_area, rho_s)
 
-ticks = years
+ticks = years[1:8]
 fig8, ax8 = plt.subplots(figsize=(6,4))
-plt.bar(years, sed_load, color = '#1d4f54')
+plt.bar(years[1:8], sed_load, color = '#1d4f54')
 plt.xlabel('Water year', fontweight='bold', fontsize=14)
 plt.ylabel(r'Mass per meter of road $(kg/m)$', fontweight='bold', fontsize=14)
 plt.title('Yearly sediment load per meter of road', fontweight='bold', fontsize=14)
 plt.xticks(range(ticks[0],ticks[len(ticks)-1]+1), ticks, rotation=45)
 plt.tight_layout()
+plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/SedLoad.png')
 plt.show()
 
 sed_sum_m = storms_df.sed_added.sum()-(storms_df.Hs_out.sum()/1000)
