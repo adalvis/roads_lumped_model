@@ -77,8 +77,8 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
-k_as, k_ab, u_ps, u_pb, e = [1e-6, 1e-6, 
-                             1e-6, 1e-6, 
+k_as, k_ab, u_ps, u_pb, e = [1e-7, 1e-7, 
+                             1e-7, 1e-7, 
                              0.725] #e needs to be variable... right?
 
 #===========================GROUP RAINFALL DATA===========================
@@ -159,6 +159,7 @@ S_sf[0] = h_s*(f_sf)
 S_b[0] = h_b*(f_bf + f_br)
 S_bc[0] = h_b*(f_br)
 S_bf[0] = h_b*(f_bf)
+n_c[0] = 0.4
 
 for j, storm in enumerate(storms_df.stormNo):
     if j == 0:
@@ -192,15 +193,15 @@ for j, storm in enumerate(storms_df.stormNo):
             continue
         else:
             q[k] = rainfall[k]*2.77778e-7*L 
-            q_avg[k] = q[k]*frac[k]
-            r_avg[k] = rainfall[k]*frac[k]
+#             q[k] = q[k]*frac[k]
+#             r_avg[k] = rainfall[k]*frac[k]
 
-            if q_avg[k] > 0:
-                n_f[k] = 0.0026*q_avg[k]**(-0.274)
-                n_c[k] = 0.08*q_avg[k]**(-0.153)
+            if q[k] > 0:
+                n_f[k] = 0.0026*q[k]**(-0.274)
+                n_c[k] = 0.4
             else:
                 n_f[k] = n_f[k-1]
-                n_c[k] = n_c[k-1]
+                n_c[k] = 0.4
 
             if S_f_init[j] <= d95:
                 n_t[k] = n_c[k] + (S_f_init[j]/d95)*(n_f[k]-n_c[k])
@@ -210,7 +211,7 @@ for j, storm in enumerate(storms_df.stormNo):
                 f_s[k] = (n_f[k]/n_t[k])**(1.5)
 
             #Calculate water depth assuming uniform overland flow
-            water_depth[k] = ((n_t[k]*q_avg[k])/(S**(1/2)))**(3/5)
+            water_depth[k] = ((n_t[k]*q[k])/(S**(1/2)))**(3/5)
 
             tau[k] = rho_w*g*water_depth[k]*S
             tau_e[k] = tau[k]*f_s[k]
@@ -231,10 +232,10 @@ for j, storm in enumerate(storms_df.stormNo):
 
 
             if val == storm:
-                q_storm[j] += q_avg[k]
-                r_storm[j] += r_avg[k]
-                q_s_avg[j] += q_s[k]
-                q_ref_avg[j] += q_ref[k]
+                q_storm[j] += q[k]*frac[k]
+#                 r_storm[j] += r_avg[k]
+                q_s_avg[j] += q_s[k]*frac[k]
+                q_ref_avg[j] += q_ref[k]*frac[k]
 
 #===========================END INTEGRATE OVER qs===========================
             
@@ -261,7 +262,7 @@ storms_df['sed_added'] = sed_added
 storms_df['sed_cap'] = sed_cap*1000
 storms_df['ref_trans'] = ref_trans*1000
 storms_df['q_storm'] = q_storm
-storms_df['r_storm'] = r_storm
+# storms_df['r_storm'] = r_storm
 # storms_df['water_depth'] = water_depth
 # storms_df['tau'] = tau
 # storms_df['tau_e'] = tau_e

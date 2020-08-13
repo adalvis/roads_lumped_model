@@ -150,14 +150,15 @@ value = np.zeros(len(storms_df))
 ref_trans = np.zeros(len(storms_df))
 
 #Initial conditions for fines, surfacing, ballast
-S_f_init[0] = 0.0275
-S_f[0] = 0.0275
+S_f_init[0] = 0.0
+S_f[0] = 0.0
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
 S_b[0] = h_b*(f_bf + f_br)
 S_bc[0] = h_b*(f_br)
 S_bf[0] = h_b*(f_bf)
+n_c[0] = 0.4
 
 for j, storm in enumerate(storms_df.stormNo):
     if j == 0:
@@ -198,10 +199,10 @@ for j, storm in enumerate(storms_df.stormNo):
 
     if q_mean[j] > 0:
         n_f[j] = 0.0026*q_mean[j]**(-0.274)
-        n_c[j] = 0.08*q_mean[j]**(-0.153)
+        n_c[j] = 0.4
     else:
         n_f[j] = n_f[j-1]
-        n_c[j] = n_c[j-1]
+        n_c[j] = 0.4
 
     if S_f_init[j] <= d95:
         n_t[j] = n_c[j] + (S_f_init[j]/d95)*(n_f[j]-n_c[j])
@@ -300,7 +301,7 @@ plt.ylabel(r'Sediment depth $(mm)$')
 fig3.legend(loc="upper right", bbox_to_anchor=(1,1), 
     bbox_transform=ax3.transAxes)
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Ref_Act.png')
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Ref_Act.png')
 plt.show()
 
 #Plot fine sediment storage over time
@@ -310,7 +311,7 @@ plt.xlabel('Date')
 plt.ylabel(r'Fine sediment storage, $S_f$ $(mm)$')
 plt.title('Fine sediment storage')
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Fines.png')
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Fines.png')
 plt.show()
 
 #Plot fine sediment storage and actual transport over time
@@ -354,7 +355,7 @@ fig7.legend(loc="upper right", bbox_to_anchor=(1,1),
     bbox_transform=ax7.transAxes)
 plt.xlabel('Date', fontweight='bold', fontsize=14)
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Surf.png')
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Surf.png')
 plt.show()
 
 #Plot ballast storage over time
@@ -372,7 +373,7 @@ fig8.legend(loc="upper right", bbox_to_anchor=(1,1),
     bbox_transform=ax8.transAxes)
 plt.title('Ballast storage', fontweight='bold', fontsize=14)
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Bal.png')
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Bal.png')
 plt.show()
 
 # fig9, ax9 = plt.subplots(3, figsize=(9,7), sharex=True)
@@ -409,7 +410,7 @@ plt.ylabel(r'Mass per meter of road $(kg/m)$', fontweight='bold', fontsize=14)
 plt.title('Yearly sediment load per meter of road', fontweight='bold', fontsize=14)
 plt.xticks(range(ticks[0],ticks[len(ticks)-1]+1), ticks, rotation=45)
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/SedLoad.png')
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/SedLoad.png')
 plt.show()
 
 sed_sum_m = storms_df.sed_added.sum()-(storms_df.Hs_out.sum()/1000)
