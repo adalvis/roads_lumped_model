@@ -12,7 +12,7 @@ import datetime
 import numpy as np
 
 #Read in .csv of pre-grouped storms
-data_df = pd.read_csv('./rlm_output/groupedStorms_ElkRock_7yr.csv', index_col='date')
+data_df = pd.read_csv('./rlm_output/data_csv/groupedStorms_ElkRock_7yr.csv', index_col='date')
 data_df.index = pd.to_datetime(data_df.index)
 
 #Length of storm in # of hourly time steps
@@ -70,16 +70,14 @@ h_s, f_sf, f_sc = [0.23, 0.275, 0.725]
 h_b, f_bf, f_br = [2, 0.20, 0.80]
 
 #===========================DEFINE PUMPING/CRUSHING RATES===========================
-# k_as = crushing constant for surfacing, m/truck pass
-# k_ab = crushing constant for ballast, m/truck pass
+# k_cs = crushing constant for surfacing, m/truck pass
+# k_cb = crushing constant for ballast, m/truck pass
 # u_ps = pumping constant for surfacing, m/truck pass
 #   (2.14e-5m^3/4.57 m^2)  
 #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
-k_as, k_ab, u_ps, u_pb, e = [1e-7, 1e-7, 
-                             1e-7, 1e-7, 
-                             0.725] #e needs to be variable... right?
+k_cs, k_cb, u_ps, u_pb, e = [1e-7, 1e-7, 5e-7, 1e-7, 0.725]
 
 #===========================GROUP RAINFALL DATA===========================
 #Group data_df.intensity_mmhr into intensity "buckets" and count the values in each "bucket"
@@ -116,15 +114,13 @@ Hs_out = np.zeros(len(storms_df))
 
 r_storm = np.zeros(len(storms_df))
 q_storm = np.zeros(len(storms_df))
-q_f1 = np.zeros(len(storms_df))
-q_f2 = np.zeros(len(storms_df))
-q_as = np.zeros(len(storms_df))
-q_ab = np.zeros(len(storms_df))
+q_ps = np.zeros(len(storms_df))
+q_pb = np.zeros(len(storms_df))
+q_cs = np.zeros(len(storms_df))
+q_cb = np.zeros(len(storms_df))
 sed_added = np.zeros(len(storms_df))
 sed_cap = np.zeros(len(storms_df))
 ref_trans = np.zeros(len(storms_df))
-# storms_df['q_storm'] = storms_df.intensity*2.77778e-7*L 
-# q_storm = storms_df.q_storm.to_numpy()
 q_s_avg = np.zeros(len(storms_df))
 q_ref_avg = np.zeros(len(storms_df))
 
@@ -137,7 +133,6 @@ q_avg = np.zeros(len(int_tip_df))
 r_avg = np.zeros(len(int_tip_df))
 f_s = np.zeros(len(int_tip_df))
 n_f = np.zeros(len(int_tip_df))
-n_c = np.zeros(len(int_tip_df))
 n_t = np.zeros(len(int_tip_df))
 q_s = np.zeros(len(int_tip_df))
 q_ref = np.zeros(len(int_tip_df))
@@ -151,40 +146,38 @@ stormNo = int_tip_df.stormNo.to_numpy()
 t_storm = int_tip_df.groupby('stormNo')['storm_dur'].mean().to_numpy()
 
 #===========================INITIALIZE DEPTHS===========================
-S_f_init[0] = 0.0205
-S_f[0] = 0.0205
+S_f_init[0] = 0.0275
+S_f[0] = 0.0275
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
 S_b[0] = h_b*(f_bf + f_br)
 S_bc[0] = h_b*(f_br)
 S_bf[0] = h_b*(f_bf)
-n_c[0] = 0.4
+n_t[0] = 0.4
+n_c = 0.4
 
 for j, storm in enumerate(storms_df.stormNo):
     if j == 0:
         continue
     else:
-        q_f1[j] = u_ps*(S_sf[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
-        q_f2[j] = u_pb*(S_bf[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
-        q_as[j] = k_as*(S_sc[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
-        q_ab[j] = k_ab*(S_bc[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
-        S_bc[j] = S_bc[j-1] - q_ab[j]*(t[j]*3600)
-        S_sc[j] = S_sc[j-1] - q_as[j]*(t[j]*3600)
-        S_bf[j] = S_bf[j-1] + q_ab[j]*(t[j]*3600) - q_f2[j]*(t[j]*3600)
-        S_sf[j] = S_sf[j-1] + q_as[j]*(t[j]*3600) - q_f1[j]*(t[j]*3600) +\
-                  q_f2[j]*(t[j]*3600)
+        q_ps[j] = u_ps*(S_sf[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
+        q_pb[j] = u_pb*(S_bf[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
+        q_cs[j] = k_cs*(S_sc[j-1]/S_s[j-1])*n_tp[j]/(t[j]*3600)
+        q_cb[j] = k_cb*(S_bc[j-1]/S_b[j-1])*n_tp[j]/(t[j]*3600)
+        S_bc[j] = S_bc[j-1] - q_cb[j]*(t[j]*3600)
+        S_sc[j] = S_sc[j-1] - q_cs[j]*(t[j]*3600)
+        S_bf[j] = S_bf[j-1] + q_cb[j]*(t[j]*3600) - q_pb[j]*(t[j]*3600)
+        S_sf[j] = S_sf[j-1] + q_cs[j]*(t[j]*3600) - q_ps[j]*(t[j]*3600) +\
+                  q_pb[j]*(t[j]*3600)
         S_s[j] = S_sc[j] + S_sf[j]
         S_b[j] = S_bc[j] + S_bf[j]
 
     if d95 >= S_f[j-1]:
-        # Let's try using an Sf_init variable because when sediment is added to
-        # TAF, that doesn't change the final S_f value, but it does affect how
-        # the sediment is transported!
-        sed_added[j] = (q_f1[j]*(t[j]*3600.))/(1-e)
+        sed_added[j] = (q_ps[j]*(t[j]*3600.))/(1-e)
         S_f_init[j] = S_f[j-1] + sed_added[j]
     else:
-        sed_added[j] = q_f1[j]*(t[j]*3600.)
+        sed_added[j] = q_ps[j]*(t[j]*3600.)
         S_f_init[j] = S_f[j-1] + sed_added[j]
 
 #===========================BEGIN INTEGRATE OVER qs===========================
@@ -193,18 +186,14 @@ for j, storm in enumerate(storms_df.stormNo):
             continue
         else:
             q[k] = rainfall[k]*2.77778e-7*L 
-#             q[k] = q[k]*frac[k]
-#             r_avg[k] = rainfall[k]*frac[k]
 
             if q[k] > 0:
                 n_f[k] = 0.0026*q[k]**(-0.274)
-                n_c[k] = 0.4
             else:
                 n_f[k] = n_f[k-1]
-                n_c[k] = 0.4
 
             if S_f_init[j] <= d95:
-                n_t[k] = n_c[k] + (S_f_init[j]/d95)*(n_f[k]-n_c[k])
+                n_t[k] = n_c + (S_f_init[j]/d95)*(n_f[k]-n_c)
                 f_s[k] = (n_f[k]/n_t[k])**(1.5)*(S_f_init[j]/d95)
             else: 
                 n_t[k] = n_f[k]
@@ -233,7 +222,6 @@ for j, storm in enumerate(storms_df.stormNo):
 
             if val == storm:
                 q_storm[j] += q[k]*frac[k]
-#                 r_storm[j] += r_avg[k]
                 q_s_avg[j] += q_s[k]*frac[k]
                 q_ref_avg[j] += q_ref[k]*frac[k]
 
@@ -248,8 +236,8 @@ for j, storm in enumerate(storms_df.stormNo):
 
 #Step 2!
 #Add all numpy arrays to the Pandas dataframe
-storms_df['qf1'] = q_f1
-storms_df['qf2'] = q_f2
+storms_df['qf1'] = q_ps
+storms_df['qf2'] = q_pb
 storms_df['S_f'] = S_f*1000
 storms_df['S_s'] = S_s
 storms_df['S_sc'] = S_sc
@@ -262,13 +250,6 @@ storms_df['sed_added'] = sed_added
 storms_df['sed_cap'] = sed_cap*1000
 storms_df['ref_trans'] = ref_trans*1000
 storms_df['q_storm'] = q_storm
-# storms_df['r_storm'] = r_storm
-# storms_df['water_depth'] = water_depth
-# storms_df['tau'] = tau
-# storms_df['tau_e'] = tau_e
-# storms_df['n_t'] = n_t
-# storms_df['f_s'] = f_s
-# storms_df['qs'] = q_s
 
 int_tip_df['q'] = q
 int_tip_df['q_avg'] = q_avg
@@ -276,120 +257,74 @@ int_tip_df['q_avg'] = q_avg
 
 plt.close('all')
 
-# #Plot f_s over time
-# fig1, ax1 = plt.subplots(figsize=(6,4))
-# plt.plot(storms_df.intensity-storms_df.r_storm)
-# plt.xlabel('Date')
-# plt.ylabel(r'Difference in intensity')
-# plt.tight_layout()
-# plt.show()
-
-# #Plot sediment transport rates over time
-# fig2, ax2 = plt.subplots(figsize=(6,4))
-# plt.plot(storms_df.q_mean-storms_df.q_storm)
-# plt.xlabel('Date')
-# plt.ylabel(r'Difference in discharge')
-# plt.tight_layout()
-# plt.show()
-
 #Plot sediment transport capacity and actual transport over time
-fig3, ax3 = plt.subplots(figsize=(6,4))
-storms_df.ref_trans.plot(color = '#9e80c2', label='Reference transport capacity')
-storms_df.Hs_out.plot(linestyle='--', color='#442766', label='Actual transport')
+fig1, ax1 = plt.subplots(figsize=(6,4))
+storms_df.ref_trans.plot(color = '#114450', label='Reference transport capacity')
+storms_df.Hs_out.plot(linestyle='-', color='#C39466', label='Actual transport')
 plt.xlabel('Date')
 plt.ylabel(r'Sediment depth $(mm)$')
-fig3.legend(loc="upper right", bbox_to_anchor=(1,1), 
-    bbox_transform=ax3.transAxes)
+fig1.legend(loc="upper right", bbox_to_anchor=(1,1), 
+    bbox_transform=ax1.transAxes)
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Ref_Act_int_qs_%s.png' %S_f_init[0])
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/ref/Ref_Act_%s.png' %S_f_init[0], dpi=300)
 plt.show()
 
 #Plot fine sediment storage over time
-fig4, ax4 = plt.subplots(figsize=(6,4))
-storms_df.plot(y='S_f', ax=ax4, color = 'mediumseagreen', legend=False)
+fig2, ax2 = plt.subplots(figsize=(6,4))
+storms_df.plot(y='S_f', ax=ax2, color = '#725446', legend=False)
 plt.xlabel('Date')
 plt.ylabel(r'Fine sediment storage, $S_f$ $(mm)$')
 plt.title('Fine sediment storage')
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Fines_int_qs_%s.png' %S_f_init[0])
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/taf/Fines_%s.png' %S_f_init[0], dpi=300)
 plt.show()
 
 #Plot fine sediment storage and actual transport over time
-fig5, ax5 = plt.subplots(figsize=(7,3))
-storms_df.plot(y='S_f', ax=ax5, color = 'mediumseagreen', legend=False, 
+fig3, ax3 = plt.subplots(figsize=(7,3))
+storms_df.plot(y='S_f', ax=ax3, color = 'mediumseagreen', legend=False, 
     label='Fine storage')
-storms_df.plot(y='Hs_out', ax=ax5, color = '#442766', legend=False, 
+storms_df.plot(y='Hs_out', ax=ax3, color = '#442766', legend=False, 
     label='Actual transport', alpha=0.75)
-ax5.set_xlabel('Date', fontsize=14, fontweight='bold')
-ax5.set_ylabel(r'Sediment depth $(mm)$', fontsize=14, fontweight='bold')
-fig5.legend(loc="upper right", bbox_to_anchor=(1,1), 
-    bbox_transform=ax5.transAxes)
+ax3.set_xlabel('Date')
+ax3.set_ylabel(r'Sediment depth $(mm)$')
+fig3.legend(loc="upper right", bbox_to_anchor=(1,1), 
+    bbox_transform=ax3.transAxes)
 plt.tight_layout()
 plt.show()
 
-#Plot transportative fluxes between layers
-# fig6, ax6 = plt.subplots(figsize=(10,7))
-# storms_df.plot(y='qf1', ax=ax6, color = 'mediumturquoise', 
-#     legend=False, label=r'$q_{f1}$')
-# storms_df.plot(y='qf2', ax=ax6, color = 'mediumvioletred', 
-#     legend=False, label=r'$q_{f2}$')
-# ax6.set_ylabel(r'Sediment flux $(mm/s)$')
-# ax6.set_xlabel('Date')
-# fig6.legend(loc="upper right", bbox_to_anchor=(1,1), 
-#     bbox_transform=ax6.transAxes)
-# plt.title('Sediment layer fluxes', fontweight='bold', fontsize=14)
-# #plt.show()
-
 #Plot surfacing storage over time
-fig7, ax7 = plt.subplots(figsize=(6,4))
-storms_df.plot(y='S_s', ax=ax7, color = '#532287', legend=False, 
+fig4, ax4 = plt.subplots(figsize=(6,4))
+storms_df.plot(y='S_s', ax=ax4, color = '#3E3F43', legend=False, 
     label='Total surfacing')
-storms_df.plot(y='S_sc', ax=ax7, color = '#b0077d', legend=False, 
+storms_df.plot(y='S_sc', ax=ax4, color = '#7B583D', legend=False, 
     label='Coarse surfacing')
-storms_df.plot(y='S_sf', ax=ax7, color = '#027fcc', legend=False, 
+storms_df.plot(y='S_sf', ax=ax4, color = '#587A81', legend=False, 
     label='Fine surfacing')
-ax7.set_ylabel(r'Surfacing storage, $S_f$ $(m)$', fontweight='bold', 
-    fontsize=14)
-ax7.set_title('Surfacing storage', fontweight='bold', fontsize=14)
-fig7.legend(loc="upper right", bbox_to_anchor=(1,1), 
-    bbox_transform=ax7.transAxes)
-plt.xlabel('Date', fontweight='bold', fontsize=14)
+ax4.set_ylabel(r'Surfacing storage, $S_f$ $(m)$')
+ax4.set_title('Surfacing storage')
+fig4.legend(loc="upper right", bbox_to_anchor=(1,1), 
+    bbox_transform=ax4.transAxes)
+plt.xlabel('Date')
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Surf_int_qs_%s.png' %S_f_init[0])
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/surfacing/Surf_%s.png' %S_f_init[0], dpi=300)
 plt.show()
 
 #Plot ballast storage over time
-fig8, ax8 = plt.subplots(figsize=(6,4))
-storms_df.plot(y='S_b', ax=ax8, color = '#12586b', legend=False, 
+fig5, ax5 = plt.subplots(figsize=(6,4))
+storms_df.plot(y='S_b', ax=ax5, color = '#2F435A', legend=False, 
     label='Total ballast')
-storms_df.plot(y='S_bc', ax=ax8, color = '#099c49', legend=False, 
+storms_df.plot(y='S_bc', ax=ax5, color = '#AB6B51', legend=False, 
     label='Coarse ballast')
-storms_df.plot(y='S_bf', ax=ax8, color = '#2949e6', legend=False, 
+storms_df.plot(y='S_bf', ax=ax5, color = '#39918C', legend=False, 
     label='Fine ballast')
-plt.xlabel('Date', fontweight='bold', fontsize=14)
-plt.ylabel(r'Ballast storage, $S_b$ $(m)$', fontweight='bold', 
-    fontsize=14)
-fig8.legend(loc="upper right", bbox_to_anchor=(1,1), 
-    bbox_transform=ax8.transAxes)
-plt.title('Ballast storage', fontweight='bold', fontsize=14)
+plt.xlabel('Date')
+plt.ylabel(r'Ballast storage, $S_b$ $(m)$')
+fig5.legend(loc="upper right", bbox_to_anchor=(1,1), 
+    bbox_transform=ax5.transAxes)
+plt.title('Ballast storage')
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/Bal_int_qs_%s.png' %S_f_init[0])
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/ballast/Bal_%s.png' %S_f_init[0], dpi=300)
 plt.show()
-
-# fig9, ax9 = plt.subplots(3, figsize=(9,7), sharex=True)
-# storms_df.plot(y='S_f', ax=ax9[0], color = 'mediumseagreen', 
-#     legend=False, label='TAF elevation')
-# storms_df.plot(y='S_s', ax=ax9[1], color = '#532287', legend=False, 
-#     label='Surfacing elevation')
-# storms_df.plot(y='S_b', ax=ax9[2], color = '#12586b', legend=False, 
-#     label='Ballast elevation')
-# plt.xlabel('Date', fontweight='bold', fontsize=14)
-# ax9[0].set_ylabel(r'$S_f$ $(mm)$', fontweight='bold', fontsize=14)
-# ax9[1].set_ylabel(r'$S_s$ $(m)$', fontweight='bold', fontsize=14)
-# ax9[2].set_ylabel(r'$S_b$ $(m)$', fontweight='bold', fontsize=14)
-# ax9[2].set_ylim(1.998,2.0)
-# plt.tight_layout()
-# plt.show()
 
 #Subset data by water year
 years=storms_df.groupby(storms_df.index.year).count().index.to_numpy()
@@ -403,14 +338,14 @@ sed_area = np.multiply(yr, L)
 sed_load = np.multiply(sed_area, rho_s)
 
 ticks = years[1:8]
-fig8, ax8 = plt.subplots(figsize=(6,4))
-plt.bar(years[1:8], sed_load, color = '#1d4f54')
-plt.xlabel('Water year', fontweight='bold', fontsize=14)
-plt.ylabel(r'Mass per meter of road $(kg/m)$', fontweight='bold', fontsize=14)
-plt.title('Yearly sediment load per meter of road', fontweight='bold', fontsize=14)
+fig6, ax6 = plt.subplots(figsize=(6,4))
+plt.bar(years[1:8], sed_load, color = '#784455')
+plt.xlabel('Water year')
+plt.ylabel(r'Mass per meter of road $(kg/m)$')
+plt.title('Yearly sediment load per meter of road')
 plt.xticks(range(ticks[0],ticks[len(ticks)-1]+1), ticks, rotation=45)
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/SedLoad_int_qs_%s.png' %S_f_init[0])
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/sed_load/SedLoad_%s.png' %S_f_init[0], dpi=300)
 plt.show()
 
 sed_sum_m = storms_df.sed_added.sum()-(storms_df.Hs_out.sum()/1000)
@@ -426,24 +361,24 @@ total_out_kg = (storms_df.Hs_out.sum()/1000)*rho_s*L
 print("\nTotal amount of sediment transported:", round(total_out_kg), "kg/m")
 
 #Takes forever to run, hence down here.
-# # ticklabels = [item.strftime('%Y') for item in df_day.index[::366*2]]
+# ticklabels = [item.strftime('%Y') for item in df_day.index[::366*2]]
 
-# # fig, ax = plt.subplots(figsize=(13,5))
-# # df_day.plot(y='truck_pass', ax=ax, color = '#8a0c80', legend=False, label='Truck passes', 
-# #             kind='bar', width=7)
-# # ax.set_xlabel('Date', fontsize=14, fontweight='bold')
-# # ax.set_ylabel('Truck passes', fontsize=14, fontweight='bold')
-# # ax.grid(False)
+# fig, ax = plt.subplots(figsize=(13,5))
+# df_day.plot(y='truck_pass', ax=ax, color = '#8a0c80', legend=False, label='Truck passes', 
+#             kind='bar', width=7)
+# ax.set_xlabel('Date', fontsize=14, fontweight='bold')
+# ax.set_ylabel('Truck passes', fontsize=14, fontweight='bold')
+# ax.grid(False)
 
-# # ax1 = ax.twinx()
-# # df_day.plot(y='storm_depth', ax=ax1, color='#0c3c8a', legend=False, label='Storm depth', kind='bar', width=7)
-# # ax1.set_ylabel(r'Storm depth $(mm)$', fontsize=14, fontweight='bold')
-# # ax1.invert_yaxis()
-# # ax1.grid(False)
+# ax1 = ax.twinx()
+# df_day.plot(y='storm_depth', ax=ax1, color='#0c3c8a', legend=False, label='Storm depth', kind='bar', width=7)
+# ax1.set_ylabel(r'Storm depth $(mm)$', fontsize=14, fontweight='bold')
+# ax1.invert_yaxis()
+# ax1.grid(False)
 
-# # fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
-# # ax.set_xticks(np.arange(0,366*2*len(ticklabels),366*2))
-# # ax.set_xticklabels(ticklabels, rotation=45)
-# # plt.tight_layout()
-# # #plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
-# # plt.show()
+# fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
+# ax.set_xticks(np.arange(0,366*2*len(ticklabels),366*2))
+# ax.set_xticklabels(ticklabels, rotation=45)
+# plt.tight_layout()
+# #plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
+# plt.show()
