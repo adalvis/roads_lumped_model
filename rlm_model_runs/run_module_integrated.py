@@ -8,7 +8,7 @@ import NFtoutle_module_integrate as mod
 import importlib
 importlib.reload(mod)
 
-data_df = pd.read_csv('./rlm_output/groupedStorms_ElkRock_7yr.csv', index_col='date')
+data_df = pd.read_csv('./rlm_output/data_csv/groupedStorms_ElkRock_7yr.csv', index_col='date')
 data_df.index = pd.to_datetime(data_df.index)
 
 
