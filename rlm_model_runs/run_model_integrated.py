@@ -4,6 +4,10 @@ Date: 06/16/2020
 Purpose: Lumped model of road prism forced using hourly weather station data  
          at North Fork Toutle; Lat: 46.37194, Lon: -122.57778
          Data pulled from Mesonet (https://developers.synopticdata.com/mesonet/)
+         
+Notes, 03/30/2021: Wash off experiment = Heavy rainfall for 30sec every 10min
+                   ---> How to reformat model timestep? Can I subdivide rainfall then regroup?
+                   ---> REMEMBER WHAT ALL THE DATAFRAMES ARE JFC
 """
 #Import libraries
 import pandas as pd
@@ -129,7 +133,6 @@ t = storms_df.deltaT.to_numpy()
 
 #=================len(int_tip_df)====================
 q = np.zeros(len(int_tip_df))
-q_avg = np.zeros(len(int_tip_df))
 r_avg = np.zeros(len(int_tip_df))
 f_s = np.zeros(len(int_tip_df))
 n_f = np.zeros(len(int_tip_df))
@@ -186,18 +189,23 @@ for j, storm in enumerate(storms_df.stormNo):
             continue
         else:
             q[k] = rainfall[k]*2.77778e-7*L 
-
+                        
             if q[k] > 0:
-                n_f[k] = 0.0026*q[k]**(-0.274)
+                #Determine Manning's GRAIN roughness
+                n_f[k] = 0.0026*q[k]**(-0.274)*(S_f_init[j]/d95) #Based on Emmett (1970) Series 8 Lab Data
+                
+                if S_f_init[j] <= d95:
+                    #Determine TOTAL Manning's roughness & partitioning ratio
+                    n_t[k] = n_c + (S_f_init[j]/d95)*np.abs(n_f[k]-n_c)
+                    f_s[k] = (n_f[k]/n_t[k])**(1.5)*(S_f_init[j]/d95)
+                    n_t[k] = n_c[k] + n_f[k]
+                else: 
+                    n_t[k] = n_f[k]
+                    
+                f_s[k] = (n_f[k]/n_t[k])**(1.5)                 
             else:
-                n_f[k] = n_f[k-1]
-
-            if S_f_init[j] <= d95:
-                n_t[k] = n_c + (S_f_init[j]/d95)*(n_f[k]-n_c)
-                f_s[k] = (n_f[k]/n_t[k])**(1.5)*(S_f_init[j]/d95)
-            else: 
-                n_t[k] = n_f[k]
-                f_s[k] = (n_f[k]/n_t[k])**(1.5)
+                n_f[k] = 0
+                n_t[k] = 0
 
             #Calculate water depth assuming uniform overland flow
             water_depth[k] = ((n_t[k]*q[k])/(S**(1/2)))**(3/5)
@@ -222,13 +230,15 @@ for j, storm in enumerate(storms_df.stormNo):
 
             if val == storm:
                 q_storm[j] += q[k]*frac[k]
-                q_s_avg[j] += q_s[k]*frac[k]
-                q_ref_avg[j] += q_ref[k]*frac[k]
+#                 q_s_avg[j] += q_s[k]*frac[k]
+#                 q_ref_avg[j] += q_ref[k]*frac[k]
+                sed_cap[j] += q_s[k]*(t_storm[j]*3600*frac[k])/L
+                ref_trans[j] += q_ref[k]*(t_storm[j]*3600*frac[k])/L
 
 #===========================END INTEGRATE OVER qs===========================
             
-    sed_cap[j] = q_s_avg[j]*t_storm[j]*3600/L
-    ref_trans[j] = q_ref_avg[j]*t_storm[j]*3600/L
+#     sed_cap[j] = q_s_avg[j]*t_storm[j]*3600/L
+#     ref_trans[j] = q_ref_avg[j]*t_storm[j]*3600/L
 
     Hs_out[j] = np.minimum(sed_added[j]+S_f[j-1], sed_cap[j])
     dS_f[j] = sed_added[j] - Hs_out[j]
@@ -252,7 +262,6 @@ storms_df['ref_trans'] = ref_trans*1000
 storms_df['q_storm'] = q_storm
 
 int_tip_df['q'] = q
-int_tip_df['q_avg'] = q_avg
 
 
 plt.close('all')
