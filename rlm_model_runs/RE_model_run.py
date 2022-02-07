@@ -1,13 +1,9 @@
 """
 Author: Amanda Manaster
-Date: 04/14/2021
-Purpose: Using lumped model of road prism to simulate wash-off experiment.
-         Will aid in development of Short Timescale Interactions Parameterization Experiment.  
-         Rainfall pattern = Heavy rainfall for 30sec every 10min.
-         
-Notes, 03/30/2021: Wash off experiment = Heavy rainfall for 30sec every 10min
-                   ---> How to reformat model timestep? Can I subdivide rainfall then regroup?
-                   ---> REMEMBER WHAT ALL THE DATAFRAMES ARE JFC
+Date: 06/16/2020
+Purpose: Lumped model of road prism forced using hourly weather station data  
+         at North Fork Toutle; Lat: 46.37194, Lon: -122.57778
+         Data pulled from Mesonet (https://developers.synopticdata.com/mesonet/)
 """
 #Import libraries
 import pandas as pd
@@ -149,8 +145,8 @@ stormNo = int_tip_df.stormNo.to_numpy()
 t_storm = int_tip_df.groupby('stormNo')['storm_dur'].mean().to_numpy()
 
 #===========================INITIALIZE DEPTHS===========================
-S_f_init[0] = 0.0245
-S_f[0] = 0.0245
+S_f_init[0] = 0.0275
+S_f[0] = 0.0275
 S_s[0] = h_s*(f_sf + f_sc)
 S_sc[0] = h_s*(f_sc)
 S_sf[0] = h_s*(f_sf)
@@ -192,15 +188,17 @@ for j, storm in enumerate(storms_df.stormNo):
                         
             if q[k] > 0:
                 #Determine Manning's GRAIN roughness
-                n_f[k] = 0.0026*q[k]**(-0.274) #Based on Emmett (1970) Series 8 Lab Data
+                n_f[k] = 0.0026*q[k]**(-0.274)*(S_f_init[j]/d95) #Based on Emmett (1970) Series 8 Lab Data
                 
                 if S_f_init[j] <= d95:
                     #Determine TOTAL Manning's roughness & partitioning ratio
-                    n_t[k] = n_c + (S_f_init[j]/d95)*(n_f[k]-n_c)
+                    n_t[k] = n_c + (S_f_init[j]/d95)*np.abs(n_f[k]-n_c)
                     f_s[k] = (n_f[k]/n_t[k])**(1.5)*(S_f_init[j]/d95)
+                    n_t[k] = n_c[k] + n_f[k]
                 else: 
                     n_t[k] = n_f[k]
-                    f_s[k] = (n_f[k]/n_t[k])**(1.5)                 
+                    
+                f_s[k] = (n_f[k]/n_t[k])**(1.5)                 
             else:
                 n_f[k] = 0
                 n_t[k] = 0
@@ -228,13 +226,15 @@ for j, storm in enumerate(storms_df.stormNo):
 
             if val == storm:
                 q_storm[j] += q[k]*frac[k]
-                q_s_avg[j] += q_s[k]*frac[k]
-                q_ref_avg[j] += q_ref[k]*frac[k]
+#                 q_s_avg[j] += q_s[k]*frac[k]
+#                 q_ref_avg[j] += q_ref[k]*frac[k]
+                sed_cap[j] += q_s[k]*(t_storm[j]*3600*frac[k])/L
+                ref_trans[j] += q_ref[k]*(t_storm[j]*3600*frac[k])/L
 
 #===========================END INTEGRATE OVER qs===========================
             
-    sed_cap[j] = q_s_avg[j]*t_storm[j]*3600/L
-    ref_trans[j] = q_ref_avg[j]*t_storm[j]*3600/L
+#     sed_cap[j] = q_s_avg[j]*t_storm[j]*3600/L
+#     ref_trans[j] = q_ref_avg[j]*t_storm[j]*3600/L
 
     Hs_out[j] = np.minimum(sed_added[j]+S_f[j-1], sed_cap[j])
     dS_f[j] = sed_added[j] - Hs_out[j]
