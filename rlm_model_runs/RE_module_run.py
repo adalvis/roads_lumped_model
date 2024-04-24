@@ -8,7 +8,7 @@ import RE_module as mod
 import importlib
 importlib.reload(mod)
 
-data_df = pd.read_csv('./rlm_output/data_csv/groupedStorms_ElkRock_7yr.csv', index_col='date')
+data_df = pd.read_csv('./rlm_data/groupedStorms_ElkRock_7yr.csv', index_col='date')
 data_df.index = pd.to_datetime(data_df.index)
 
 
@@ -72,5 +72,5 @@ plt.plot(u_rat[20:25],sed[20:25], 's', label = '4')
 plt.xlabel('u ratio')
 plt.ylabel('7-year average sediment yield (kg/m)')
 plt.legend(title='k ratio')
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/7year_low_integrate.png')
+#plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/7year_low_integrate.png')
 plt.show()

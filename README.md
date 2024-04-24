@@ -21,8 +21,8 @@ This folder contains three scripts used to format and plot input data for script
 ### `rlm_model_runs`
 This folder contains two scripts used to run the lumped road erosion model.
 
-1. `RE_model_run.py` estimates the erosion of forest roads using stochastically generated rainfall.
-   - **Input:** Model run time,  average inter-storm duration for location in hours, average storm duration for location in hours, and average rainfall intensity for location in millimeters per hour.
+1. `RE_model_run.py` estimates the erosion of forest roads using rainfall data pulled from the Mesonet API stochastically generated truck passes.
+   - **Input:** Output from `groupStorms_script.py`
    - **Output:** Plots of road layer depths vs. time and erosion vs. time.
 2. `RE_module_run.py` calls `RE_module.py` to run multiple iterations of the lumped road erosion model.
    - **Input:** Output from `groupStorms_script.py`.
