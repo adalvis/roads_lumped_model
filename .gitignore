@@ -1,3 +1,4 @@
 rlm_data/
 .ipynb_checkpoints
 rlm_model_runs/__pycache__/
+savefigs/
