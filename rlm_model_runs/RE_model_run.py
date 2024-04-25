@@ -12,7 +12,7 @@ import datetime
 import numpy as np
 
 #Read in .csv of pre-grouped storms
-data_df = pd.read_csv(r'C:\Users\Amanda\Documents\GitHub\roads_lumped_model\rlm_data\groupedStorms_ElkRock_7yr.csv', index_col='date')
+data_df = pd.read_csv('/home/adalvis/github/roads_lumped_model/rlm_data/groupedStorms_ElkRock_7yr.csv', index_col='date')
 data_df.index = pd.to_datetime(data_df.index)
 
 #Length of storm in # of hourly time steps
@@ -191,7 +191,7 @@ for j, storm in enumerate(storms_df.stormNo):
                 
                 if S_f_init[j] <= d95:
                     #Determine TOTAL Manning's roughness & partitioning ratio
-                    n_t[k] = n_c + (S_f_init[j]/d95)*n_f[k]-(S_f_init[j]/d95)*n_c
+                    n_t[k] = n_c + (S_f_init[j]/d95)*(n_f[k]-n_c)
                     f_s[k] = (n_f[k]/n_t[k])**(1.5)*(S_f_init[j]/d95)
                 else: 
                     n_t[k] = n_f[k]              
@@ -253,79 +253,84 @@ storms_df['ref_trans'] = ref_trans*1000
 storms_df['q_storm'] = q_storm
 
 int_tip_df['q'] = q
-int_tip_df.to_csv(r'C:\Users\Amanda\Documents\GitHub\roads_lumped_model\rlm_data\int_tip_df_new.csv')
-
+int_tip_df.to_csv('/home/adalvis/github/roads_lumped_model/rlm_data/int_tip_df_new.csv')
+#%%
 plt.close('all')
-
 #Plot sediment transport capacity and actual transport over time
 fig1, ax1 = plt.subplots(figsize=(6,4))
-storms_df.ref_trans.plot(color = '#114450', label='Reference transport capacity')
-storms_df.Hs_out.plot(linestyle='-', color='#C39466', label='Actual transport')
+storms_df.ref_trans.plot(color = '#95190C', label='Reference transport capacity')
+storms_df.Hs_out.plot(linestyle='-', color='#E3B505', label='Actual transport')
 plt.xlabel('Date')
-plt.ylabel(r'Sediment depth $(mm)$')
+plt.ylabel('Sediment depth (mm)')
 fig1.legend(loc="upper right", bbox_to_anchor=(1,1), 
     bbox_transform=ax1.transAxes)
+for label in ax1.get_xticklabels():
+    label.set_horizontalalignment('center')
+plt.xticks(rotation=0)
 plt.tight_layout()
-# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/ref/Ref_Act_%s.png' %S_f_init[0], dpi=300)
+# plt.savefig(r'/home/adalvis/github/roads_lumped_model/savefigs/Fig4.png', dpi=600)
 plt.show()
-
+#%%
 #Plot fine sediment storage over time
 fig2, ax2 = plt.subplots(figsize=(6,4))
-storms_df.plot(y='S_f', ax=ax2, color = '#725446', legend=False)
+storms_df.plot(y='S_f', ax=ax2, color = '#610345', legend=False)
 plt.xlabel('Date')
-plt.ylabel(r'Fine sediment storage, $S_f$ $(mm)$')
-plt.title('Fine sediment storage')
+plt.ylabel('Fine sediment storage, $S_a$ (mm)')
+# plt.title('Fine sediment storage')
+for label in ax2.get_xticklabels():
+    label.set_horizontalalignment('center')
+plt.xticks(rotation=0)
 plt.tight_layout()
-# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/taf/Fines_%s.png' %S_f_init[0], dpi=300)
+plt.savefig(r'/home/adalvis/github/roads_lumped_model/savefigs/Fig3.png', dpi=600)
 plt.show()
-
+#%%
 #Plot fine sediment storage and actual transport over time
-fig3, ax3 = plt.subplots(figsize=(7,3))
-storms_df.plot(y='S_f', ax=ax3, color = 'mediumseagreen', legend=False, 
-    label='Fine storage')
-storms_df.plot(y='Hs_out', ax=ax3, color = '#442766', legend=False, 
-    label='Actual transport', alpha=0.75)
-ax3.set_xlabel('Date')
-ax3.set_ylabel(r'Sediment depth $(mm)$')
-fig3.legend(loc="upper right", bbox_to_anchor=(1,1), 
-    bbox_transform=ax3.transAxes)
-plt.tight_layout()
-plt.show()
+# fig3, ax3 = plt.subplots(figsize=(7,3))
+# storms_df.plot(y='S_f', ax=ax3, color = 'mediumseagreen', legend=False, 
+#     label='Fine storage')
+# storms_df.plot(y='Hs_out', ax=ax3, color = '#442766', legend=False, 
+#     label='Actual transport', alpha=0.75)
+# ax3.set_xlabel('Date')
+# ax3.set_ylabel(r'Sediment depth $(mm)$')
+# fig3.legend(loc="upper right", bbox_to_anchor=(1,1), 
+#     bbox_transform=ax3.transAxes)
+# plt.tight_layout()
+# plt.show()
 
 #Plot surfacing storage over time
-fig4, ax4 = plt.subplots(figsize=(6,4))
-storms_df.plot(y='S_s', ax=ax4, color = '#3E3F43', legend=False, 
-    label='Total surfacing')
-storms_df.plot(y='S_sc', ax=ax4, color = '#7B583D', legend=False, 
-    label='Coarse surfacing')
-storms_df.plot(y='S_sf', ax=ax4, color = '#587A81', legend=False, 
-    label='Fine surfacing')
-ax4.set_ylabel(r'Surfacing storage, $S_f$ $(m)$')
-ax4.set_title('Surfacing storage')
-fig4.legend(loc="upper right", bbox_to_anchor=(1,1), 
-    bbox_transform=ax4.transAxes)
-plt.xlabel('Date')
-plt.tight_layout()
-# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/surfacing/Surf_%s.png' %S_f_init[0], dpi=300)
-plt.show()
+# fig4, ax4 = plt.subplots(figsize=(6,4))
+# storms_df.plot(y='S_s', ax=ax4, color = '#3E3F43', legend=False, 
+#     label='Total surfacing')
+# storms_df.plot(y='S_sc', ax=ax4, color = '#7B583D', legend=False, 
+#     label='Coarse surfacing')
+# storms_df.plot(y='S_sf', ax=ax4, color = '#587A81', legend=False, 
+#     label='Fine surfacing')
+# ax4.set_ylabel(r'Surfacing storage, $S_f$ $(m)$')
+# ax4.set_title('Surfacing storage')
+# fig4.legend(loc="upper right", bbox_to_anchor=(1,1), 
+#     bbox_transform=ax4.transAxes)
+# plt.xlabel('Date')
+# plt.tight_layout()
+# # plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/surfacing/Surf_%s.png' %S_f_init[0], dpi=300)
+# plt.show()
 
 #Plot ballast storage over time
-fig5, ax5 = plt.subplots(figsize=(6,4))
-storms_df.plot(y='S_b', ax=ax5, color = '#2F435A', legend=False, 
-    label='Total ballast')
-storms_df.plot(y='S_bc', ax=ax5, color = '#AB6B51', legend=False, 
-    label='Coarse ballast')
-storms_df.plot(y='S_bf', ax=ax5, color = '#39918C', legend=False, 
-    label='Fine ballast')
-plt.xlabel('Date')
-plt.ylabel(r'Ballast storage, $S_b$ $(m)$')
-fig5.legend(loc="upper right", bbox_to_anchor=(1,1), 
-    bbox_transform=ax5.transAxes)
-plt.title('Ballast storage')
-plt.tight_layout()
-# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/ballast/Bal_%s.png' %S_f_init[0], dpi=300)
-plt.show()
-
+# fig5, ax5 = plt.subplots(figsize=(6,4))
+# storms_df.plot(y='S_b', ax=ax5, color = '#2F435A', legend=False, 
+#     label='Total ballast')
+# storms_df.plot(y='S_bc', ax=ax5, color = '#AB6B51', legend=False, 
+#     label='Coarse ballast')
+# storms_df.plot(y='S_bf', ax=ax5, color = '#39918C', legend=False, 
+#     label='Fine ballast')
+# plt.xlabel('Date')
+# plt.ylabel(r'Ballast storage, $S_b$ $(m)$')
+# fig5.legend(loc="upper right", bbox_to_anchor=(1,1), 
+#     bbox_transform=ax5.transAxes)
+# plt.title('Ballast storage')
+# plt.tight_layout()
+# # plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/ballast/Bal_%s.png' %S_f_init[0], dpi=300)
+# plt.show()
+#%%
 #Subset data by water year
 years=storms_df.groupby(storms_df.index.year).count().index.to_numpy()
 yr = np.zeros(7)
@@ -339,13 +344,13 @@ sed_load = np.multiply(sed_area, rho_s)
 
 ticks = years[1:8]
 fig6, ax6 = plt.subplots(figsize=(6,4))
-plt.bar(years[1:8], sed_load, color = '#784455')
+plt.bar(years[1:8], sed_load, color = '#107E7D', edgecolor='k')
 plt.xlabel('Water year')
-plt.ylabel(r'Mass per meter of road $(kg/m)$')
-plt.title('Yearly sediment load per meter of road')
-plt.xticks(range(ticks[0],ticks[len(ticks)-1]+1), ticks, rotation=45)
+plt.ylabel(r'Mass per meter of road (kg/m)')
+# plt.title('Yearly sediment load per meter of road')
+plt.xticks(range(ticks[0],ticks[len(ticks)-1]+1), ticks, rotation=0)
 plt.tight_layout()
-# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/hourly/sed_load/SedLoad_%s.png' %S_f_init[0], dpi=300)
+# plt.savefig(r'/home/adalvis/github/roads_lumped_model/savefigs/Fig5.png', dpi=600)
 plt.show()
 
 sed_sum_m = storms_df.sed_added.sum()-(storms_df.Hs_out.sum()/1000)
@@ -382,3 +387,4 @@ print("\nTotal amount of sediment transported:", round(total_out_kg), "kg/m")
 # plt.tight_layout()
 # #plt.savefig(r'C:\Users\Amanda\Desktop\Rainfall_Truck.png', dpi=300)
 # plt.show()
+# %%
