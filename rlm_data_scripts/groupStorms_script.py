@@ -1,3 +1,4 @@
+#%%
 # Import libraries
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -8,11 +9,11 @@ from scipy.stats import expon
 
 #data = pd.read_csv('./rlm_output/ElkRock_rain_10yr.csv', index_col='date') #for 7 yr
 # data = pd.read_csv('./rlm_output/ElkRock_rain_14yr.csv', index_col='date') #for 14 yr
-data = pd.read_csv('./rlm_output/ElkRock_rain_10yr.csv', index_col='date') #for 10 yr
+data = pd.read_csv('/home/adalvis/github/roads_lumped_model/rlm_data/ElkRock_rain_10yr.csv', index_col='date') #for 10 yr
 #data = pd.read_csv('./rlm_output/ElkRock_rain.csv', index_col='date') #for 1 yr
 data.index = pd.to_datetime(data.index)
 #data = data[data.index >= data.index[12614]] #for 7 yr
-data = data.asfreq('H')
+data = data.asfreq('h')
 data[data['intensity_mmhr']<0]=0
 data.fillna(0, inplace=True)
 df = data.copy()
@@ -23,12 +24,12 @@ plt.xlabel('Date')
 plt.ylabel('Intensity (mm/hr)')
 plt.title('Raw Elk Rock data')
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/rawData10_ElkRock.png')
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/rawData10_ElkRock.png')
 plt.show()
 
 time_since_rain = np.zeros(len(df))
 
-if df.intensity_mmhr[0]==0:
+if df.intensity_mmhr.iloc[0]==0:
     time_since_rain[0] = 1
 
 for (i, entry) in enumerate(df.intensity_mmhr):
@@ -76,10 +77,10 @@ for (j, val) in enumerate(time_since_rain):
 df['timeSinceRain'] = time_since_rain
 df['stormNo'] = storm_index
 df['totalNo'] = df.stormNo.copy()
-df.totalNo.fillna(method='ffill', inplace=True)
+df.fillna({'totalNo':'ffill'}, inplace=True)
 df['groupedDepth'] = df.groupby('stormNo')['intensity_mmhr'].transform('sum')
-df.stormNo.fillna(-0.01, inplace=True)
-df.groupedDepth.fillna(0.0, inplace = True)
+df.fillna({'stormNo':-0.01}, inplace=True)
+df.fillna({'groupedDepth':0.0}, inplace = True)
 
 fig2, ax2 = plt.subplots()
 df.groupedDepth.plot(ax=ax2, color='teal', linewidth=0.75) 
@@ -87,7 +88,7 @@ plt.xlabel('Date')
 plt.ylabel('Rainfall depth (mm)')
 plt.title('Total storm depth Elk Rock data')
 plt.tight_layout()
-plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/groupedData10_ElkRock.png')
+# plt.savefig(r'C:/Users/Amanda/Documents/GitHub/roads_lumped_model/rlm_output/groupedData10_ElkRock.png')
 plt.show()
 
 # Save output
@@ -95,56 +96,4 @@ plt.show()
 #df.to_csv('./rlm_output/groupedStorms_ElkRock_14yr.csv') #for 14 yr
 #df.to_csv('./rlm_output/groupedStorms_ElkRock_10yr.csv') #for 10 yr
 #df.to_csv('./rlm_output/groupedStorms_ElkRock.csv') #for 1 yr
-
-#Below is code I used to hack my way through this the first time. The cleaner
-#version of this is above!
-
-# storm_index_2 = np.empty(len(df))
-# storm_index_2[:] = -9999
-# storm_no = 0
-# for (j, val) in enumerate(time_since_rain):
-#     if j >= (len(time_since_rain)-12):
-#     	storm_index_2[j] = storm_no
-#     	total[j] = storm_no
-#     elif val == 0:
-#         storm_index_2[j] = storm_no
-#         total[j] = storm_no
-#     elif val == 12:
-#         storm_no += 1
-#         total[j] = storm_no - 1
-#     elif val == 1:
-#     	storm_index_2[j] = storm_no if time_since_rain[j+11] != 12 else -9999
-#     	total[j] = storm_no
-#     elif val == 2:
-#         storm_index_2[j] = storm_no if time_since_rain[j+10] != 12 else -9999
-#         total[j] = storm_no
-#     elif val == 3:
-#         storm_index_2[j] = storm_no if time_since_rain[j+9] != 12 else -9999
-#         total[j] = storm_no
-#     elif val == 4:
-#         storm_index_2[j] = storm_no if time_since_rain[j+8] != 12 else -9999
-#         total[j] = storm_no 
-#     elif val == 5:
-#         storm_index_2[j] = storm_no if time_since_rain[j+7] != 12 else -9999
-#         total[j] = storm_no
-#     elif val == 6:
-#         storm_index_2[j] = storm_no if time_since_rain[j+6] != 12 else -9999
-#         total[j] = storm_no
-#     elif val == 7:
-#         storm_index_2[j] = storm_no if time_since_rain[j+5] != 12 else -9999
-#         total[j] = storm_no
-#     elif val == 8:
-#         storm_index_2[j] = storm_no if time_since_rain[j+4] != 12 else -9999
-#         total[j] = storm_no 
-#     elif val == 9:
-#         storm_index_2[j] = storm_no if time_since_rain[j+3] != 12 else -9999
-#         total[j] = storm_no
-#     elif val == 10:
-#         storm_index_2[j] = storm_no if time_since_rain[j+2] != 12 else -9999
-#         total[j] = storm_no
-#     elif val == 11:
-#         storm_index_2[j] = storm_no if time_since_rain[j+1] != 12 else -9999
-#         total[j] = storm_no
-#     else:
-#         storm_index_2[j] = -9999
-#         total[j] = storm_no-1 if time_since_rain[j] >= 12 else storm_no
+# %%
