@@ -14,7 +14,7 @@ import datetime
 import numpy as np
 
 #Read in .csv of pre-grouped storms
-data_df = pd.read_csv('/home/adalvis/github/roads_lumped_model/rlm_data/groupedStorms_ElkRock_7yr.csv', index_col='date')
+data_df = pd.read_csv('/home/adalvis/github/roads_lumped_model/rlm_data/groupedStorms_ElkRock_10yr.csv', index_col='date')
 data_df.index = pd.to_datetime(data_df.index)
 
 #Length of storm in # of hourly time steps
@@ -72,10 +72,9 @@ storms_df.set_index(pd.DatetimeIndex([day0+datetime.timedelta(hours=time)
 #%%===========================DEFINE PHYSICAL CONSTANTS===========================
 # L = representative segment of road, m
 # S = m/m
-# tau_c = N/m^2; value from https://pubs.usgs.gov/sir/2008/5093/table7.html 
-#     =====> 0.0091 mm is avg
+# tau_c = N/m^2
 L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
-                                          9.81, 0.03, 0.055,
+                                          9.81, 0.03, 0.052,
                                           1.8e-5, 0.0275]
 #%%===========================DEFINE LAYER CONSTANTS===========================
 # h_s = depth of surfacing
@@ -557,9 +556,9 @@ for ax in ax1.flatten():
     ax.right_ax.legend(loc="lower right")
     for label in ax.get_xticklabels():
         label.set_horizontalalignment('center')
-    ax.set(xlabel='Date', ylim=(0,575))
+    ax.set(xlabel='Date', ylim=(0,675))
     ax.tick_params(axis='x', labelrotation=25)
-    ax.right_ax.set_ylim(0,29)
+    ax.right_ax.set_ylim(0,40)
     for tl in ax.get_yticklabels():
         tl.set_color('#95190C') 
     for tl in ax.right_ax.get_yticklabels():
@@ -578,14 +577,14 @@ plt.show()
 #%%
 #Plot fine sediment storage over time
 fig2, ax2 = plt.subplots(figsize=(6,4))
-storms_df.plot(y='S_f_20', ax=ax2, color = '#610345', label='Mean $n_{\Delta t}$ = 20 tpd')
-storms_df.plot(y='S_f_10', ax=ax2, color = '#107E7D', label='Mean $n_{\Delta t}$ = 10 tpd')
-storms_df.plot(y='S_f_5', ax=ax2, color = '#D5573B', label='Mean $n_{\Delta t}$ = 5 tpd')
+storms_df.plot(y='S_f_20', ax=ax2, color = '#610345', label=r'Mean $n_{\Delta t}$ = 20 tpd')
+storms_df.plot(y='S_f_10', ax=ax2, color = '#107E7D', label=r'Mean $n_{\Delta t}$ = 10 tpd')
+storms_df.plot(y='S_f_5', ax=ax2, color = '#D5573B', label=r'Mean $n_{\Delta t}$ = 5 tpd')
 plt.xlabel('Date')
 plt.ylabel('Fine sediment storage, $S_a$ (mm)')
 # plt.title('Fine sediment storage')
 ax2.legend(loc="upper right")
-ax2.set_ylim(23.75,27.75)
+ax2.set_ylim(23,29)
 for label in ax2.get_xticklabels():
     label.set_horizontalalignment('center')
 plt.xticks(rotation=0)
@@ -664,9 +663,9 @@ plt.show()
 #%%
 #Subset data by water year
 years=storms_df.groupby(storms_df.index.year).count().index.to_numpy()
-yr_5 = np.zeros(7)
-yr_10 = np.zeros(7)
-yr_20 = np.zeros(7)
+yr_5 = np.zeros(len(years)-1)
+yr_10 = np.zeros(len(years)-1)
+yr_20 = np.zeros(len(years)-1)
 for i, year in enumerate(years):
     if i < len(years)-1:
         yr_5[i] = (storms_df.Hs_out_5[str(year)+'-07-01':str(year+1)+'-06-30'].sum())/1000
@@ -685,11 +684,11 @@ sed_load_20 = np.multiply(sed_area_20, rho_s)
 
 width = 0.25
 
-ticks = years[1:8]
+ticks = years[1:len(years)]
 fig6, ax6 = plt.subplots(figsize=(6,4))
-plt.bar(years[1:8]-width, sed_load_20, width, color = '#610345', edgecolor='k', label=r'Mean $n_{\Delta t}$ = 20 tpd')
-plt.bar(years[1:8], sed_load_10, width, color = '#107E7D', edgecolor='k', label=r'Mean $n_{\Delta t}$ = 10 tpd')
-plt.bar(years[1:8]+width, sed_load_5, width, color = '#D5573B', edgecolor='k', label=r'Mean $n_{\Delta t}$ = 5 tpd')
+plt.bar(years[1:len(years)]-width, sed_load_20, width, color = '#610345', edgecolor='k', label=r'Mean $n_{\Delta t}$ = 20 tpd')
+plt.bar(years[1:len(years)], sed_load_10, width, color = '#107E7D', edgecolor='k', label=r'Mean $n_{\Delta t}$ = 10 tpd')
+plt.bar(years[1:len(years)]+width, sed_load_5, width, color = '#D5573B', edgecolor='k', label=r'Mean $n_{\Delta t}$ = 5 tpd')
 plt.xlabel('Water year')
 plt.ylabel(r'Mass per meter of road (kg/m)')
 # plt.title('Yearly sediment load per meter of road')
