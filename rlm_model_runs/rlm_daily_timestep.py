@@ -60,107 +60,53 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
-k_cs, k_cb, u_ps, u_pb, e = [1e-7, 1e-7, 5e-7, 1e-7, 0.725]
+k_cs, k_cb, u_ps, u_pb, e, n_c_5 = [1e-7, 1e-7, 5e-7, 
+                                    1e-7, 0.725, 0.4]
 
 
 #%%===========================INITIALIZE ARRAYS===========================
-#=================len(timeStep_Hr)====================
-S_f_5 = np.zeros(len(timeStep_Hr))
-S_s_5 = np.zeros(len(timeStep_Hr))
-S_sc_5 = np.zeros(len(timeStep_Hr))
-S_sf_5 = np.zeros(len(timeStep_Hr))
-S_b_5 = np.zeros(len(timeStep_Hr))
-S_bc_5 = np.zeros(len(timeStep_Hr))
-S_bf_5 = np.zeros(len(timeStep_Hr))
-Hs_out_5 = np.zeros(len(timeStep_Hr))
-q_ps_5 = np.zeros(len(timeStep_Hr))
-q_pb_5 = np.zeros(len(timeStep_Hr))
-q_cs_5 = np.zeros(len(timeStep_Hr))
-q_cb_5 = np.zeros(len(timeStep_Hr))
-sed_added_5 = np.zeros(len(timeStep_Hr))
-q_s_5 = np.zeros(len(timeStep_Hr))
-sed_cap_5 = np.zeros(len(timeStep_Hr))
-ref_trans_5 = np.zeros(len(timeStep_Hr))
-q_ref_5 = np.zeros(len(timeStep_Hr))
+#=================for n=5====================
+S_f_5, S_s_5, S_sc_5, S_sf_5, S_b_5, S_bc_5, S_bf_5, \
+    Hs_out_5, q_ps_5, q_pb_5, q_cs_5, q_cb_5,\
+    sed_added_5, q_s_5, sed_cap_5, ref_trans_5, q_ref_5 = \
+    [np.zeros(len(timeStep_Hr)) for _ in range(17)]
 
-S_f_10 = np.zeros(len(timeStep_Hr))
-S_s_10 = np.zeros(len(timeStep_Hr))
-S_sc_10 = np.zeros(len(timeStep_Hr))
-S_sf_10 = np.zeros(len(timeStep_Hr))
-S_b_10 = np.zeros(len(timeStep_Hr))
-S_bc_10 = np.zeros(len(timeStep_Hr))
-S_bf_10 = np.zeros(len(timeStep_Hr))
-Hs_out_10 = np.zeros(len(timeStep_Hr))
-q_ps_10 = np.zeros(len(timeStep_Hr))
-q_pb_10 = np.zeros(len(timeStep_Hr))
-q_cs_10 = np.zeros(len(timeStep_Hr))
-q_cb_10 = np.zeros(len(timeStep_Hr))
-sed_added_10 = np.zeros(len(timeStep_Hr))
-q_s_10 = np.zeros(len(timeStep_Hr))
-sed_cap_10 = np.zeros(len(timeStep_Hr))
-ref_trans_10 = np.zeros(len(timeStep_Hr))
-q_ref_10 = np.zeros(len(timeStep_Hr))
+f_s_5, n_f_5, n_t_5, tau_e_5, water_depth_5, tau_5 =\
+    [np.zeros(len(timeStep_Hr)) for _ in range(6)]
 
-S_f_20 = np.zeros(len(timeStep_Hr))
-S_s_20 = np.zeros(len(timeStep_Hr))
-S_sc_20 = np.zeros(len(timeStep_Hr))
-S_sf_20 = np.zeros(len(timeStep_Hr))
-S_b_20 = np.zeros(len(timeStep_Hr))
-S_bc_20 = np.zeros(len(timeStep_Hr))
-S_bf_20 = np.zeros(len(timeStep_Hr))
-Hs_out_20 = np.zeros(len(timeStep_Hr))
-q_ps_20 = np.zeros(len(timeStep_Hr))
-q_pb_20 = np.zeros(len(timeStep_Hr))
-q_cs_20 = np.zeros(len(timeStep_Hr))
-q_cb_20 = np.zeros(len(timeStep_Hr))
-sed_added_20 = np.zeros(len(timeStep_Hr))
-q_s_20 = np.zeros(len(timeStep_Hr))
-sed_cap_20 = np.zeros(len(timeStep_Hr))
-ref_trans_20 = np.zeros(len(timeStep_Hr))
-q_ref_20 = np.zeros(len(timeStep_Hr))
+#=================for n=10====================
+S_f_10, S_s_10, S_sc_10, S_sf_10, S_b_10, S_bc_10, S_bf_10, \
+    Hs_out_10, q_ps_10, q_pb_10, q_cs_10, q_cb_10,\
+    sed_added_10, q_s_10, sed_cap_10, ref_trans_10, q_ref_10 = \
+    [np.zeros(len(timeStep_Hr)) for _ in range(17)]
 
-r_storm = np.zeros(len(timeStep_Hr))
-q_storm = np.zeros(len(timeStep_Hr))
+f_s_10, n_f_10, n_t_10, tau_e_10, water_depth_10, tau_10 =\
+    [np.zeros(len(timeStep_Hr)) for _ in range(6)]
 
-#=================len(int_tip_df)====================
-f_s_5 = np.zeros(len(timeStep_Hr))
-n_f_5 = np.zeros(len(timeStep_Hr))
-n_t_5 = np.zeros(len(timeStep_Hr))
-tau_e_5 = np.zeros(len(timeStep_Hr))
-water_depth_5 = np.zeros(len(timeStep_Hr))
-tau_5 = np.zeros(len(timeStep_Hr))
+#=================for n=20====================
+S_f_20, S_s_20, S_sc_20, S_sf_20, S_b_20, S_bc_20, S_bf_20, \
+    Hs_out_20, q_ps_20, q_pb_20, q_cs_20, q_cb_20,\
+    sed_added_20, q_s_20, sed_cap_20, ref_trans_20, q_ref_20 = \
+    [np.zeros(len(timeStep_Hr)) for _ in range(17)]
 
-f_s_10 = np.zeros(len(timeStep_Hr))
-n_f_10 = np.zeros(len(timeStep_Hr))
-n_t_10 = np.zeros(len(timeStep_Hr))
-tau_e_10 = np.zeros(len(timeStep_Hr))
-water_depth_10 = np.zeros(len(timeStep_Hr))
-tau_10 = np.zeros(len(timeStep_Hr))
+f_s_20, n_f_20, n_t_20, tau_e_20, water_depth_20, tau_20 =\
+    [np.zeros(len(timeStep_Hr)) for _ in range(6)]
 
-f_s_20 = np.zeros(len(timeStep_Hr))
-n_f_20 = np.zeros(len(timeStep_Hr))
-n_t_20 = np.zeros(len(timeStep_Hr))
-tau_e_20 = np.zeros(len(timeStep_Hr))
-water_depth_20 = np.zeros(len(timeStep_Hr))
-tau_20 = np.zeros(len(timeStep_Hr))
 
-r_avg = np.zeros(len(timeStep_Hr))
 q = np.zeros(len(timeStep_Hr))
-
 
 #%%===========================INITIALIZE DEPTHS n = 5===========================
 S_f_5[0] = 0.0275
-S_s_5[0] = h_s*(f_sf + f_sc)
+S_s_5[0] = h_s
 S_sc_5[0] = h_s*(f_sc)
 S_sf_5[0] = h_s*(f_sf)
-S_b_5[0] = h_b*(f_bf + f_br)
+S_b_5[0] = h_b
 S_bc_5[0] = h_b*(f_br)
 S_bf_5[0] = h_b*(f_bf)
 n_t_5[0] = 0.4
-n_c_5 = 0.4
 q[0] = daily_mean[0]*2.77778e-7*L
 
-for j in range(0, len(timeStep_Hr)):
+for j in range(len(timeStep_Hr)):
     if j == 0:
         continue
     else:
