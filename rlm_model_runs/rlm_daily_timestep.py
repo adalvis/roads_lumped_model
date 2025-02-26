@@ -21,7 +21,9 @@ data_df.index = pd.to_datetime(data_df.index)
 #%%
 # Timestep in hours (each timestep is 24 hours)
 timeStep_Hr = data_df.groupby('dates')['dates'].count().to_numpy()
-intensity_mmhr = data_df['intensity_mmhr'].copy()
+dates = data_df.dates.asfreq('D').to_numpy()
+dates_rep = data_df['dates'].copy().to_numpy()
+intensity_mmhr = data_df['intensity_mmhr'].copy().to_numpy()
 daily_mean = data_df.groupby('dates')['daily_mean'].mean().to_numpy()
 daily_depth = data_df.groupby('dates')['daily_depth'].mean().to_numpy()
 
@@ -60,40 +62,44 @@ h_b, f_bf, f_br = [2, 0.20, 0.80]
 #   6 tires * 0.225 m width * 0.005 m length * 3.175e-3 m treads
 # u_pb = pumping constant for ballast, m/truck pass
 # e = fraction of coarse material, -
-k_cs, k_cb, u_ps, u_pb, e, n_c_5 = [1e-7, 1e-7, 5e-7, 
-                                    1e-7, 0.725, 0.4]
+k_cs, k_cb, u_ps, u_pb, e, n_c_5, n_c_10, n_c_20 = [1e-7, 1e-7, 5e-7, 
+                                                    1e-7, 0.725, 0.4,
+                                                    0.4, 0.4]
 
 
 #%%===========================INITIALIZE ARRAYS===========================
 #=================for n=5====================
 S_f_5, S_s_5, S_sc_5, S_sf_5, S_b_5, S_bc_5, S_bf_5, \
-    Hs_out_5, q_ps_5, q_pb_5, q_cs_5, q_cb_5,\
-    sed_added_5, q_s_5, sed_cap_5, ref_trans_5, q_ref_5 = \
-    [np.zeros(len(timeStep_Hr)) for _ in range(17)]
+    Hs_out_5, q_ps_5, q_pb_5, q_cs_5, q_cb_5, \
+    sed_added_5, sed_cap_5, ref_trans_5 = \
+    [np.zeros(len(timeStep_Hr)) for _ in range(15)]
 
-f_s_5, n_f_5, n_t_5, tau_e_5, water_depth_5, tau_5 =\
-    [np.zeros(len(timeStep_Hr)) for _ in range(6)]
+f_s_5, n_f_5, n_t_5, tau_e_5, water_depth_5, tau_5, \
+    q_s_5, q_ref_5= \
+    [np.zeros(len(intensity_mmhr)) for _ in range(8)]
 
 #=================for n=10====================
 S_f_10, S_s_10, S_sc_10, S_sf_10, S_b_10, S_bc_10, S_bf_10, \
-    Hs_out_10, q_ps_10, q_pb_10, q_cs_10, q_cb_10,\
-    sed_added_10, q_s_10, sed_cap_10, ref_trans_10, q_ref_10 = \
-    [np.zeros(len(timeStep_Hr)) for _ in range(17)]
+    Hs_out_10, q_ps_10, q_pb_10, q_cs_10, q_cb_10, \
+    sed_added_10, sed_cap_10, ref_trans_10 = \
+    [np.zeros(len(timeStep_Hr)) for _ in range(15)]
 
-f_s_10, n_f_10, n_t_10, tau_e_10, water_depth_10, tau_10 =\
-    [np.zeros(len(timeStep_Hr)) for _ in range(6)]
+f_s_10, n_f_10, n_t_10, tau_e_10, water_depth_10, tau_10, \
+    q_s_10, q_ref_10 =\
+    [np.zeros(len(intensity_mmhr)) for _ in range(8)]
 
 #=================for n=20====================
 S_f_20, S_s_20, S_sc_20, S_sf_20, S_b_20, S_bc_20, S_bf_20, \
-    Hs_out_20, q_ps_20, q_pb_20, q_cs_20, q_cb_20,\
-    sed_added_20, q_s_20, sed_cap_20, ref_trans_20, q_ref_20 = \
-    [np.zeros(len(timeStep_Hr)) for _ in range(17)]
+    Hs_out_20, q_ps_20, q_pb_20, q_cs_20, q_cb_20, \
+    sed_added_20, sed_cap_20, ref_trans_20 = \
+    [np.zeros(len(timeStep_Hr)) for _ in range(15)]
 
-f_s_20, n_f_20, n_t_20, tau_e_20, water_depth_20, tau_20 =\
-    [np.zeros(len(timeStep_Hr)) for _ in range(6)]
+f_s_20, n_f_20, n_t_20, tau_e_20, water_depth_20, tau_20, \
+    q_s_20, q_ref_20 = \
+    [np.zeros(len(intensity_mmhr)) for _ in range(8)]
 
 
-q = np.zeros(len(timeStep_Hr))
+q = np.zeros(len(intensity_mmhr))
 
 #%%===========================INITIALIZE DEPTHS n = 5===========================
 S_f_5[0] = 0.0275
@@ -104,9 +110,9 @@ S_b_5[0] = h_b
 S_bc_5[0] = h_b*(f_br)
 S_bf_5[0] = h_b*(f_bf)
 n_t_5[0] = 0.4
-q[0] = daily_mean[0]*2.77778e-7*L
+q[0] = intensity_mmhr[0]*2.77778e-7*L
 
-for j in range(len(timeStep_Hr)):
+for j, date in enumerate(dates):
     if j == 0:
         continue
     else:
@@ -128,63 +134,67 @@ for j in range(len(timeStep_Hr)):
         sed_added_5[j] = q_ps_5[j]*(timeStep_Hr[j]*3600.)
     S_f_5[j] = S_f_5[j-1] + sed_added_5[j]
 #===========================Detemine qs n = 5===========================
-    # Calculate avg daily flow
-    q[j] = daily_mean[j]*2.77778e-7*L 
-                
-    if q[j] > 0:
-        #Determine Manning's GRAIN roughness
-        n_f_5[j] = 0.0026*q[j]**(-0.274)#*(S_f_init[j]/d95) #Based on Emmett (1970) Series 8 Lab Data
-        
-        if S_f_5[j] <= d95:
-            #Determine TOTAL Manning's roughness & partitioning ratio
-            n_t_5[j] = n_c_5 + (S_f_5[j]/d95)*(n_f_5[j]-n_c_5)
-            f_s_5[j] = (n_f_5[j]/n_t_5[j])**(1.5)*(S_f_5[j]/d95)
-        else: 
-            n_t_5[j] = n_f_5[j]              
-            f_s_5[j] = (n_f_5[j]/n_t_5[j])**(1.5)                 
-    else:
-        n_f_5[j] = n_f_5[j-1]
-        n_t_5[j] = n_t_5[j-1]
+    for k, day in enumerate(dates_rep):
+        if day == date:
+            if k == 0:
+                continue
+            else:
+                # Calculate avg daily flow
+                q[k] = intensity_mmhr[k]*2.77778e-7*L 
+                            
+                if q[k] > 0:
+                    #Determine Manning's GRAIN roughness
+                    n_f_5[k] = 0.0026*q[k]**(-0.274)#*(S_f_init[k]/d95) #Based on Emmett (1970) Series 8 Lab Data
+                    
+                    if S_f_5[j] <= d95:
+                        #Determine TOTAL Manning's roughness & partitioning ratio
+                        n_t_5[k] = n_c_5 + (S_f_5[j]/d95)*(n_f_5[k]-n_c_5)
+                        f_s_5[k] = (n_f_5[k]/n_t_5[k])**(1.5)*(S_f_5[j]/d95)
+                    else: 
+                        n_t_5[k] = n_f_5[k]              
+                        f_s_5[k] = (n_f_5[k]/n_t_5[k])**(1.5)                 
+                else:
+                    n_f_5[k] = n_f_5[k-1]
+                    n_t_5[k] = n_t_5[k-1]
 
-    #Calculate water depth assuming uniform overland flow
-    water_depth_5[j] = ((n_t_5[j]*q[j])/(S**(1/2)))**(3/5)
+                #Calculate water depth assuming uniform overland flow
+                water_depth_5[k] = ((n_t_5[k]*q[k])/(S**(1/2)))**(3/5)
 
-    tau_5[j] = rho_w*g*water_depth_5[j]*S
-    tau_e_5[j] = tau_5[j]*f_s_5[j]
+                tau_5[k] = rho_w*g*water_depth_5[k]*S
+                tau_e_5[k] = tau_5[k]*f_s_5[k]
 
-    #Calculate sediment transport rate
-    if (tau_e_5[j]-tau_c) >= 0:
-        q_s_5[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_5[j]-tau_c)**(2.457))
-    else:
-        q_s_5[j] = 0
+                #Calculate sediment transport rate
+                if (tau_e_5[k]-tau_c) >= 0:
+                    q_s_5[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_5[k]-tau_c)**(2.457))
+                else:
+                    q_s_5[k] = 0
 
-    #Calculate reference transport 
-    if (tau_5[j]-tau_c) >=0:
-        q_ref_5[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_5[j]-tau_c)**(2.457))
-    else:
-        q_ref_5[j] = 0
+                #Calculate reference transport 
+                if (tau_5[k]-tau_c) >=0:
+                    q_ref_5[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_5[k]-tau_c)**(2.457))
+                else:
+                    q_ref_5[k] = 0
 
 #===========================END INTEGRATE OVER qs===========================
             
-    sed_cap_5[j] = q_s_5[j]*timeStep_Hr[j]*3600/L
-    ref_trans_5[j] = q_ref_5[j]*timeStep_Hr[j]*3600/L
+            sed_cap_5[j] += q_s_5[k]*3600/L
+            ref_trans_5[j] += q_ref_5[k]*3600/L
 
     Hs_out_5[j] = np.minimum(sed_added_5[j]+S_f_5[j-1], sed_cap_5[j])
     S_f_5[j] = S_f_5[j-1] + sed_added_5[j] - Hs_out_5[j]
 
 #%%===========================INITIALIZE DEPTHS n = 10===========================
 S_f_10[0] = 0.0275
-S_s_10[0] = h_s*(f_sf + f_sc)
+S_s_10[0] = h_s
 S_sc_10[0] = h_s*(f_sc)
 S_sf_10[0] = h_s*(f_sf)
-S_b_10[0] = h_b*(f_bf + f_br)
+S_b_10[0] = h_b
 S_bc_10[0] = h_b*(f_br)
 S_bf_10[0] = h_b*(f_bf)
 n_t_10[0] = 0.4
-n_c_10 = 0.4
-q = daily_mean*2.77778e-7*L
+q[0] = intensity_mmhr[0]*2.77778e-7*L
 
-for j in range(0, len(timeStep_Hr)):
+for j, date in enumerate(dates):
     if j == 0:
         continue
     else:
@@ -205,63 +215,67 @@ for j in range(0, len(timeStep_Hr)):
     else:
         sed_added_10[j] = q_ps_10[j]*(timeStep_Hr[j]*3600.)
     S_f_10[j] = S_f_10[j-1] + sed_added_10[j]
-#===========================Detemine qs n = 10===========================
-    # Calculate avg daily flow
-    if q[j] > 0:
-        #Determine Manning's GRAIN roughness
-        n_f_10[j] = 0.0026*q[j]**(-0.274)#*(S_f_[j]/d95) #Based on Emmett (1970) Series 8 Lab Data
-        
-        if S_f_10[j] <= d95:
-            #Determine TOTAL Manning's roughness & partitioning ratio
-            n_t_10[j] = n_c_10 + (S_f_10[j]/d95)*(n_f_10[j]-n_c_10)
-            f_s_10[j] = (n_f_10[j]/n_t_10[j])**(1.5)*(S_f_10[j]/d95)
-        else: 
-            n_t_10[j] = n_f_10[j]              
-            f_s_10[j] = (n_f_10[j]/n_t_10[j])**(1.5)                 
-    else:
-        n_f_10[j] = n_f_10[j-1]
-        n_t_10[j] = n_t_10[j-1]
+#===========================Detemine qs n = 5===========================
+    for k, day in enumerate(dates_rep):
+        if day == date:
+            if k == 0:
+                continue
+            else:
+                # Calculate avg daily flow
+                q[k] = intensity_mmhr[k]*2.77778e-7*L 
+                            
+                if q[k] > 0:
+                    #Determine Manning's GRAIN roughness
+                    n_f_10[k] = 0.0026*q[k]**(-0.274)#*(S_f_init[k]/d95) #Based on Emmett (1970) Series 8 Lab Data
+                    
+                    if S_f_10[j] <= d95:
+                        #Determine TOTAL Manning's roughness & partitioning ratio
+                        n_t_10[k] = n_c_10 + (S_f_10[j]/d95)*(n_f_10[k]-n_c_10)
+                        f_s_10[k] = (n_f_10[k]/n_t_10[k])**(1.5)*(S_f_10[j]/d95)
+                    else: 
+                        n_t_10[k] = n_f_10[k]              
+                        f_s_10[k] = (n_f_10[k]/n_t_10[k])**(1.5)                 
+                else:
+                    n_f_10[k] = n_f_10[k-1]
+                    n_t_10[k] = n_t_10[k-1]
 
-    #Calculate water depth assuming uniform overland flow
-    water_depth_10[j] = ((n_t_10[j]*q[j])/(S**(1/2)))**(3/5)
+                #Calculate water depth assuming uniform overland flow
+                water_depth_10[k] = ((n_t_10[k]*q[k])/(S**(1/2)))**(3/5)
 
-    tau_10[j] = rho_w*g*water_depth_10[j]*S
-    tau_e_10[j] = tau_10[j]*f_s_10[j]
+                tau_10[k] = rho_w*g*water_depth_10[k]*S
+                tau_e_10[k] = tau_10[k]*f_s_10[k]
 
-    #Calculate sediment transport rate
-    if (tau_e_10[j]-tau_c) >= 0:
-        q_s_10[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_10[j]-tau_c)**(2.457))
-    else:
-        q_s_10[j] = 0
+                #Calculate sediment transport rate
+                if (tau_e_10[k]-tau_c) >= 0:
+                    q_s_10[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_10[k]-tau_c)**(2.457))
+                else:
+                    q_s_10[k] = 0
 
-    #Calculate reference transport 
-    if (tau_10[j]-tau_c) >=0:
-        q_ref_10[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_10[j]-tau_c)**(2.457))
-    else:
-        q_ref_10[j] = 0
+                #Calculate reference transport 
+                if (tau_10[k]-tau_c) >=0:
+                    q_ref_10[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_10[k]-tau_c)**(2.457))
+                else:
+                    q_ref_10[k] = 0
 
 #===========================END INTEGRATE OVER qs===========================
             
-    sed_cap_10[j] = q_s_10[j]*timeStep_Hr[j]*3600/L
-    ref_trans_10[j] = q_ref_10[j]*timeStep_Hr[j]*3600/L
+            sed_cap_10[j] += q_s_10[k]*3600/L
+            ref_trans_10[j] += q_ref_10[k]*3600/L
 
     Hs_out_10[j] = np.minimum(sed_added_10[j]+S_f_10[j-1], sed_cap_10[j])
     S_f_10[j] = S_f_10[j-1] + sed_added_10[j] - Hs_out_10[j]
-
-
 #%%===========================INITIALIZE DEPTHS n = 20===========================
 S_f_20[0] = 0.0275
-S_s_20[0] = h_s*(f_sf + f_sc)
+S_s_20[0] = h_s
 S_sc_20[0] = h_s*(f_sc)
 S_sf_20[0] = h_s*(f_sf)
-S_b_20[0] = h_b*(f_bf + f_br)
+S_b_20[0] = h_b
 S_bc_20[0] = h_b*(f_br)
 S_bf_20[0] = h_b*(f_bf)
 n_t_20[0] = 0.4
-n_c_20 = 0.4
-q[0] = daily_mean[0]*2.77778e-7*L
+q[0] = intensity_mmhr[0]*2.77778e-7*L
 
-for j in range(0, len(timeStep_Hr)):
+for j, date in enumerate(dates):
     if j == 0:
         continue
     else:
@@ -282,47 +296,52 @@ for j in range(0, len(timeStep_Hr)):
     else:
         sed_added_20[j] = q_ps_20[j]*(timeStep_Hr[j]*3600.)
     S_f_20[j] = S_f_20[j-1] + sed_added_20[j]
-#===========================Detemine qs n = 20===========================
-    # Calculate avg daily flow
-    q[j] = daily_mean[j]*2.77778e-7*L 
-                
-    if q[j] > 0:
-        #Determine Manning's GRAIN roughness
-        n_f_20[j] = 0.0026*q[j]**(-0.274)#*(S_f_init[j]/d95) #Based on Emmett (1970) Series 8 Lab Data
-        
-        if S_f_20[j] <= d95:
-            #Determine TOTAL Manning's roughness & partitioning ratio
-            n_t_20[j] = n_c_20 + (S_f_20[j]/d95)*(n_f_20[j]-n_c_20)
-            f_s_20[j] = (n_f_20[j]/n_t_20[j])**(1.5)*(S_f_20[j]/d95)
-        else: 
-            n_t_20[j] = n_f_20[j]              
-            f_s_20[j] = (n_f_20[j]/n_t_20[j])**(1.5)                 
-    else:
-        n_f_20[j] = n_f_20[j-1]
-        n_t_20[j] = n_t_20[j-1]
+#===========================Detemine qs n = 5===========================
+    for k, day in enumerate(dates_rep):
+        if day == date:
+            if k == 0:
+                continue
+            else:
+                # Calculate avg daily flow
+                q[k] = intensity_mmhr[k]*2.77778e-7*L 
+                            
+                if q[k] > 0:
+                    #Determine Manning's GRAIN roughness
+                    n_f_20[k] = 0.0026*q[k]**(-0.274)#*(S_f_init[k]/d95) #Based on Emmett (1970) Series 8 Lab Data
+                    
+                    if S_f_20[j] <= d95:
+                        #Determine TOTAL Manning's roughness & partitioning ratio
+                        n_t_20[k] = n_c_20 + (S_f_20[j]/d95)*(n_f_20[k]-n_c_20)
+                        f_s_20[k] = (n_f_20[k]/n_t_20[k])**(1.5)*(S_f_20[j]/d95)
+                    else: 
+                        n_t_20[k] = n_f_20[k]              
+                        f_s_20[k] = (n_f_20[k]/n_t_20[k])**(1.5)                 
+                else:
+                    n_f_20[k] = n_f_20[k-1]
+                    n_t_20[k] = n_t_20[k-1]
 
-    #Calculate water depth assuming uniform overland flow
-    water_depth_20[j] = ((n_t_20[j]*q[j])/(S**(1/2)))**(3/5)
+                #Calculate water depth assuming uniform overland flow
+                water_depth_20[k] = ((n_t_20[k]*q[k])/(S**(1/2)))**(3/5)
 
-    tau_20[j] = rho_w*g*water_depth_20[j]*S
-    tau_e_20[j] = tau_20[j]*f_s_20[j]
+                tau_20[k] = rho_w*g*water_depth_20[k]*S
+                tau_e_20[k] = tau_20[k]*f_s_20[k]
 
-    #Calculate sediment transport rate
-    if (tau_e_20[j]-tau_c) >= 0:
-        q_s_20[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_20[j]-tau_c)**(2.457))
-    else:
-        q_s_20[j] = 0
+                #Calculate sediment transport rate
+                if (tau_e_20[k]-tau_c) >= 0:
+                    q_s_20[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_20[k]-tau_c)**(2.457))
+                else:
+                    q_s_20[k] = 0
 
-    #Calculate reference transport 
-    if (tau_20[j]-tau_c) >=0:
-        q_ref_20[j] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_20[j]-tau_c)**(2.457))
-    else:
-        q_ref_20[j] = 0
+                #Calculate reference transport 
+                if (tau_20[k]-tau_c) >=0:
+                    q_ref_20[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_20[k]-tau_c)**(2.457))
+                else:
+                    q_ref_20[k] = 0
 
 #===========================END INTEGRATE OVER qs===========================
             
-    sed_cap_20[j] = q_s_20[j]*timeStep_Hr[j]*3600/L
-    ref_trans_20[j] = q_ref_20[j]*timeStep_Hr[j]*3600/L
+            sed_cap_20[j] += q_s_20[k]*3600/L
+            ref_trans_20[j] += q_ref_20[k]*3600/L
 
     Hs_out_20[j] = np.minimum(sed_added_20[j]+S_f_20[j-1], sed_cap_20[j])
     S_f_20[j] = S_f_20[j-1] + sed_added_20[j] - Hs_out_20[j]
@@ -392,9 +411,9 @@ for ax in ax1.flatten():
     ax.right_ax.legend(loc="lower right")
     for label in ax.get_xticklabels():
         label.set_horizontalalignment('center')
-    ax.set(xlabel='Date', ylim=(0,130))
+    ax.set(xlabel='Date', ylim=(0,675))
     ax.tick_params(axis='x', labelrotation=25)
-    ax.right_ax.set_ylim(0,29)
+    ax.right_ax.set_ylim(0,40)
     for tl in ax.get_yticklabels():
         tl.set_color('#95190C') 
     for tl in ax.right_ax.get_yticklabels():
@@ -419,7 +438,7 @@ storms_df.plot(y='S_f_5', ax=ax2, color = '#D5573B', label=r'Mean $n_{\Delta t}$
 plt.xlabel('Date')
 plt.ylabel('Fine sediment storage, $S_a$ (mm)')
 ax2.legend(loc="upper right")
-# ax2.set_ylim(23.75,27.75)
+ax2.set_ylim(23,29)
 for label in ax2.get_xticklabels():
     label.set_horizontalalignment('center')
 plt.xticks(rotation=0)
