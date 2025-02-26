@@ -254,51 +254,47 @@ for j, storm in enumerate(storms_df.stormNo):
         S_f_init_5[j] = S_f_5[j-1] + sed_added_5[j]
 #===========================BEGIN INTEGRATE OVER qs n = 5===========================
     for k, val in enumerate(stormNo):
-        if k == 0:
-            continue
-        else:
-            q[k] = rainfall[k]*2.77778e-7*L 
-                        
-            if q[k] > 0:
-                #Determine Manning's GRAIN roughness
-                n_f_5[k] = 0.0026*q[k]**(-0.274)#*(S_f_init[j]/d95) #Based on Emmett (1970) Series 8 Lab Data
-                
-                if S_f_init_5[j] <= d95:
-                    #Determine TOTAL Manning's roughness & partitioning ratio
-                    n_t_5[k] = n_c_5 + (S_f_init_5[j]/d95)*(n_f_5[k]-n_c_5)
-                    f_s_5[k] = (n_f_5[k]/n_t_5[k])**(1.5)*(S_f_init_5[j]/d95)
-                else: 
-                    n_t_5[k] = n_f_5[k]              
-                    f_s_5[k] = (n_f_5[k]/n_t_5[k])**(1.5)                 
-            else:
-                n_f_5[k] = n_f_5[k-1]
-                n_t_5[k] = n_t_5[k-1]
-
-            #Calculate water depth assuming uniform overland flow
-            water_depth_5[k] = ((n_t_5[k]*q[k])/(S**(1/2)))**(3/5)
-
-            tau_5[k] = rho_w*g*water_depth_5[k]*S
-            tau_e_5[k] = tau_5[k]*f_s_5[k]
-
-            #Calculate sediment transport rate
-            if (tau_e_5[k]-tau_c) >= 0:
-                q_s_5[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_5[k]-tau_c)**(2.457))
-            else:
-                q_s_5[k] = 0
-
-            #Calculate reference transport 
-            if (tau_5[k]-tau_c) >=0:
-                q_ref_5[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_5[k]-tau_c)**(2.457))
-            else:
-                q_ref_5[k] = 0
-
-
         if val == storm:
+            if k == 0:
+                continue
+            else:
+                q[k] = rainfall[k]*2.77778e-7*L 
+                            
+                if q[k] > 0:
+                    #Determine Manning's GRAIN roughness
+                    n_f_5[k] = 0.0026*q[k]**(-0.274)#*(S_f_init[j]/d95) #Based on Emmett (1970) Series 8 Lab Data
+                    
+                    if S_f_init_5[j] <= d95:
+                        #Determine TOTAL Manning's roughness & partitioning ratio
+                        n_t_5[k] = n_c_5 + (S_f_init_5[j]/d95)*(n_f_5[k]-n_c_5)
+                        f_s_5[k] = (n_f_5[k]/n_t_5[k])**(1.5)*(S_f_init_5[j]/d95)
+                    else: 
+                        n_t_5[k] = n_f_5[k]              
+                        f_s_5[k] = (n_f_5[k]/n_t_5[k])**(1.5)                 
+                else:
+                    n_f_5[k] = n_f_5[k-1]
+                    n_t_5[k] = n_t_5[k-1]
+
+                #Calculate water depth assuming uniform overland flow
+                water_depth_5[k] = ((n_t_5[k]*q[k])/(S**(1/2)))**(3/5)
+
+                tau_5[k] = rho_w*g*water_depth_5[k]*S
+                tau_e_5[k] = tau_5[k]*f_s_5[k]
+
+                #Calculate sediment transport rate
+                if (tau_e_5[k]-tau_c) >= 0:
+                    q_s_5[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_5[k]-tau_c)**(2.457))
+                else:
+                    q_s_5[k] = 0
+
+                #Calculate reference transport 
+                if (tau_5[k]-tau_c) >=0:
+                    q_ref_5[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_5[k]-tau_c)**(2.457))
+                else:
+                    q_ref_5[k] = 0
             q_storm[j] += q[k]*frac[k]
             q_s_avg_5[j] += q_s_5[k]*frac[k]
             q_ref_avg_5[j] += q_ref_5[k]*frac[k]
-            # sed_cap[j] += q_s[k]*(t_storm[j]*3600*frac[k])/L
-            # ref_trans[j] += q_ref[k]*(t_storm[j]*3600*frac[k])/L
 
 #===========================END INTEGRATE OVER qs===========================
             
@@ -344,54 +340,49 @@ for j, storm in enumerate(storms_df.stormNo):
         S_f_init_10[j] = S_f_10[j-1] + sed_added_10[j]
 #===========================BEGIN INTEGRATE OVER qs n = 10===========================
     for k, val in enumerate(stormNo):
-        if k == 0:
-            continue
-        else:
-            q[k] = rainfall[k]*2.77778e-7*L 
-                        
-            if q[k] > 0:
-                #Determine Manning's GRAIN roughness
-                n_f_10[k] = 0.0026*q[k]**(-0.274)#*(S_f_init[j]/d95) #Based on Emmett (1970) Series 8 Lab Data
-                
-                if S_f_init_10[j] <= d95:
-                    #Determine TOTAL Manning's roughness & partitioning ratio
-                    n_t_10[k] = n_c_10 + (S_f_init_10[j]/d95)*(n_f_10[k]-n_c_10)
-                    f_s_10[k] = (n_f_10[k]/n_t_10[k])**(1.5)*(S_f_init_10[j]/d95)
-                else: 
-                    n_t_10[k] = n_f_10[k]              
-                    f_s_10[k] = (n_f_10[k]/n_t_10[k])**(1.5)                 
+        if val == storm:
+            if k == 0:
+                continue
             else:
-                n_f_10[k] = n_f_10[k-1]
-                n_t_10[k] = n_t_10[k-1]
+                q[k] = rainfall[k]*2.77778e-7*L 
+                            
+                if q[k] > 0:
+                    #Determine Manning's GRAIN roughness
+                    n_f_10[k] = 0.0026*q[k]**(-0.274)#*(S_f_init[j]/d95) #Based on Emmett (1970) Series 8 Lab Data
+                    
+                    if S_f_init_10[j] <= d95:
+                        #Determine TOTAL Manning's roughness & partitioning ratio
+                        n_t_10[k] = n_c_10 + (S_f_init_10[j]/d95)*(n_f_10[k]-n_c_10)
+                        f_s_10[k] = (n_f_10[k]/n_t_10[k])**(1.5)*(S_f_init_10[j]/d95)
+                    else: 
+                        n_t_10[k] = n_f_10[k]              
+                        f_s_10[k] = (n_f_10[k]/n_t_10[k])**(1.5)                 
+                else:
+                    n_f_10[k] = n_f_10[k-1]
+                    n_t_10[k] = n_t_10[k-1]
 
-            #Calculate water depth assuming uniform overland flow
-            water_depth_10[k] = ((n_t_10[k]*q[k])/(S**(1/2)))**(3/5)
+                #Calculate water depth assuming uniform overland flow
+                water_depth_10[k] = ((n_t_10[k]*q[k])/(S**(1/2)))**(3/5)
 
-            tau_10[k] = rho_w*g*water_depth_10[k]*S
-            tau_e_10[k] = tau_10[k]*f_s_10[k]
+                tau_10[k] = rho_w*g*water_depth_10[k]*S
+                tau_e_10[k] = tau_10[k]*f_s_10[k]
 
-            #Calculate sediment transport rate
-            if (tau_e_10[k]-tau_c) >= 0:
-                q_s_10[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_10[k]-tau_c)**(2.457))
-            else:
-                q_s_10[k] = 0
+                #Calculate sediment transport rate
+                if (tau_e_10[k]-tau_c) >= 0:
+                    q_s_10[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_10[k]-tau_c)**(2.457))
+                else:
+                    q_s_10[k] = 0
 
-            #Calculate reference transport 
-            if (tau_10[k]-tau_c) >=0:
-                q_ref_10[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_10[k]-tau_c)**(2.457))
-            else:
-                q_ref_10[k] = 0
+                #Calculate reference transport 
+                if (tau_10[k]-tau_c) >=0:
+                    q_ref_10[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_10[k]-tau_c)**(2.457))
+                else:
+                    q_ref_10[k] = 0
+            q_storm[j] += q[k]*frac[k]
+            q_s_avg_10[j] += q_s_10[k]*frac[k]
+            q_ref_avg_10[j] += q_ref_10[k]*frac[k]
 
-
-            if val == storm:
-                q_storm[j] += q[k]*frac[k]
-                q_s_avg_10[j] += q_s_10[k]*frac[k]
-                q_ref_avg_10[j] += q_ref_10[k]*frac[k]
-                # sed_cap[j] += q_s[k]*(t_storm[j]*3600*frac[k])/L
-                # ref_trans[j] += q_ref[k]*(t_storm[j]*3600*frac[k])/L
-
-    #===========================END INTEGRATE OVER qs===========================
-            
+#===========================END INTEGRATE OVER qs===========================
         sed_cap_10[j] = q_s_avg_10[j]*t_storm[j]*3600/L
         ref_trans_10[j] = q_ref_avg_10[j]*t_storm[j]*3600/L
 
@@ -437,51 +428,48 @@ for j, storm in enumerate(storms_df.stormNo):
 
 #===========================BEGIN INTEGRATE OVER qs n = 20===========================
     for k, val in enumerate(stormNo):
-        if k == 0:
-            continue
-        else:
-            q[k] = rainfall[k]*2.77778e-7*L 
-                        
-            if q[k] > 0:
-                #Determine Manning's GRAIN roughness
-                n_f_20[k] = 0.0026*q[k]**(-0.274)#*(S_f_init[j]/d95) #Based on Emmett (1970) Series 8 Lab Data
-                
-                if S_f_init_20[j] <= d95:
-                    #Determine TOTAL Manning's roughness & partitioning ratio
-                    n_t_20[k] = n_c_20 + (S_f_init_20[j]/d95)*(n_f_20[k]-n_c_20)
-                    f_s_20[k] = (n_f_20[k]/n_t_20[k])**(1.5)*(S_f_init_20[j]/d95)
-                else: 
-                    n_t_20[k] = n_f_20[k]              
-                    f_s_20[k] = (n_f_20[k]/n_t_20[k])**(1.5)                 
+        if val == storm:
+            if k == 0:
+                continue
             else:
-                n_f_20[k] = n_f_20[k-1]
-                n_t_20[k] = n_t_20[k-1]
+                q[k] = rainfall[k]*2.77778e-7*L 
+                            
+                if q[k] > 0:
+                    #Determine Manning's GRAIN roughness
+                    n_f_20[k] = 0.0026*q[k]**(-0.274)#*(S_f_init[j]/d95) #Based on Emmett (1970) Series 8 Lab Data
+                    
+                    if S_f_init_20[j] <= d95:
+                        #Determine TOTAL Manning's roughness & partitioning ratio
+                        n_t_20[k] = n_c_20 + (S_f_init_20[j]/d95)*(n_f_20[k]-n_c_20)
+                        f_s_20[k] = (n_f_20[k]/n_t_20[k])**(1.5)*(S_f_init_20[j]/d95)
+                    else: 
+                        n_t_20[k] = n_f_20[k]              
+                        f_s_20[k] = (n_f_20[k]/n_t_20[k])**(1.5)                 
+                else:
+                    n_f_20[k] = n_f_20[k-1]
+                    n_t_20[k] = n_t_20[k-1]
 
-            #Calculate water depth assuming uniform overland flow
-            water_depth_20[k] = ((n_t_20[k]*q[k])/(S**(1/2)))**(3/5)
+                #Calculate water depth assuming uniform overland flow
+                water_depth_20[k] = ((n_t_20[k]*q[k])/(S**(1/2)))**(3/5)
 
-            tau_20[k] = rho_w*g*water_depth_20[k]*S
-            tau_e_20[k] = tau_20[k]*f_s_20[k]
+                tau_20[k] = rho_w*g*water_depth_20[k]*S
+                tau_e_20[k] = tau_20[k]*f_s_20[k]
 
-            #Calculate sediment transport rate
-            if (tau_e_20[k]-tau_c) >= 0:
-                q_s_20[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_20[k]-tau_c)**(2.457))
-            else:
-                q_s_20[k] = 0
+                #Calculate sediment transport rate
+                if (tau_e_20[k]-tau_c) >= 0:
+                    q_s_20[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_e_20[k]-tau_c)**(2.457))
+                else:
+                    q_s_20[k] = 0
 
-            #Calculate reference transport 
-            if (tau_20[k]-tau_c) >=0:
-                q_ref_20[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_20[k]-tau_c)**(2.457))
-            else:
-                q_ref_20[k] = 0
+                #Calculate reference transport 
+                if (tau_20[k]-tau_c) >=0:
+                    q_ref_20[k] = (((10**(-4.348))/(rho_s*((d50)**(0.811))))*(tau_20[k]-tau_c)**(2.457))
+                else:
+                    q_ref_20[k] = 0
+            q_storm[j] += q[k]*frac[k]
+            q_s_avg_20[j] += q_s_20[k]*frac[k]
+            q_ref_avg_20[j] += q_ref_20[k]*frac[k]
 
-
-            if val == storm:
-                q_storm[j] += q[k]*frac[k]
-                q_s_avg_20[j] += q_s_20[k]*frac[k]
-                q_ref_avg_20[j] += q_ref_20[k]*frac[k]
-                # sed_cap[j] += q_s[k]*(t_storm[j]*3600*frac[k])/L
-                # ref_trans[j] += q_ref[k]*(t_storm[j]*3600*frac[k])/L
 
     #===========================END INTEGRATE OVER qs===========================
             
@@ -639,9 +627,9 @@ plt.show()
 #%%
 #Plot ballast storage over time
 fig5, ax5 = plt.subplots(figsize=(6,4))
-storms_df.plot(y='S_b_20', ax=ax5, color = '#610345', label='Mean $n_{\Delta t}$ = 20 tpd')
-storms_df.plot(y='S_b_10', ax=ax5, color = '#107E7D', label='Mean $n_{\Delta t}$ = 10 tpd')
-storms_df.plot(y='S_b_5', ax=ax5, color = '#D5573B', label='Mean $n_{\Delta t}$ = 5 tpd')
+storms_df.plot(y='S_b_20', ax=ax5, color = '#610345', label=r'Mean $n_{\Delta t}$ = 20 tpd')
+storms_df.plot(y='S_b_10', ax=ax5, color = '#107E7D', label=r'Mean $n_{\Delta t}$ = 10 tpd')
+storms_df.plot(y='S_b_5', ax=ax5, color = '#D5573B', label=r'Mean $n_{\Delta t}$ = 5 tpd')
 
 ax5.set_ylim(1.99875, 2.00005)
 ax5.tick_params(axis='x', labelrotation=0)
