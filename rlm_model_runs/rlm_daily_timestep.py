@@ -116,22 +116,22 @@ for j, date in enumerate(dates):
     if j == 0:
         continue
     else:
-        q_ps_5[j] = u_ps*(S_sf_5[j-1]/S_s_5[j-1])*truck_pass_5[j]/(timeStep_Hr[j]*3600)
-        q_pb_5[j] = u_pb*(S_bf_5[j-1]/S_b_5[j-1])*truck_pass_5[j]/(timeStep_Hr[j]*3600)
-        q_cs_5[j] = k_cs*(S_sc_5[j-1]/S_s_5[j-1])*truck_pass_5[j]/(timeStep_Hr[j]*3600)
-        q_cb_5[j] = k_cb*(S_bc_5[j-1]/S_b_5[j-1])*truck_pass_5[j]/(timeStep_Hr[j]*3600)
-        S_bc_5[j] = S_bc_5[j-1] - q_cb_5[j]*(timeStep_Hr[j]*3600)
-        S_sc_5[j] = S_sc_5[j-1] - q_cs_5[j]*(timeStep_Hr[j]*3600)
-        S_bf_5[j] = S_bf_5[j-1] + q_cb_5[j]*(timeStep_Hr[j]*3600) - q_pb_5[j]*(timeStep_Hr[j]*3600)
-        S_sf_5[j] = S_sf_5[j-1] + q_cs_5[j]*(timeStep_Hr[j]*3600) - q_ps_5[j]*(timeStep_Hr[j]*3600) \
-            + q_pb_5[j]*(timeStep_Hr[j]*3600)
+        q_ps_5[j] = u_ps*(S_sf_5[j-1]/S_s_5[j-1])*truck_pass_5[j]#/(timeStep_Hr[j]*3600)
+        q_pb_5[j] = u_pb*(S_bf_5[j-1]/S_b_5[j-1])*truck_pass_5[j]#/(timeStep_Hr[j]*3600)
+        q_cs_5[j] = k_cs*(S_sc_5[j-1]/S_s_5[j-1])*truck_pass_5[j]#/(timeStep_Hr[j]*3600)
+        q_cb_5[j] = k_cb*(S_bc_5[j-1]/S_b_5[j-1])*truck_pass_5[j]#/(timeStep_Hr[j]*3600)
+        S_bc_5[j] = S_bc_5[j-1] - q_cb_5[j]#*(timeStep_Hr[j]*3600)
+        S_sc_5[j] = S_sc_5[j-1] - q_cs_5[j]#*(timeStep_Hr[j]*3600)
+        S_bf_5[j] = S_bf_5[j-1] + q_cb_5[j] - q_pb_5[j]
+        S_sf_5[j] = S_sf_5[j-1] + q_cs_5[j] - q_ps_5[j] \
+            + q_pb_5[j]
         S_s_5[j] = S_sc_5[j] + S_sf_5[j]
         S_b_5[j] = S_bc_5[j] + S_bf_5[j]
 
     if d95 >= S_f_5[j-1]:
-        sed_added_5[j] = (q_ps_5[j]*(timeStep_Hr[j]*3600.))/(1-e)
+        sed_added_5[j] = (q_ps_5[j])/(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
     else:
-        sed_added_5[j] = q_ps_5[j]*(timeStep_Hr[j]*3600.)
+        sed_added_5[j] = q_ps_5[j]#*(timeStep_Hr[j]*3600.)
     S_f_5[j] = S_f_5[j-1] + sed_added_5[j]
 #===========================Detemine qs n = 5===========================
     for k, day in enumerate(dates_rep):
@@ -198,22 +198,22 @@ for j, date in enumerate(dates):
     if j == 0:
         continue
     else:
-        q_ps_10[j] = u_ps*(S_sf_10[j-1]/S_s_10[j-1])*truck_pass_10[j]/(timeStep_Hr[j]*3600)
-        q_pb_10[j] = u_pb*(S_bf_10[j-1]/S_b_10[j-1])*truck_pass_10[j]/(timeStep_Hr[j]*3600)
-        q_cs_10[j] = k_cs*(S_sc_10[j-1]/S_s_10[j-1])*truck_pass_10[j]/(timeStep_Hr[j]*3600)
-        q_cb_10[j] = k_cb*(S_bc_10[j-1]/S_b_10[j-1])*truck_pass_10[j]/(timeStep_Hr[j]*3600)
-        S_bc_10[j] = S_bc_10[j-1] - q_cb_10[j]*(timeStep_Hr[j]*3600)
-        S_sc_10[j] = S_sc_10[j-1] - q_cs_10[j]*(timeStep_Hr[j]*3600)
-        S_bf_10[j] = S_bf_10[j-1] + q_cb_10[j]*(timeStep_Hr[j]*3600) - q_pb_10[j]*(timeStep_Hr[j]*3600)
-        S_sf_10[j] = S_sf_10[j-1] + q_cs_10[j]*(timeStep_Hr[j]*3600) - q_ps_10[j]*(timeStep_Hr[j]*3600) \
-            + q_pb_10[j]*(timeStep_Hr[j]*3600)
+        q_ps_10[j] = u_ps*(S_sf_10[j-1]/S_s_10[j-1])*truck_pass_10[j]#/(timeStep_Hr[j]*3600)
+        q_pb_10[j] = u_pb*(S_bf_10[j-1]/S_b_10[j-1])*truck_pass_10[j]#/(timeStep_Hr[j]*3600)
+        q_cs_10[j] = k_cs*(S_sc_10[j-1]/S_s_10[j-1])*truck_pass_10[j]#/(timeStep_Hr[j]*3600)
+        q_cb_10[j] = k_cb*(S_bc_10[j-1]/S_b_10[j-1])*truck_pass_10[j]#/(timeStep_Hr[j]*3600)
+        S_bc_10[j] = S_bc_10[j-1] - q_cb_10[j]#*(timeStep_Hr[j]*3600)
+        S_sc_10[j] = S_sc_10[j-1] - q_cs_10[j]#*(timeStep_Hr[j]*3600)
+        S_bf_10[j] = S_bf_10[j-1] + q_cb_10[j] - q_pb_10[j]
+        S_sf_10[j] = S_sf_10[j-1] + q_cs_10[j] - q_ps_10[j] \
+            + q_pb_10[j]
         S_s_10[j] = S_sc_10[j] + S_sf_10[j]
         S_b_10[j] = S_bc_10[j] + S_bf_10[j]
 
     if d95 >= S_f_10[j-1]:
-        sed_added_10[j] = (q_ps_10[j]*(timeStep_Hr[j]*3600.))/(1-e)
+        sed_added_10[j] = (q_ps_10[j])/(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
     else:
-        sed_added_10[j] = q_ps_10[j]*(timeStep_Hr[j]*3600.)
+        sed_added_10[j] = q_ps_10[j]#*(timeStep_Hr[j]*3600.)
     S_f_10[j] = S_f_10[j-1] + sed_added_10[j]
 #===========================Detemine qs n = 5===========================
     for k, day in enumerate(dates_rep):
@@ -279,22 +279,22 @@ for j, date in enumerate(dates):
     if j == 0:
         continue
     else:
-        q_ps_20[j] = u_ps*(S_sf_20[j-1]/S_s_20[j-1])*truck_pass_20[j]/(timeStep_Hr[j]*3600)
-        q_pb_20[j] = u_pb*(S_bf_20[j-1]/S_b_20[j-1])*truck_pass_20[j]/(timeStep_Hr[j]*3600)
-        q_cs_20[j] = k_cs*(S_sc_20[j-1]/S_s_20[j-1])*truck_pass_20[j]/(timeStep_Hr[j]*3600)
-        q_cb_20[j] = k_cb*(S_bc_20[j-1]/S_b_20[j-1])*truck_pass_20[j]/(timeStep_Hr[j]*3600)
-        S_bc_20[j] = S_bc_20[j-1] - q_cb_20[j]*(timeStep_Hr[j]*3600)
-        S_sc_20[j] = S_sc_20[j-1] - q_cs_20[j]*(timeStep_Hr[j]*3600)
-        S_bf_20[j] = S_bf_20[j-1] + q_cb_20[j]*(timeStep_Hr[j]*3600) - q_pb_20[j]*(timeStep_Hr[j]*3600)
-        S_sf_20[j] = S_sf_20[j-1] + q_cs_20[j]*(timeStep_Hr[j]*3600) - q_ps_20[j]*(timeStep_Hr[j]*3600) \
-            + q_pb_20[j]*(timeStep_Hr[j]*3600)
+        q_ps_20[j] = u_ps*(S_sf_20[j-1]/S_s_20[j-1])*truck_pass_20[j]#/(timeStep_Hr[j]*3600)
+        q_pb_20[j] = u_pb*(S_bf_20[j-1]/S_b_20[j-1])*truck_pass_20[j]#/(timeStep_Hr[j]*3600)
+        q_cs_20[j] = k_cs*(S_sc_20[j-1]/S_s_20[j-1])*truck_pass_20[j]#/(timeStep_Hr[j]*3600)
+        q_cb_20[j] = k_cb*(S_bc_20[j-1]/S_b_20[j-1])*truck_pass_20[j]#/(timeStep_Hr[j]*3600)
+        S_bc_20[j] = S_bc_20[j-1] - q_cb_20[j]#*(timeStep_Hr[j]*3600)
+        S_sc_20[j] = S_sc_20[j-1] - q_cs_20[j]#*(timeStep_Hr[j]*3600)
+        S_bf_20[j] = S_bf_20[j-1] + q_cb_20[j] - q_pb_20[j]
+        S_sf_20[j] = S_sf_20[j-1] + q_cs_20[j] - q_ps_20[j] \
+            + q_pb_20[j]
         S_s_20[j] = S_sc_20[j] + S_sf_20[j]
         S_b_20[j] = S_bc_20[j] + S_bf_20[j]
 
     if d95 >= S_f_20[j-1]:
-        sed_added_20[j] = (q_ps_20[j]*(timeStep_Hr[j]*3600.))/(1-e)
+        sed_added_20[j] = (q_ps_20[j])/(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
     else:
-        sed_added_20[j] = q_ps_20[j]*(timeStep_Hr[j]*3600.)
+        sed_added_20[j] = q_ps_20[j]#*(timeStep_Hr[j]*3600.)
     S_f_20[j] = S_f_20[j-1] + sed_added_20[j]
 #===========================Detemine qs n = 5===========================
     for k, day in enumerate(dates_rep):
@@ -525,17 +525,23 @@ yr_20 = np.zeros(len(years)-1)
 for i, year in enumerate(years):
     if i < len(years)-1:
         yr_5[i] = (storms_df.Hs_out_5[str(year)+'-07-01':str(year+1)+'-06-30'].sum())/1000
+        # print(yr_5[i])
         yr_10[i] = (storms_df.Hs_out_10[str(year)+'-07-01':str(year+1)+'-06-30'].sum())/1000
+        # print(yr_10[i])
         yr_20[i] = (storms_df.Hs_out_20[str(year)+'-07-01':str(year+1)+'-06-30'].sum())/1000
+        # print(yr_20[i])
 
 #Multiply Hs_out
 sed_area_5 = np.multiply(yr_5, L)
+print(sed_area_5)
 sed_load_5 = np.multiply(sed_area_5, rho_s)
 
 sed_area_10 = np.multiply(yr_10, L)
+print(sed_area_10)
 sed_load_10 = np.multiply(sed_area_10, rho_s)
 
 sed_area_20 = np.multiply(yr_20, L)
+print(sed_area_20)
 sed_load_20 = np.multiply(sed_area_20, rho_s)
 
 width = 0.25
