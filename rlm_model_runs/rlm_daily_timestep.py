@@ -1,6 +1,6 @@
 """
 Author: Amanda Alvis
-Date: 01/15/2025
+Date: 6/10/2025
 Purpose: Lumped model of road prism forced using hourly weather station data  
          at North Fork Toutle; Lat: 46.37194, Lon: -122.57778
          Data pulled from Mesonet (https://developers.synopticdata.com/mesonet/)
@@ -44,7 +44,7 @@ for i in range(0, len(timeStep_Hr)):
 # S = m/m
 # tau_c = N/m^2
 L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
-                                          9.81, 0.03, 0.052,
+                                          9.81, 0.05, 0.052,
                                           1.8e-5, 0.0275]
 #%%===========================DEFINE LAYER CONSTANTS===========================
 # h_s = depth of surfacing
@@ -123,16 +123,19 @@ for j, date in enumerate(dates):
         S_bc_5[j] = S_bc_5[j-1] - q_cb_5[j]#*(timeStep_Hr[j]*3600)
         S_sc_5[j] = S_sc_5[j-1] - q_cs_5[j]#*(timeStep_Hr[j]*3600)
         S_bf_5[j] = S_bf_5[j-1] + q_cb_5[j] - q_pb_5[j]
-        S_sf_5[j] = S_sf_5[j-1] + q_cs_5[j] - q_ps_5[j] \
-            + q_pb_5[j]
-        S_s_5[j] = S_sc_5[j] + S_sf_5[j]
-        S_b_5[j] = S_bc_5[j] + S_bf_5[j]
+        
 
     if d95 >= S_f_5[j-1]:
-        sed_added_5[j] = (q_ps_5[j])/(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
+        sed_added_5[j] = (q_ps_5[j])*(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
+        S_sf_5[j] = S_sf_5[j-1] + q_cs_5[j] - q_ps_5[j]*(1-e) \
+            + q_pb_5[j]
     else:
         sed_added_5[j] = q_ps_5[j]#*(timeStep_Hr[j]*3600.)
+        S_sf_5[j] = S_sf_5[j-1] + q_cs_5[j] - q_ps_5[j] \
+            + q_pb_5[j]
     S_f_5[j] = S_f_5[j-1] + sed_added_5[j]
+    S_s_5[j] = S_sc_5[j] + S_sf_5[j]
+    S_b_5[j] = S_bc_5[j] + S_bf_5[j]
 #===========================Detemine qs n = 5===========================
     for k, day in enumerate(dates_rep):
         if day == date:
@@ -205,16 +208,18 @@ for j, date in enumerate(dates):
         S_bc_10[j] = S_bc_10[j-1] - q_cb_10[j]#*(timeStep_Hr[j]*3600)
         S_sc_10[j] = S_sc_10[j-1] - q_cs_10[j]#*(timeStep_Hr[j]*3600)
         S_bf_10[j] = S_bf_10[j-1] + q_cb_10[j] - q_pb_10[j]
-        S_sf_10[j] = S_sf_10[j-1] + q_cs_10[j] - q_ps_10[j] \
-            + q_pb_10[j]
-        S_s_10[j] = S_sc_10[j] + S_sf_10[j]
-        S_b_10[j] = S_bc_10[j] + S_bf_10[j]
 
     if d95 >= S_f_10[j-1]:
-        sed_added_10[j] = (q_ps_10[j])/(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
+        sed_added_10[j] = (q_ps_10[j])*(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
+        S_sf_10[j] = S_sf_10[j-1] + q_cs_10[j] - q_ps_10[j]*(1-e) \
+            + q_pb_10[j]
     else:
         sed_added_10[j] = q_ps_10[j]#*(timeStep_Hr[j]*3600.)
+        S_sf_10[j] = S_sf_10[j-1] + q_cs_10[j] - q_ps_10[j] \
+            + q_pb_10[j]
     S_f_10[j] = S_f_10[j-1] + sed_added_10[j]
+    S_s_10[j] = S_sc_10[j] + S_sf_10[j]
+    S_b_10[j] = S_bc_10[j] + S_bf_10[j]
 #===========================Detemine qs n = 5===========================
     for k, day in enumerate(dates_rep):
         if day == date:
@@ -286,16 +291,18 @@ for j, date in enumerate(dates):
         S_bc_20[j] = S_bc_20[j-1] - q_cb_20[j]#*(timeStep_Hr[j]*3600)
         S_sc_20[j] = S_sc_20[j-1] - q_cs_20[j]#*(timeStep_Hr[j]*3600)
         S_bf_20[j] = S_bf_20[j-1] + q_cb_20[j] - q_pb_20[j]
-        S_sf_20[j] = S_sf_20[j-1] + q_cs_20[j] - q_ps_20[j] \
-            + q_pb_20[j]
-        S_s_20[j] = S_sc_20[j] + S_sf_20[j]
-        S_b_20[j] = S_bc_20[j] + S_bf_20[j]
 
     if d95 >= S_f_20[j-1]:
-        sed_added_20[j] = (q_ps_20[j])/(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
+        sed_added_20[j] = (q_ps_20[j])*(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
+        S_sf_20[j] = S_sf_20[j-1] + q_cs_20[j] - q_ps_20[j]*(1-e) \
+            + q_pb_20[j]
     else:
         sed_added_20[j] = q_ps_20[j]#*(timeStep_Hr[j]*3600.)
+        S_sf_20[j] = S_sf_20[j-1] + q_cs_20[j] - q_ps_20[j] \
+            + q_pb_20[j]
     S_f_20[j] = S_f_20[j-1] + sed_added_20[j]
+    S_s_20[j] = S_sc_20[j] + S_sf_20[j]
+    S_b_20[j] = S_bc_20[j] + S_bf_20[j]
 #===========================Detemine qs n = 5===========================
     for k, day in enumerate(dates_rep):
         if day == date:
@@ -411,9 +418,9 @@ for ax in ax1.flatten():
     ax.right_ax.legend(loc="lower right")
     for label in ax.get_xticklabels():
         label.set_horizontalalignment('center')
-    ax.set(xlabel='Date', ylim=(0,675))
+    ax.set(xlabel='Date', ylim=(0,850))
     ax.tick_params(axis='x', labelrotation=25)
-    ax.right_ax.set_ylim(0,40)
+    ax.right_ax.set_ylim(0,10)
     for tl in ax.get_yticklabels():
         tl.set_color('#95190C') 
     for tl in ax.right_ax.get_yticklabels():
@@ -438,7 +445,7 @@ storms_df.plot(y='S_f_5', ax=ax2, color = '#D5573B', label=r'Mean $n_{\Delta t}$
 plt.xlabel('Date')
 plt.ylabel('Fine sediment storage, $S_a$ (mm)')
 ax2.legend(loc="upper right")
-ax2.set_ylim(23,29)
+ax2.set_ylim(22,28)
 for label in ax2.get_xticklabels():
     label.set_horizontalalignment('center')
 plt.xticks(rotation=0)
