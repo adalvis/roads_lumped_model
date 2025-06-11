@@ -45,7 +45,7 @@ for i in range(0, len(timeStep_Hr)):
 # tau_c = N/m^2
 L, rho_w, rho_s, g, S, tau_c, d50, d95 = [4.57, 1000, 2650, 
                                           9.81, 0.05, 0.052,
-                                          1.8e-5, 0.0275]
+                                          1.8e-5, 0.025]
 #%%===========================DEFINE LAYER CONSTANTS===========================
 # h_s = depth of surfacing
 # f_sf, f_sc = fractions of fine/coarse material in ballast
@@ -102,7 +102,7 @@ f_s_20, n_f_20, n_t_20, tau_e_20, water_depth_20, tau_20, \
 q = np.zeros(len(intensity_mmhr))
 
 #%%===========================INITIALIZE DEPTHS n = 5===========================
-S_f_5[0] = 0.0275
+S_f_5[0] = 0.02
 S_s_5[0] = h_s
 S_sc_5[0] = h_s*(f_sc)
 S_sf_5[0] = h_s*(f_sf)
@@ -122,20 +122,19 @@ for j, date in enumerate(dates):
         q_cb_5[j] = k_cb*(S_bc_5[j-1]/S_b_5[j-1])*truck_pass_5[j]#/(timeStep_Hr[j]*3600)
         S_bc_5[j] = S_bc_5[j-1] - q_cb_5[j]#*(timeStep_Hr[j]*3600)
         S_sc_5[j] = S_sc_5[j-1] - q_cs_5[j]#*(timeStep_Hr[j]*3600)
-        S_bf_5[j] = S_bf_5[j-1] + q_cb_5[j] - q_pb_5[j]
-        
-
-    if d95 >= S_f_5[j-1]:
-        sed_added_5[j] = (q_ps_5[j])*(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
-        S_sf_5[j] = S_sf_5[j-1] + q_cs_5[j] - q_ps_5[j]*(1-e) \
-            + q_pb_5[j]
-    else:
-        sed_added_5[j] = q_ps_5[j]#*(timeStep_Hr[j]*3600.)
         S_sf_5[j] = S_sf_5[j-1] + q_cs_5[j] - q_ps_5[j] \
             + q_pb_5[j]
-    S_f_5[j] = S_f_5[j-1] + sed_added_5[j]
-    S_s_5[j] = S_sc_5[j] + S_sf_5[j]
-    S_b_5[j] = S_bc_5[j] + S_bf_5[j]
+        S_bf_5[j] = S_bf_5[j-1] + q_cb_5[j] - q_pb_5[j]
+        
+        S_s_5[j] = S_sc_5[j] + S_sf_5[j]
+        S_b_5[j] = S_bc_5[j] + S_bf_5[j]
+
+    if d95 >= S_f_5[j-1]/(1-e):
+        sed_added_5[j] = (q_ps_5[j])#*(timeStep_Hr[j]*3600.))#/(1-e)
+        S_f_5[j] = S_f_5[j-1] + sed_added_5[j]*(1-e)
+    else:
+        sed_added_5[j] = q_ps_5[j]#*(timeStep_Hr[j]*3600.)
+        S_f_5[j] = S_f_5[j-1] + sed_added_5[j]
 #===========================Detemine qs n = 5===========================
     for k, day in enumerate(dates_rep):
         if day == date:
@@ -187,7 +186,7 @@ for j, date in enumerate(dates):
     S_f_5[j] = S_f_5[j-1] + sed_added_5[j] - Hs_out_5[j]
 
 #%%===========================INITIALIZE DEPTHS n = 10===========================
-S_f_10[0] = 0.0275
+S_f_10[0] = 0.02
 S_s_10[0] = h_s
 S_sc_10[0] = h_s*(f_sc)
 S_sf_10[0] = h_s*(f_sf)
@@ -208,18 +207,22 @@ for j, date in enumerate(dates):
         S_bc_10[j] = S_bc_10[j-1] - q_cb_10[j]#*(timeStep_Hr[j]*3600)
         S_sc_10[j] = S_sc_10[j-1] - q_cs_10[j]#*(timeStep_Hr[j]*3600)
         S_bf_10[j] = S_bf_10[j-1] + q_cb_10[j] - q_pb_10[j]
+        S_sf_10[j] = S_sf_10[j-1] + q_cs_10[j] - q_ps_10[j] \
+            + q_pb_10[j]\
+        
+        S_s_10[j] = S_sc_10[j] + S_sf_10[j]
+        S_b_10[j] = S_bc_10[j] + S_bf_10[j]
+        
 
-    if d95 >= S_f_10[j-1]:
-        sed_added_10[j] = (q_ps_10[j])*(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
-        S_sf_10[j] = S_sf_10[j-1] + q_cs_10[j] - q_ps_10[j]*(1-e) \
-            + q_pb_10[j]
+    if d95 >= S_f_10[j-1]/(1-e):
+        sed_added_10[j] = (q_ps_10[j])#*(timeStep_Hr[j]*3600.))#/(1-e)
+        S_f_10[j] = S_f_10[j-1]*(1-e) + sed_added_10[j]
     else:
         sed_added_10[j] = q_ps_10[j]#*(timeStep_Hr[j]*3600.)
-        S_sf_10[j] = S_sf_10[j-1] + q_cs_10[j] - q_ps_10[j] \
-            + q_pb_10[j]
-    S_f_10[j] = S_f_10[j-1] + sed_added_10[j]
-    S_s_10[j] = S_sc_10[j] + S_sf_10[j]
-    S_b_10[j] = S_bc_10[j] + S_bf_10[j]
+        S_f_10[j] = S_f_10[j-1] + sed_added_10[j]
+        
+    
+    
 #===========================Detemine qs n = 5===========================
     for k, day in enumerate(dates_rep):
         if day == date:
@@ -270,7 +273,7 @@ for j, date in enumerate(dates):
     Hs_out_10[j] = np.minimum(sed_added_10[j]+S_f_10[j-1], sed_cap_10[j])
     S_f_10[j] = S_f_10[j-1] + sed_added_10[j] - Hs_out_10[j]
 #%%===========================INITIALIZE DEPTHS n = 20===========================
-S_f_20[0] = 0.0275
+S_f_20[0] = 0.02
 S_s_20[0] = h_s
 S_sc_20[0] = h_s*(f_sc)
 S_sf_20[0] = h_s*(f_sf)
@@ -291,18 +294,19 @@ for j, date in enumerate(dates):
         S_bc_20[j] = S_bc_20[j-1] - q_cb_20[j]#*(timeStep_Hr[j]*3600)
         S_sc_20[j] = S_sc_20[j-1] - q_cs_20[j]#*(timeStep_Hr[j]*3600)
         S_bf_20[j] = S_bf_20[j-1] + q_cb_20[j] - q_pb_20[j]
-
-    if d95 >= S_f_20[j-1]:
-        sed_added_20[j] = (q_ps_20[j])*(1-e)#*(timeStep_Hr[j]*3600.))#/(1-e)
-        S_sf_20[j] = S_sf_20[j-1] + q_cs_20[j] - q_ps_20[j]*(1-e) \
-            + q_pb_20[j]
-    else:
-        sed_added_20[j] = q_ps_20[j]#*(timeStep_Hr[j]*3600.)
         S_sf_20[j] = S_sf_20[j-1] + q_cs_20[j] - q_ps_20[j] \
             + q_pb_20[j]
-    S_f_20[j] = S_f_20[j-1] + sed_added_20[j]
-    S_s_20[j] = S_sc_20[j] + S_sf_20[j]
-    S_b_20[j] = S_bc_20[j] + S_bf_20[j]
+        
+        S_s_20[j] = S_sc_20[j] + S_sf_20[j]
+        S_b_20[j] = S_bc_20[j] + S_bf_20[j]
+
+    if d95 >= S_f_20[j-1]/(1-e):
+        sed_added_20[j] = (q_ps_20[j])#*(timeStep_Hr[j]*3600.))#/(1-e)
+        S_f_20[j] = S_f_20[j-1]*(1-e) + sed_added_20[j]
+    else:
+        sed_added_20[j] = q_ps_20[j]#*(timeStep_Hr[j]*3600.)
+        S_f_20[j] = S_f_20[j-1] + sed_added_20[j]
+
 #===========================Detemine qs n = 5===========================
     for k, day in enumerate(dates_rep):
         if day == date:
@@ -418,9 +422,9 @@ for ax in ax1.flatten():
     ax.right_ax.legend(loc="lower right")
     for label in ax.get_xticklabels():
         label.set_horizontalalignment('center')
-    ax.set(xlabel='Date', ylim=(0,850))
+    ax.set(xlabel='Date', ylim=(0,5000))
     ax.tick_params(axis='x', labelrotation=25)
-    ax.right_ax.set_ylim(0,10)
+    ax.right_ax.set_ylim(0,20)
     for tl in ax.get_yticklabels():
         tl.set_color('#95190C') 
     for tl in ax.right_ax.get_yticklabels():
@@ -445,7 +449,7 @@ storms_df.plot(y='S_f_5', ax=ax2, color = '#D5573B', label=r'Mean $n_{\Delta t}$
 plt.xlabel('Date')
 plt.ylabel('Fine sediment storage, $S_a$ (mm)')
 ax2.legend(loc="upper right")
-ax2.set_ylim(22,28)
+ax2.set_ylim(19,28)
 for label in ax2.get_xticklabels():
     label.set_horizontalalignment('center')
 plt.xticks(rotation=0)
@@ -539,17 +543,20 @@ for i, year in enumerate(years):
         # print(yr_20[i])
 
 #Multiply Hs_out
-sed_area_5 = np.multiply(yr_5, L)
-print(sed_area_5)
-sed_load_5 = np.multiply(sed_area_5, rho_s)
+print('Sediment depth: ',yr_5)
+print('Total sediment depth: ', yr_5*80*4.57*2)
+sed_area_5 = yr_5*L
+sed_load_5 = sed_area_5*rho_s
 
-sed_area_10 = np.multiply(yr_10, L)
-print(sed_area_10)
-sed_load_10 = np.multiply(sed_area_10, rho_s)
+print('Sediment depth: ',yr_10)
+print('Total sediment depth: ', yr_10*80*4.57*2)
+sed_area_10 = yr_10*L
+sed_load_10 = sed_area_10*rho_s
 
-sed_area_20 = np.multiply(yr_20, L)
-print(sed_area_20)
-sed_load_20 = np.multiply(sed_area_20, rho_s)
+print('Sediment depth: ',yr_20)
+print('Total sediment depth: ', yr_20*80*4.57*2)
+sed_area_20 = yr_20*L
+sed_load_20 = sed_area_20*rho_s
 
 width = 0.25
 
