@@ -4,8 +4,10 @@ import json
 import numpy as np
 from datetime import datetime, timedelta
 
-mesonetToken = '081d3a79e9304e25820be19e856bb049'
+#%%
+mesonetToken = input("Please enter your Mesonet token:")
 
+#%%
 #Initialize lists to store data
 date_start = str(201007010000) #for 10 yr
 date_end = str(202007010000) #for 10 yr
