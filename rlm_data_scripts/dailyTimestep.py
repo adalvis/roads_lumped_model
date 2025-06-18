@@ -1,4 +1,3 @@
-#%%
 # Import libraries
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -6,9 +5,8 @@ import datetime
 import numpy as np
 from scipy.stats import expon
 
-
 data = pd.read_csv('/home/adalvis/github/roads_lumped_model/'+\
-	'rlm_data/ElkRock_rain_10yr.csv', index_col='date') #for 10 yr
+	'rlm_data/ElkRock_rain_10yr.csv', index_col='date')
 
 data.index = pd.to_datetime(data.index)
 data = data.asfreq('h')
@@ -47,4 +45,3 @@ plt.show()
 # Save output
 # df.to_csv('/home/adalvis/github/roads_lumped_model/'+\
 # 	'rlm_data/dailyStorms_ElkRock10.csv')
-# %%
