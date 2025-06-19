@@ -4,6 +4,8 @@ import json
 import numpy as np
 from datetime import datetime, timedelta
 
+#PLEASE NOTE: the API with Synoptic Data is NOT free.
+
 #%%
 mesonetToken = input("Please enter your Mesonet token:")
 
@@ -52,7 +54,6 @@ rain_df = rain_df.set_index('date', drop=True)
 rain_df.fillna(0.0, inplace=True)
 
 #Save file as .csv
-rain_df.to_csv(r'C:/Users/Amanda/Documents/GitHub/'+
-               'roads_lumped_model/rlm_output/ElkRock_rain_10yr.csv') #for 10 yr
+rain_df.to_csv('../rlm_data/ElkRock_rain_10yr.csv') #for 10 yr
 # rain_df.to_csv(r'C:/Users/Amanda/Documents/GitHub/'+
 #                 'roads_lumped_model/rlm_output/ElkRock_rain.csv') #for 1 yr
