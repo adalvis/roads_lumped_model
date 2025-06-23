@@ -1,8 +1,8 @@
-# Lumped Road Erosion Model
-**Updated:** 06/18/2025
+# WADNR Roads Project Lumped Model
+**Updated:** 06/23/2025
 
 ## Summary
-This repository contains code for a lumped model used to estimate the erosion of forest roads.
+This repository contains code for a spatially lumped model used to estimate the erosion of forest roads.
 
 ## Repository navigation
 ### `rlm_data_scripts`
@@ -17,7 +17,8 @@ This folder contains four scripts used to format and plot input data for scripts
 3. `groupStorms_script.py` is a script used to group rainfall data by storm.
    - **Input:** Raw rainfall data in a Pandas-readable format and a user-defined minimum threshold of time between storms.
    - **Output:** Pandas dataframe of rainfall data grouped by storm.
-4. `pullRainfall.py` is a script used to pull rainfall data from rain gages near field sites using the Mesonet API.
+4. `pullRainfall.py` is a script used to pull rainfall data from rain gages near field sites using the Mesonet API. Note that
+the Mesonet API is now known as the Synoptic Data API and is not free to use. This script is kept here for completeness.
    - **Input:** Station ID.
    - **Output:** Raw rainfall data in a Pandas-readable format.
 
@@ -28,7 +29,6 @@ This folder contains one script used to run the lumped road erosion model and a 
 generated truck passes.
    - **Input:** Output from `dailyTimestep.py`.
    - **Output:** Plots of road layer depths vs. time and erosion vs. time.
-2. `rlm_tutorial.ipynb` estimates the erosion of forest roads using rainfall data pulled from the Mesonet API and stochastically 
-generated truck passes in a tutorial format.
+2. `rlm_tutorial.ipynb` estimates the erosion of forest roads using rainfall data pulled from the Mesonet API and stochastically generated truck passes in a tutorial format.
    - **Input:** Output from `dailyTimestep.py`.
    - **Output:** Plots of road layer depths vs. time and erosion vs. time.
