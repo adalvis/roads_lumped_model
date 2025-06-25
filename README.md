@@ -7,12 +7,6 @@ This repository contains code for a spatially lumped model used to estimate the 
 ## Model description
 This spatially lumped model for estimating forest road erosion uses a tri-layered conceptualization (Figure 1) to demonstrate the vertical sediment exchange among layers of a road cross section and incorporates two of four traffic-induced, erosion-enhancing processes discussed in Alvis et al. (2023): pumping (Figure 2) and crushing (Figure 3).
 
-<style>
-table th, table td {
-  width: 33%; /* Adjust the percentage as needed for equal widths */
-}
-</style>
-
 |<img src="./rlm_model_runs/figs/lumpedModel_noLabels.png" width="600">|<img src="./rlm_model_runs/figs/crushing_threePanel.PNG" width="700">|<img src="./rlm_model_runs/figs/pumping_threePanel.PNG" width="750">|
 |:----------------------------------------------:|:---------------------------------------------:|:--------------------------------------------:|
 |**Figure 1.** The tri-layered conceptualization that is used to model processes occurring vertically within the road prism.|**Figure 2.** Schematic of the crushing process. On a typical road surface aggregate (left) when traffic is applied (center) the larger sediment breaks down into finer sediment (right). Image not to scale.|**Figure 3.** Schematic of the pumping process. Larger sediment is layered over finer sediment (left) and when traffic is applied (center) the larger sediment gets pushed down which forces the finer sediment upwards (right). Image not to scale.|
